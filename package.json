@@ -1,6 +1,6 @@
 {
   "name": "treeize",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Converts tabular row data (as from SQL joins, flat JSON, etc) to deep tree graphs based on simple column naming conventions.",
   "main": "./lib/treeize.js",
   "repository": {

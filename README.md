@@ -1,8 +1,6 @@
 treeize
 =======
 
-_v0.0.4_
-
 Converts row data (in JSON/associative array format) to object/tree structure based on column naming conventions.
 
 ## Installation
