@@ -2,13 +2,10 @@
   "name": "treeize",
   "version": "0.0.3",
   "description": "Converts tabular row data (as from SQL joins, flat JSON, etc) to deep tree graphs based on simple column naming conventions.",
-  "main": "treeize.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "./lib/treeize.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kwhitley/treeize"
+    "url": "https://github.com/kwhitley/treeize.git"
   },
   "keywords": [
     "JSON",
@@ -21,7 +18,10 @@
     "flat"
   ],
   "author": "K. R. Whitley <contact@krwhitley.com> (http://krwhitley.com/)",
-  "license": "MIT",
+  "licenses": [{
+    "type": "MIT",
+    "url" : "http://en.wikipedia.org/wiki/MIT_License"
+  }],
   "bugs": {
     "url": "https://github.com/kwhitley/treeize/issues"
   },
