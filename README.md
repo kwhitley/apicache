@@ -5,12 +5,15 @@ Converts row data (in JSON/associative array format) to object/tree structure ba
 
 ## Installation
 
-`npm install --save treeize`
+```
+npm install treeize
+```
 
-## Usage
+## API
 
 - `treeize.grow(flatData, options)` - takes your results/rows of flat associative data and returns a full object graph.
-- `treeize.set(options)` - sets global options for the lib.  For example, to use a path delimiter of '>' instead of '+', call `treeize.set({ delimiter: '>' })`
+- `treeize.getOptions()` - returns global options for the lib.
+- `treeize.setOptions(options)` - sets global options for the lib.  For example, to use a path delimiter of '>' instead of '+', call `treeize.setOptions({ delimiter: '>' })`
 
 ### Notes
 

@@ -1,6 +1,6 @@
 {
   "name": "treeize",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Converts tabular row data (as from SQL joins, flat JSON, etc) to deep tree graphs based on simple column naming conventions.",
   "main": "./lib/treeize.js",
   "repository": {
@@ -18,15 +18,27 @@
     "flat"
   ],
   "author": "K. R. Whitley <contact@krwhitley.com> (http://krwhitley.com/)",
-  "licenses": [{
-    "type": "MIT",
-    "url" : "http://en.wikipedia.org/wiki/MIT_License"
-  }],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://en.wikipedia.org/wiki/MIT_License"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/kwhitley/treeize/issues"
   },
   "dependencies": {
     "lodash": "~1.3.1",
     "inflection": "~1.2.6"
+  },
+  "devDependencies": {
+    "grunt": "latest",
+    "nodeunit": "latest",
+    "grunt-contrib-jshint": "latest",
+    "grunt-contrib-nodeunit": "latest",
+    "grunt-contrib-watch": "latest"
+  },
+  "scripts": {
+    "test": "grunt"
   }
 }
