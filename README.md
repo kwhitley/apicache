@@ -13,14 +13,14 @@ npm install treeize
 
 - `treeize.grow(flatData, options)` - takes your results/rows of flat associative data and returns a full object graph.
 - `treeize.getOptions()` - returns global options for the lib.
-- `treeize.setOptions(options)` - sets global options for the lib.  For example, to use a path delimiter of '>' instead of '+', call `treeize.setOptions({ delimiter: '>' })`
+- `treeize.setOptions(options)` - sets global options for the lib.  For example, to use a path delimiter of '>' instead of ':', call `treeize.setOptions({ delimiter: '>' })`
 
 ### Notes
 
 - The column/attribute order is not important.  All attributes are sorted by depth before mapping.  This ensures parent nodes exist before children nodes are created within.
 - Each attribute name of the flat data must consist of the full path to its node & attribute, seperated by the delimiter.  `id` suggests an `id` attribute on a root element, whereas `name+first` implies a `first` attribute on a `name` object within a root element.
 - To imply a collection in the path/attribute-name, use a plural name (e.g. "subjects" instead of "subject").  Otherwise, use a singular name for a singular object.
-- Use a `+` delimiter (default) to seperate path nodes.  To change this, use the `treeize.set([options])` function.
+- Use a `:` delimiter (default) to seperate path nodes.  To change this, use the `treeize.set([options])` function.
 
 ### Assumptions
 
@@ -38,20 +38,20 @@ var flatData = [
   {
     "name":             "Mittens",
     "age":              12,
-    "toys+name":        "mouse",
-    "toys+owner+name":  "Mittens"
+    "toys:name":        "mouse",
+    "toys:owner:name":  "Mittens"
   },
   {
     "name":             "Mittens",
     "age":              12,
-    "toys+name":        "yarn",
-    "toys+owner+name":  "Ms. Threadz"
+    "toys:name":        "yarn",
+    "toys:owner:name":  "Ms. Threadz"
   },
   {
     "name":             "Tiger",
     "age":              7,
-    "toys+name":        "a stick",
-    "toys+owner+name":  "Mother Nature"
+    "toys:name":        "a stick",
+    "toys:owner:name":  "Mother Nature"
   }
 ];
 
