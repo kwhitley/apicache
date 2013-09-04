@@ -17,7 +17,7 @@ npm install treeize
 
 ### Notes
 
-- The column/attribute order is not important.  All attributes are sorted by depth and then alphabetically before mapping.
+- The column/attribute order is not important.  All attributes are sorted by depth before mapping.  This ensures parent nodes exist before children nodes are created within.
 - Each attribute name of the flat data must consist of the full path to its node & attribute, seperated by the delimiter.  `id` suggests an `id` attribute on a root element, whereas `name+first` implies a `first` attribute on a `name` object within a root element.
 - To imply a collection in the path/attribute-name, use a plural name (e.g. "subjects" instead of "subject").  Otherwise, use a singular name for a singular object.
 - Use a `+` delimiter (default) to seperate path nodes.  To change this, use the `treeize.set([options])` function.
