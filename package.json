@@ -1,11 +1,11 @@
 {
-  "name": "api-cache",
+  "name": "apicache",
   "version": "0.0.1",
   "description": "Ultra-simplified API/JSON-caching middleware for Express that even a monkey could implement and use.",
-  "main": "./lib/api-cache.js",
+  "main": "./lib/apicache.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kwhitley/api-cache.git"
+    "url": "https://github.com/kwhitley/apicache.git"
   },
   "keywords": [
     "JSON",
@@ -25,7 +25,7 @@
     }
   ],
   "bugs": {
-    "url": "https://github.com/kwhitley/api-cache/issues"
+    "url": "https://github.com/kwhitley/apicache/issues"
   },
   "devDependencies": {
     "grunt": "latest",
