@@ -1,6 +1,6 @@
 {
   "name": "apicache",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Ultra-simplified API/JSON-caching middleware for Express that even a monkey could implement and use.",
   "main": "./lib/apicache.js",
   "repository": {
