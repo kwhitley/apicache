@@ -1,6 +1,6 @@
 {
   "name": "apicache",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
   "main": "./lib/apicache.js",
   "repository": {
@@ -8,14 +8,15 @@
     "url": "https://github.com/kwhitley/apicache.git"
   },
   "keywords": [
+    "cache",
+    "API",
+    "response",
+    "express",
     "JSON",
-    "SQL",
-    "tree",
-    "graph",
-    "deep",
-    "convert",
-    "expand",
-    "flat"
+    "duration",
+    "middleware",
+    "simple",
+    "memory"
   ],
   "author": "K. R. Whitley <contact@krwhitley.com> (http://krwhitley.com/)",
   "licenses": [
