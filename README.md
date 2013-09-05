@@ -18,7 +18,7 @@ npm install apicache
 
 To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
 
-```
+```js
 var apicache = require('apicache').middleware;
 
 ...
