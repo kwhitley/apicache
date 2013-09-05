@@ -1,7 +1,7 @@
 {
   "name": "apicache",
   "version": "0.0.2",
-  "description": "Ultra-simplified API/JSON-caching middleware for Express that even a monkey could implement and use.",
+  "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
   "main": "./lib/apicache.js",
   "repository": {
     "type": "git",
