@@ -39,17 +39,28 @@ npm install apicache
 - `apicache.middleware([duration])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.
 - `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
 
+#### Available Options (first value is default)
+
+```js
+{
+  debug:            false|true,   // if true, enables console output
+  defaultDuration:  3600000,      // should be a number (in ms), defaults to 1 hour
+  enabled:          true|false,   // if false, turns off caching globally (useful on dev)
+}
+```
+
 ## Usage
 
 To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
 
 ```js
-var apicache = require('apicache').middleware;
+var apicache = require('apicache').options({ debug: true }).middleware;
 
 ...
 
 // an example route
 app.get('/api/v1/myroute', apicache('5 minutes'), function(req, res, next) {
+  // do some work... this will only occur once per 5 minutes
   res.send({ foo: bar });
 });
 
