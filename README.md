@@ -66,6 +66,13 @@ app.get('/api/v1/myroute', apicache('5 minutes'), function(req, res, next) {
 
 ```
 
+## Client-Side Bypass
+
+When sharing `GET` routes between admin and public sites, you'll likely want the
+routes to be cached from your public client, but NOT cached when from the admin client. This
+is achieved by sending a `"x-apicache-bypass": true` header along with the requst from the admin.
+The presence of this header flag will bypass the cache, ensuring you aren't looking at stale data.
+
 ## Limitations
 
 - `apicache` is currently an in-memory cache, built upon [memory-cache](https://github.com/ptarjan/node-cache).  It may later be expanded to allow other cache-layers.
