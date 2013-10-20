@@ -36,6 +36,8 @@ npm install apicache
 
 ## API
 
+- `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
+- `apicache.getIndex()` - returns current cache index [of keys]
 - `apicache.middleware([duration])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.
 - `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
 
@@ -62,6 +64,49 @@ var apicache = require('apicache').options({ debug: true }).middleware;
 app.get('/api/v1/myroute', apicache('5 minutes'), function(req, res, next) {
   // do some work... this will only occur once per 5 minutes
   res.send({ foo: bar });
+});
+
+```
+
+## Cache Key Groups
+
+Oftentimes it benefits us to group cache entries, for example, by collection (in an API).  This
+would enable us to clear all cached "post" requests if we updated something in the "post" collection
+for instance. Adding a simple `req.apicacheGroup = [somevalue];` to your route enables this.  See example below:
+
+```js
+
+var apicache  = require('apicache');
+var cache     = Apicache.middleware;
+
+// GET collection/id
+app.get('/api/:collection/:id?', cache('1 hour'), function(req, res, next) {
+  req.apicacheGroup = req.params.collection;
+  // do some work
+  res.send({ foo: 'bar' });
+});
+
+// POST collection/id
+app.post('/api/:collection/:id?', function(req, res, next) {
+  // update model
+  apicache.clear(req.params.collection);
+  res.send(200);
+});
+
+```
+
+Additionally, you could add manual cache control to the previous project with routes such as these:
+
+```js
+
+// GET apicache index (for the curious)
+app.get('/api/cache/index', function(req, res, next) {
+  res.send(apicache.getIndex());
+});
+
+// GET apicache index (for the curious)
+app.get('/api/cache/clear/:key?', function(req, res, next) {
+  res.send(200, ApiCache.clear(req.params.key || req.query.key));
 });
 
 ```
