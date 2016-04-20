@@ -79,7 +79,7 @@ for instance. Adding a simple `req.apicacheGroup = [somevalue];` to your route e
 ```js
 
 var apicache  = require('apicache');
-var cache     = Apicache.middleware;
+var cache     = apicache.middleware;
 
 // GET collection/id
 app.get('/api/:collection/:id?', cache('1 hour'), function(req, res, next) {
