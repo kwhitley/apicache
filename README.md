@@ -48,6 +48,7 @@ npm install apicache
   debug:            false|true,   // if true, enables console output
   defaultDuration:  3600000,      // should be a number (in ms), defaults to 1 hour
   enabled:          true|false,   // if false, turns off caching globally (useful on dev)
+  redisClient:      client,       // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],           // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
 }
 ```
@@ -78,7 +79,7 @@ for instance. Adding a simple `req.apicacheGroup = [somevalue];` to your route e
 ```js
 
 var apicache  = require('apicache');
-var cache     = Apicache.middleware;
+var cache     = apicache.middleware;
 
 // GET collection/id
 app.get('/api/:collection/:id?', cache('1 hour'), function(req, res, next) {
