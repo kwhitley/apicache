@@ -1,6 +1,6 @@
 {
   "name": "apicache",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
   "main": "./lib/apicache.js",
   "repository": {
