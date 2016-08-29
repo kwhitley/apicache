@@ -125,3 +125,18 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 - `apicache` is currently an in-memory cache, built upon [memory-cache](https://github.com/ptarjan/node-cache).  It may later be expanded to allow other cache-layers.
 - This should only be used for JSON responses (as from an API) - if for no other reason, because it will return the cached response as `application/json`.  There's a reason it's called `apicache`.
 
+## Contributors
+
+Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
+
+- @rutgernation - JSONP support
+- @Amhri - bugfix headers (with redis)
+- @enricsangra - added x-apicache-force-fetch header
+- @tskillian - custom appendKey path support
+- @agolden - Content-Encoding preservation (for gzip, etc)
+- @davidyang - express 4+ compatibility
+- @gesposito - README update
+- @Webcascade - bugfix in cache groups (during debug)
+- @nmors - redis support
+
+
