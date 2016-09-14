@@ -10,6 +10,9 @@
   "keywords": [
     "cache",
     "API",
+    "redis",
+    "memcache",
+    "memory-cache",
     "response",
     "express",
     "JSON",
