@@ -39,8 +39,8 @@
     "test": "grunt"
   },
   "dependencies": {
-    "inflection": "~1.2.6",
-    "lodash": "^4.11.1",
-    "memory-cache": "0.0.5"
+    "inflection": "^1.10.0",
+    "lodash": "^4.15.0",
+    "memory-cache": "^0.1.6"
   }
 }
