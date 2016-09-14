@@ -138,5 +138,6 @@ Special thanks to all those that use this library and report issues, but especia
 - @gesposito - README update
 - @Webcascade - bugfix in cache groups (during debug)
 - @nmors - redis support
+- @maytis, @ashwinnaidu - redis expiration
 
 
