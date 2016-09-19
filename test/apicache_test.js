@@ -31,7 +31,6 @@ describe('.options(opt?) {GETTER/SETTER}', function() {
       expect(apicache.options({ defaultDuration: newDuration }).options().defaultDuration).to.equal(newDuration);
     });
   });
-
 });
 
 describe('.getIndex() {GETTER}', function() {

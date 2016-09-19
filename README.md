@@ -34,6 +34,23 @@ who really wants to calculate that each time?).
 npm install apicache
 ```
 
+## Usage
+
+To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
+
+```js
+var cache = require('apicache').middleware;
+
+...
+
+// an example route
+app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
+  // do some work... this will only occur once per 5 minutes
+  res.json({ foo: bar });
+});
+
+```
+
 ## API
 
 - `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
@@ -51,23 +68,6 @@ npm install apicache
   redisClient:      client,       // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],           // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
 }
-```
-
-## Usage
-
-To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
-
-```js
-var apicache = require('apicache').options({ debug: true }).middleware;
-
-...
-
-// an example route
-app.get('/api/v1/myroute', apicache('5 minutes'), function(req, res, next) {
-  // do some work... this will only occur once per 5 minutes
-  res.send({ foo: bar });
-});
-
 ```
 
 ## Cache Key Groups
@@ -111,6 +111,21 @@ app.get('/api/cache/clear/:key?', function(req, res, next) {
   res.send(200, ApiCache.clear(req.params.key || req.query.key));
 });
 
+```
+
+## Debugging/Console Out
+
+As of v0.2.0, apicache now takes advantage of the brilliant [debug](https://www.npmjs.com/package/debug) module for console logging.  To 
+enable, simply add 'apicache' to the DEBUG environment variable
+
+```
+export DEBUG=apicache
+```
+
+Alternatively, the older method of passing enabling via the .options() function still works.
+
+```js 
+var cache = require('apicache').options({ debug: true }).middleware;
 ```
 
 ## Client-Side Bypass
