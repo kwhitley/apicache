@@ -45,7 +45,6 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "inflection": "^1.10.0",
     "lodash": "^4.15.0",
     "memory-cache": "^0.1.6"
   }

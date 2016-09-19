@@ -41,9 +41,6 @@ To use, simply inject the middleware (example: `apicache('5 minutes')`) into you
 ```js
 var cache = require('apicache').middleware;
 
-...
-
-// an example route
 app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
   // do some work... this will only occur once per 5 minutes
   res.json({ foo: bar });
