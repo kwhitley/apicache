@@ -115,7 +115,7 @@ describe('.clear(key?) {SETTER}', function() {
 });
 
 describe('.middleware {MIDDLEWARE}', function() {
-  var mockAPI = require('./mock_api')('2 seconds');
+  var mockAPI = require('./mock_api')('1 second');
   var apicache = require('../lib/apicache.js');
 
   it('is a function', function() {
@@ -145,9 +145,6 @@ describe('.middleware {MIDDLEWARE}', function() {
 
   it('injects a cache key', function() {
     expect(apicache.getIndex().all).to.include('/api/movies');
-    // setTimeout(function() {
-
-    // }, 5);
   });
 
   it('removes a cache key after expiration', function(done) {
@@ -155,7 +152,7 @@ describe('.middleware {MIDDLEWARE}', function() {
     setTimeout(function() {
       expect(apicache.getIndex().all).to.have.length(0);
       done();
-    }, 2000);
+    }, 1001);
   });
   
 });

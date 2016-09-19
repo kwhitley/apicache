@@ -1,6 +1,8 @@
 apicache
 ========
 
+[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg)](https://travis-ci.org/kwhitley/apicache)
+
 An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.
 
 ## Why?
