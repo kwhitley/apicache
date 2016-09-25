@@ -2,6 +2,7 @@ A simple API/JSON response caching middleware for Express/Node using plain-engli
 =======
 
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg)](https://travis-ci.org/kwhitley/apicache)
+[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=master)](https://coveralls.io/github/kwhitley/apicache?branch=master)
 
 ## Why?
 
@@ -112,7 +113,7 @@ app.get('/api/cache/clear/:key?', function(req, res, next) {
 
 ## Debugging/Console Out
 
-As of v0.2.0, apicache now takes advantage of the brilliant [debug](https://www.npmjs.com/package/debug) module for console logging.  To 
+As of v0.2.0, apicache now takes advantage of the brilliant [debug](https://www.npmjs.com/package/debug) module for console logging.  To
 enable, simply add 'apicache' to the DEBUG environment variable
 
 ```
@@ -121,7 +122,7 @@ export DEBUG=apicache
 
 Alternatively, the older method of passing enabling via the .options() function still works.
 
-```js 
+```js
 var cache = require('apicache').options({ debug: true }).middleware;
 ```
 
