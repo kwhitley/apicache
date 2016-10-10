@@ -1,8 +1,7 @@
-var express = require('express');
-var apicache = require('../lib/apicache');
-var cache = apicache.middleware;
-
-var app = module.exports = function(expiration) {
+module.exports = function(expiration) {
+  var express = require('express');
+  var apicache = require('../lib/apicache');
+  var cache = apicache.middleware;
   var app = express();
 
   var movies = [{

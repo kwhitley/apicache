@@ -143,6 +143,20 @@ describe('.middleware {MIDDLEWARE}', function() {
       });
   });
 
+  // it('skips cache when middlewareToggle param is falsey', function(done) {
+  //   var falseAPI = require('./mock_api')('1 second', false);
+  //   request(falseAPI)
+  //     .get('/api/movies')
+  //     .end(function(err, res) {
+  //       request(falseAPI)
+  //         .get('/api/movies')
+  //         .end(function(err, res) {
+  //           expect(falseAPI.requestsProcessed).to.equal(1);
+  //           done();
+  //         })
+  //     });
+  // });
+
   it('injects a cache key', function() {
     expect(apicache.getIndex().all).to.include('/api/movies');
   });

@@ -143,14 +143,16 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
 - @rutgernation - JSONP support
-- @Amhri - bugfix headers (with redis)
 - @enricsangra - added x-apicache-force-fetch header
 - @tskillian - custom appendKey path support
 - @agolden - Content-Encoding preservation (for gzip, etc)
 - @davidyang - express 4+ compatibility
 - @gesposito - README update
-- @Webcascade - bugfix in cache groups (during debug)
 - @nmors - redis support
 - @maytis, @ashwinnaidu - redis expiration
+
+### Bugfixes
+
+- @Amhri, @Webcascade, @conmarap
 
 
