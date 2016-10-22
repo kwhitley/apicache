@@ -55,6 +55,8 @@ app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
 - `apicache.getIndex()` - returns current cache index [of keys]
 - `apicache.middleware([duration])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.
 - `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
+- `apicache.newInstance([options])` - used to create a new ApiCache instance (by default, simply requiring this library shares a common instance)
+- `apicache.clone()` - used to create a new ApiCache instance with the same options as the current one
 
 #### Available Options (first value is default)
 
@@ -65,6 +67,10 @@ app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
   enabled:          true|false,   // if false, turns off caching globally (useful on dev)
   redisClient:      client,       // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],           // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
+  statusCodes: {
+    exclude:        [],           // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
+    include:        [],           // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
+  }
 }
 ```
 
