@@ -1,8 +1,7 @@
 A simple API/JSON response caching middleware for Express/Node using plain-english durations.
 =======
 
-[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg)](https://travis-ci.org/kwhitley/apicache)
-[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=master)](https://coveralls.io/github/kwhitley/apicache?branch=master)
+[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg)](https://travis-ci.org/kwhitley/apicache.svg?branch=master)
 
 ## Why?
 
@@ -47,13 +46,27 @@ app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
   res.json({ foo: bar });
 });
 
+// ADVANCED USAGE USING MIDDLEWARE TOGGLE PARAM
+
+function onlyStatus200(req, res) {
+  return req.statusCode === 200; // returns false for requests of other status codes (e.g. 403, 404, 500, etc)
+}
+
+app.get('/api/missing', cache('5 minutes', onlyStatus200), function(req, res) {
+  res.status(404).json({ results: 'will not be cached' });
+});
+
+app.get('/api/found', cache('5 minutes', onlyStatus200), function(req, res) {
+  res.json({ results: 'will be cached' });
+});
+
 ```
 
 ## API
 
 - `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
 - `apicache.getIndex()` - returns current cache index [of keys]
-- `apicache.middleware([duration])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.
+- `apicache.middleware([duration], [toggleMiddleware])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request.
 - `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
 - `apicache.newInstance([options])` - used to create a new ApiCache instance (by default, simply requiring this library shares a common instance)
 - `apicache.clone()` - used to create a new ApiCache instance with the same options as the current one
@@ -96,7 +109,7 @@ app.get('/api/:collection/:id?', cache('1 hour'), function(req, res, next) {
 app.post('/api/:collection/:id?', function(req, res, next) {
   // update model
   apicache.clear(req.params.collection);
-  res.send(200);
+  res.send('added a new item, so the cache has been cleared');
 });
 
 ```
