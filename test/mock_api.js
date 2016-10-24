@@ -41,6 +41,18 @@ function MockAPI(expiration, options) {
     res.json(movies)
   })
 
+  app.get('/api/text', function(req, res) {
+    app.requestsProcessed++
+
+    res.send('plaintext')
+  })
+
+  app.get('/api/html', function(req, res) {
+    app.requestsProcessed++
+
+    res.send('<html>')
+  })
+
   app.get('/api/missing', function(req, res) {
     app.requestsProcessed++
 
