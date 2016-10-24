@@ -2,6 +2,7 @@ var chai = require('chai')
 var expect = chai.expect
 var request = require('supertest')
 var apicache = require('../lib/apicache')
+var pjson = require('../package.json')
 var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
@@ -143,17 +144,50 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
   })
 
-  it('caches a request', function(done) {
+  it('properly returns a cached request', function(done) {
     var mockAPI = require('./mock_api')('10 seconds')
 
     request(mockAPI)
       .get('/api/movies')
-      .end(function(err, res) {
-        // console.log('res', mockAPI.apicache.id, mockAPI.apicache.getIndex())
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all).to.include('/api/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
         expect(mockAPI.requestsProcessed).to.equal(1)
-        done()
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('embeds store type and apicache version in cached responses', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
+        expect(res1.headers['apicache-store']).to.equal(undefined)
+        expect(res1.headers['apicache-version']).to.equal(undefined)
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+            expect(res2.headers['apicache-store']).to.equal('memory')
+            expect(res2.headers['apicache-version']).to.equal(pjson.version)
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
       })
   })
 
