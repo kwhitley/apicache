@@ -43,7 +43,7 @@ var cache = require('apicache').middleware;
 
 app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
   // do some work... this will only occur once per 5 minutes
-  res.json({ foo: bar });
+  res.json({ foo: 'bar' });
 });
 
 // ADVANCED USAGE USING MIDDLEWARE TOGGLE PARAM
