@@ -123,6 +123,20 @@ describe('.clear(key?) {SETTER}', function() {
 		expect(typeof apicache.clear).to.equal('function')
 	})
 
+  it('works when called with no key', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+    expect(mockAPI.apicache.clear().all.length).to.equal(0)
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.clear().all.length).to.equal(0)
+        done()
+      })
+  })
 })
 
 describe('.middleware {MIDDLEWARE}', function() {

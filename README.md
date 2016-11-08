@@ -39,6 +39,9 @@ npm install apicache
 To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
 
 ```js
+var express = require('express')
+var app = express()
+
 var cache = require('apicache').middleware;
 
 app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
@@ -46,17 +49,27 @@ app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
   res.json({ foo: 'bar' });
 });
 
+// CACHE ALL REQUESTS
+
+app.use(cache('5 minutes'))
+
+app.get('/will-be-cached', (req, res) => {
+  res.json({ success: true })
+})
+
 // ADVANCED USAGE USING MIDDLEWARE TOGGLE PARAM
 
 function onlyStatus200(req, res) {
   return req.statusCode === 200; // returns false for requests of other status codes (e.g. 403, 404, 500, etc)
 }
 
-app.get('/api/missing', cache('5 minutes', onlyStatus200), function(req, res) {
+const cacheSuccesses = cache('5 minutes', onlyStatus200)
+
+app.get('/api/missing', cacheSuccesses, function(req, res) {
   res.status(404).json({ results: 'will not be cached' });
 });
 
-app.get('/api/found', cache('5 minutes', onlyStatus200), function(req, res) {
+app.get('/api/found', cacheSuccesses, function(req, res) {
   res.json({ results: 'will be cached' });
 });
 
@@ -172,6 +185,6 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes
 
-- @Amhri, @Webcascade, @conmarap
+- @Amhri, @Webcascade, @conmarap, @cjfurelid
 
 
