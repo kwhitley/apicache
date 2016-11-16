@@ -41,6 +41,13 @@ function MockAPI(expiration, options) {
     res.json(movies)
   })
 
+  app.get('/api/testcachegroup', function(req, res) {
+    app.requestsProcessed++
+    req.apicacheGroup = 'cachegroup'
+
+    res.json(movies)
+  })
+
   app.get('/api/text', function(req, res) {
     app.requestsProcessed++
 
