@@ -1,13 +1,13 @@
 {
   "name": "apicache",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "scripts": {
     "test": "mocha $(find test -name '*.test.js') --recursive",
     "dev": "npm run test -- --watch",
     "prepublish": "npm run test"
   },
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=4.0.0"
   },
   "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
   "main": "./lib/apicache.js",
@@ -36,7 +36,6 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "express": "^4.14.0",
-    "fake-api-server": "^0.4.0",
     "grunt": "latest",
     "grunt-contrib-jshint": "latest",
     "grunt-contrib-nodeunit": "latest",
@@ -46,7 +45,6 @@
     "supertest": "^2.0.0"
   },
   "dependencies": {
-    "debug": "^2.2.0",
-    "lodash": "^4.15.0"
+    "debug": "^2.2.0"
   }
 }
