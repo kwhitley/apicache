@@ -11,7 +11,6 @@ var t           = {
   day:          3600000 * 24,
   week:         3600000 * 24 * 7,
   month:        3600000 * 24 * 30,
-  year:         3600000 * 24 * 365,
 };
 
 var instances = [];
@@ -57,11 +56,81 @@ function ApiCache() {
     // console.log('shouldCacheResponse', response)
     if (!response) return false
 
-    if (codes.exclude && codes.exclude.length && codes.exclude.indexOf(response.status) !== -1) return false
-    if (codes.include && codes.include.length && codes.include.indexOf(response.status) === -1) return false
+    if (codes.exclude && codes.exclude.length && codes.exclude.indexOf(response.statusCode) !== -1) return false
+    if (codes.include && codes.include.length && codes.include.indexOf(response.statusCode) === -1) return false
     // console.log('passed!')
 
     return true
+  }
+
+  function addIndexEntries(key, req) {
+    var groupName = req.apicacheGroup
+
+    if (groupName) {
+      debug('group detected "' + groupName + '"');
+      var group = (index.groups[groupName] = index.groups[groupName] || [])
+      group.unshift(key);
+    }
+
+    index.all.unshift(key);
+  }
+
+  function createCacheObject(status, headers, data, encoding) {
+    headers['apicache-store'] = globalOptions.redisClient ? 'redis' : 'memory';
+    headers['apicache-version'] = pkg.version;
+    return {
+      status, headers, data, encoding
+    }
+  }
+
+  function cacheResponse(key, value, duration) {
+    var redis = globalOptions.redisClient
+    if (redis) {
+      debug('storing cached entry in redis', JSON.stringify(value))
+      redis.hset(key, "response", JSON.stringify(value));
+      redis.hset(key, "duration", duration);
+      redis.expire(key, duration/1000);
+    } else {
+      memCache.add(key, value, duration)
+    }
+
+    // add automatic cache clearing from duration, includes max limit on setTimeout
+    setTimeout(function() { instance.clear(key) }, Math.min(duration, 2147483647));
+  }
+
+  function makeResponseCacheable(req, res, next, key, duration, strDuration) {
+    // cache miss, so build and cache (if necessary)
+    debug('path "' + key + '" not found in cache');
+
+    // monkeypatch res.end to create cache object
+    res.__end = res.end
+    res.end = function(content, encoding) {
+      if (shouldCacheResponse(res)) {
+        debug('adding cache entry for "' + key + '" @ ' + strDuration);
+        addIndexEntries(key, req)
+        var cacheObject = createCacheObject(res.statusCode, res._headers, content, encoding)
+        cacheResponse(key, cacheObject, duration)
+      }
+
+      return res.__end(content, encoding)
+    }
+
+    next();
+  }
+
+
+  function sendCachedResponse(response, cacheObject) {
+    Object.assign(response._headers, cacheObject.headers)
+
+    // unstringify buffers
+    var data = cacheObject.data
+    if (data.type === 'Buffer') {
+      data = new Buffer(data.data)
+    }
+
+    response.writeHead(cacheObject.status || 200, response._headers)
+
+    return response.end(data, cacheObject.encoding)
   }
 
   this.clear = function(target) {
@@ -149,8 +218,6 @@ function ApiCache() {
     var duration = instance.getDuration(strDuration);
 
     return function cache(req, res, next) {
-      var cached;
-
       function bypass() {
         debug('bypass detected, skipping cache.');
         return next();
@@ -182,111 +249,29 @@ function ApiCache() {
         key += '$$appendKey=' + appendKey;
       }
 
-      if (!globalOptions.redisClient) {
-        cached = memCache.get(key);
+      // if not forced bypass of cache from client request, attempt cache hit
+      if (!req.headers['x-apicache-force-fetch']) {
+        // attempt cache hit
+        var redis = globalOptions.redisClient
+        var cached = !redis ? memCache.getValue(key) : null
 
-        cached = cached && cached.value;
-      }
-
-      if ((cached || globalOptions.redisClient) && !req.headers['x-apicache-force-fetch']) {
-
-        if (!globalOptions.redisClient) {
-
-          debug('returning memory-cached version of "' + key + '"');
-
-          res.statusCode = cached.status;
-          res.set(cached.headers);
-
-          if(globalOptions.jsonp) {
-            return res.jsonp(cached.body);
-          }
-          return res.send(cached.body);
-
-        } else {
-
-          debug('returning redis cached version of "' + key + '"');
-
-          globalOptions.redisClient.hgetall(key, function (err, obj) {
-            //var redis_duration = obj.duration || globalOptions.defaultDuration;
-            if (err) {
-              debug('[api-cache] [redis-error]: ' + err);
-            }
-
-            if (!obj) {
-              buildCacheObj();
-            } else {
-              if (obj.responseObj) {
-                var redis_responseObj = JSON.parse(obj.responseObj);
-                res.statusCode = redis_responseObj.status;
-                res.set(redis_responseObj.headers);
-                return res.send(redis_responseObj.body);
-              } else {
-                buildCacheObj();
-              }
-            }
-          });
+        // send if cache hit from memory-cache
+        if (cached) {
+          return sendCachedResponse(res, cached)
         }
-      } else {
-        buildCacheObj();
-      }
 
-      function buildCacheObj() {
-        debug('path "' + key + '" not found in cache');
-
-        res.realSend = (globalOptions.jsonp) ? res.jsonp : res.send;
-
-        var methodName = (globalOptions.jsonp) ? "jsonp" : "send";
-
-        res[methodName] = function(a, b) {
-          var responseObj = {
-            headers: {
-              'Content-Type': 'application/json; charset=utf-8'
-            }
-          };
-
-          responseObj.status  = b !== undefined ? a : (typeof a === 'number' ? a : res.statusCode);
-          responseObj.body    = b !== undefined ? b : (typeof a !== 'number' ? a : null);
-
-          // last bypass attempt
-          if (shouldCacheResponse(responseObj) && !memCache.get(key) && !req.headers['x-apicache-bypass']) {
-            if (req.apicacheGroup) {
-              debug('group detected "' + req.apicacheGroup + '"');
-
-              index.groups[req.apicacheGroup] = index.groups[req.apicacheGroup] || [];
-              index.groups[req.apicacheGroup].push(key);
-            }
-
-            index.all.push(key);
-
-            debug('adding cache entry for "' + key + '" @ ' + strDuration);
-
-            var useHeaders = ['Cache-Control', 'Expires', 'Content-Encoding'];
-
-            useHeaders.forEach(function(h) {
-              var header = res.get(h);
-              if (header !== undefined) {
-                responseObj.headers[h] = header;
-              }
-            });
-
-            responseObj.headers['apicache-version'] = pkg.version;
-
-            if (!globalOptions.redisClient) {
-              responseObj.headers['apicache-store'] = 'memory';
-              memCache.add(key, responseObj, duration);
+        // send if cache hit from redis
+        if (redis) {
+          redis.hgetall(key, function (err, obj) {
+            if (!err && obj) {
+              return sendCachedResponse(res, JSON.parse(obj.response))
             } else {
-              responseObj.headers['apicache-store'] = 'redis';
-              globalOptions.redisClient.hset(key, "responseObj", JSON.stringify(responseObj));
-              globalOptions.redisClient.hset(key, "duration", duration);
-              globalOptions.redisClient.expire(key, duration/1000);
+              return makeResponseCacheable(req, res, next, key, duration, strDuration)
             }
-
-            setTimeout(function() { instance.clear(key) }, duration);
-          }
-
-          return res.realSend(responseObj.body);
-        };
-        next();
+          })
+        } else {
+          makeResponseCacheable(req, res, next, key, duration, strDuration)
+        }
       }
     };
   };

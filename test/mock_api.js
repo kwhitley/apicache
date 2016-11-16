@@ -11,7 +11,7 @@ var instances = []
 function MockAPI(expiration, options) {
   // console.log('creating MockAPI with expiration in ' + expiration + ' with ApiCache config', options)
   var express = require('express')
-  var apicache = require('../lib/apicache').newInstance(options)
+  var apicache = require('../src/apicache').newInstance(options)
 
   var app = express()
 
