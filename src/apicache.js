@@ -53,12 +53,10 @@ function ApiCache() {
     var opt = globalOptions
     var codes = opt.statusCodes
 
-    // console.log('shouldCacheResponse', response)
     if (!response) return false
 
     if (codes.exclude && codes.exclude.length && codes.exclude.indexOf(response.statusCode) !== -1) return false
     if (codes.include && codes.include.length && codes.include.indexOf(response.statusCode) === -1) return false
-    // console.log('passed!')
 
     return true
   }
@@ -178,7 +176,7 @@ function ApiCache() {
       if (!globalOptions.redisClient) {
         memCache.clear();
       } else {
-        globalOptions.redisClient.del();
+        globalOptions.redisClient.flushdb();
       }
       this.resetIndex();
     }

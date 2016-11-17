@@ -2,7 +2,8 @@ var chai = require('chai')
 var expect = chai.expect
 var request = require('supertest')
 var apicache = require('../src/apicache')
-var pjson = require('../package.json')
+var pkg = require('../package.json')
+var redis = require('redis')
 var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
@@ -238,47 +239,11 @@ describe('.middleware {MIDDLEWARE}', function() {
             expect(res2.status).to.equal(200)
             expect(res2.body.length).to.equal(2)
             expect(res2.headers['apicache-store']).to.equal('memory')
-            expect(res2.headers['apicache-version']).to.equal(pjson.version)
+            expect(res2.headers['apicache-version']).to.equal(pkg.version)
             expect(mockAPI.requestsProcessed).to.equal(1)
             done()
           })
       })
-  })
-
-  it('works with redis client', function(done) {
-    // var RedisServer = require('redis-server');
-    // var redisServerInstance = new RedisServer(6379);
-
-    // redisServerInstance.open(function (error) {
-
-    //   if (error) {
-    //     throw new Error(error);
-    //   }
-
-      var redis = require('redis')
-      var mockAPI = require('./mock_api')('10 seconds', { redisClient: redis.createClient() })
-
-      request(mockAPI)
-        .get('/api/movies')
-        .end(function(err, res1) {
-          expect(res1.status).to.equal(200)
-          expect(res1.body.length).to.equal(2)
-          expect(res1.headers['apicache-store']).to.equal(undefined)
-          expect(res1.headers['apicache-version']).to.equal(undefined)
-          expect(mockAPI.requestsProcessed).to.equal(1)
-
-          request(mockAPI)
-            .get('/api/movies')
-            .end(function(err, res2) {
-              expect(res2.status).to.equal(200)
-              expect(res2.body.length).to.equal(2)
-              expect(res2.headers['apicache-store']).to.equal('redis')
-              expect(res2.headers['apicache-version']).to.equal(pjson.version)
-              expect(mockAPI.requestsProcessed).to.equal(1)
-              done()
-            })
-        })
-    // });
   })
 
   it('embeds returns content-type JSON from original response and cached response', function(done) {
@@ -338,4 +303,82 @@ describe('.middleware {MIDDLEWARE}', function() {
     }, 15)
   })
 
+})
+
+describe('Redis support', function() {
+  it('properly caches a request', function(done) {
+    var db = redis.createClient()
+    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
+        expect(res1.headers['apicache-store']).to.equal(undefined)
+        expect(res1.headers['apicache-version']).to.equal(undefined)
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+            expect(res2.headers['apicache-store']).to.equal('redis')
+            expect(res2.headers['apicache-version']).to.equal(pkg.version)
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            db.flushdb()
+            done()
+          })
+      })
+  })
+
+  it('can clear indexed cache groups', function(done) {
+    var db = redis.createClient()
+    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+
+    request(mockAPI)
+      .get('/api/testcachegroup')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+        expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+        db.flushdb()
+        done()
+      })
+  })
+
+  it('can clear indexed entries by url/key (non-group)', function(done) {
+    var db = redis.createClient()
+    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
+        db.flushdb()
+        done()
+      })
+  })
+
+  it('can clear all entries from index', function(done) {
+    var db = redis.createClient()
+    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+
+    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+    expect(mockAPI.apicache.clear().all.length).to.equal(0)
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.clear().all.length).to.equal(0)
+        db.flushdb()
+        done()
+      })
+  })
 })
