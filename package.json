@@ -1,8 +1,8 @@
 {
   "name": "apicache",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "scripts": {
-    "test": "mocha $(find test -name '*.test.js') --recursive",
+    "test": "redis-server & mocha $(find test -name '*.test.js') --recursive",
     "dev": "npm run test -- --watch",
     "prepublish": "npm run test"
   },
@@ -10,7 +10,7 @@
     "node": ">=4.0.0"
   },
   "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
-  "main": "./lib/apicache.js",
+  "main": "./src/apicache.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/kwhitley/apicache.git"
@@ -37,6 +37,7 @@
     "chai": "^3.5.0",
     "express": "^4.14.0",
     "mocha": "^3.0.2",
+    "redis": "^2.6.3",
     "supertest": "^2.0.0"
   },
   "dependencies": {

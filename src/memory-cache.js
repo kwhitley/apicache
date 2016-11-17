@@ -50,6 +50,12 @@ MemoryCache.prototype.get = function(key) {
 	return entry
 }
 
+MemoryCache.prototype.getValue = function(key) {
+	var entry = this.get(key)
+
+	return entry && entry.value
+}
+
 MemoryCache.prototype.clear = function() {
 	Object.keys(this.cache).forEach(function(key) {
 		this.delete(key)
