@@ -1,7 +1,7 @@
 A simple API/JSON response caching middleware for Express/Node using plain-english durations.
 =======
 
-[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache.svg?branch=master)
+[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
 
 ## Why?
 
