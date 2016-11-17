@@ -1,7 +1,7 @@
 A simple API/JSON response caching middleware for Express/Node using plain-english durations.
 =======
 
-[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg)](https://travis-ci.org/kwhitley/apicache.svg?branch=master)
+[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache.svg?branch=master)
 
 ## Why?
 
@@ -59,17 +59,16 @@ app.get('/will-be-cached', (req, res) => {
 
 // ADVANCED USAGE USING MIDDLEWARE TOGGLE PARAM
 
-function onlyStatus200(req, res) {
-  return req.statusCode === 200; // returns false for requests of other status codes (e.g. 403, 404, 500, etc)
-}
+// returns false for requests of other status codes (e.g. 403, 404, 500, etc)
+const onlyStatus200 = req => req.statusCode === 200;
 
-const cacheSuccesses = cache('5 minutes', onlyStatus200)
+const cacheSuccesses = cache('5 minutes', onlyStatus200);
 
-app.get('/api/missing', cacheSuccesses, function(req, res) {
+app.get('/api/missing', cacheSuccesses, (req, res) => {
   res.status(404).json({ results: 'will not be cached' });
 });
 
-app.get('/api/found', cacheSuccesses, function(req, res) {
+app.get('/api/found', cacheSuccesses, (req, res) => {
   res.json({ results: 'will be cached' });
 });
 
