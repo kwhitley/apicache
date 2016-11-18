@@ -107,6 +107,10 @@ function ApiCache() {
     res.__end = res.end
     res.end = function(content, encoding) {
       if (shouldCacheResponse(res)) {
+        res.header({
+          'cache-control': 'max-age=' + (duration / 1000).toFixed(0)
+        })
+
         addIndexEntries(key, req)
         var cacheObject = createCacheObject(res.statusCode, res._headers, content, encoding)
         cacheResponse(key, cacheObject, duration)
