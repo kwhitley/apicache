@@ -9,7 +9,7 @@
   "engines": {
     "node": ">=4.0.0"
   },
-  "description": "An ultra-simplified API/JSON response caching middleware for Express/Node using plain-english durations.",
+  "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
   "main": "./src/apicache.js",
   "repository": {
     "type": "git",
