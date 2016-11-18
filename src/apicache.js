@@ -1,6 +1,6 @@
-var url         = require('url');
-var MemoryCache = require('./memory-cache');
-var pkg         = require('../package.json');
+var url         = require('url')
+var MemoryCache = require('./memory-cache')
+var pkg         = require('../package.json')
 
 var t           = {
   ms:           1,
@@ -10,9 +10,9 @@ var t           = {
   day:          3600000 * 24,
   week:         3600000 * 24 * 7,
   month:        3600000 * 24 * 30,
-};
+}
 
-var instances = [];
+var instances = []
 
 var matches = function(a) {
   return function(b) { return a === b }
@@ -22,8 +22,13 @@ var doesntMatch = function(a) {
   return function(b) { return !matches(a)(b) }
 }
 
+var logDuration = function(d, prefix) {
+  var str = (d > 1000) ? ((d/1000).toFixed(2) + 'sec') : (d + 'ms')
+  return '\x1b[33m- ' + (prefix ? prefix + ' ' : '') + str + '\x1b[0m'
+}
+
 function ApiCache() {
-  var memCache = new MemoryCache;
+  var memCache = new MemoryCache
 
   var globalOptions = {
     debug:              false,
@@ -36,13 +41,13 @@ function ApiCache() {
       include: [],
       exclude: [],
     }
-  };
+  }
 
-  var instance = this;
-  var index = null;
+  var instance = this
+  var index = null
 
-  instances.push(this);
-  this.id = instances.length;
+  instances.push(this)
+  this.id = instances.length
 
   function debug(a,b,c,d) {
     var arr = (['\x1b[36m[apicache]\x1b[0m', a,b,c,d]).filter(function(arg) { return arg !== undefined })
@@ -67,17 +72,17 @@ function ApiCache() {
     var groupName = req.apicacheGroup
 
     if (groupName) {
-      debug('group detected "' + groupName + '"');
+      debug('group detected "' + groupName + '"')
       var group = (index.groups[groupName] = index.groups[groupName] || [])
-      group.unshift(key);
+      group.unshift(key)
     }
 
-    index.all.unshift(key);
+    index.all.unshift(key)
   }
 
   function createCacheObject(status, headers, data, encoding) {
-    headers['apicache-store'] = globalOptions.redisClient ? 'redis' : 'memory';
-    headers['apicache-version'] = pkg.version;
+    headers['apicache-store'] = globalOptions.redisClient ? 'redis' : 'memory'
+    headers['apicache-version'] = pkg.version
     return {
       status, headers, data, encoding
     }
@@ -86,35 +91,35 @@ function ApiCache() {
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     if (redis) {
-      redis.hset(key, "response", JSON.stringify(value));
-      redis.hset(key, "duration", duration);
-      redis.expire(key, duration/1000);
+      redis.hset(key, "response", JSON.stringify(value))
+      redis.hset(key, "duration", duration)
+      redis.expire(key, duration/1000)
     } else {
       memCache.add(key, value, duration)
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
-    setTimeout(function() { instance.clear(key) }, Math.min(duration, 2147483647));
+    setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
   }
 
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
-    // cache miss, so build and cache (if necessary)
-    debug('path "' + key + '" not found in cache');
-
     // monkeypatch res.end to create cache object
     res.__end = res.end
     res.end = function(content, encoding) {
       if (shouldCacheResponse(res)) {
-        debug('adding cache entry for "' + key + '" @ ' + strDuration);
         addIndexEntries(key, req)
         var cacheObject = createCacheObject(res.statusCode, res._headers, content, encoding)
         cacheResponse(key, cacheObject, duration)
+
+        // display log entry
+        var elapsed = new Date() - req.apicacheTimer
+        debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
       }
 
       return res.__end(content, encoding)
     }
 
-    next();
+    next()
   }
 
 
@@ -132,35 +137,32 @@ function ApiCache() {
     return response.end(data, cacheObject.encoding)
   }
 
-  this.clear = function(target) {
-    debug('cache.clear called with target', target)
-    debug('current index', index)
-
-    var group = index.groups[target];
+  this.clear = function(target, isAutomatic) {
+    var group = index.groups[target]
 
     if (group) {
-      debug('clearing group "' + target + '"');
+      debug('clearing group "' + target + '"')
 
       group.forEach(function(key) {
-        debug('clearing cached entry for "' + key + '"');
+        debug('clearing cached entry for "' + key + '"')
 
         if (!globalOptions.redisClient) {
-          memCache.delete(key);
+          memCache.delete(key)
         } else {
-          globalOptions.redisClient.del(key);
+          globalOptions.redisClient.del(key)
         }
-        index.all = index.all.filter(doesntMatch(key));
-      });
+        index.all = index.all.filter(doesntMatch(key))
+      })
 
-      delete index.groups[target];
+      delete index.groups[target]
     } else if (target) {
-      debug('clearing cached entry for "' + target + '"');
+      debug('clearing ' + (isAutomatic ? 'expired' : 'cached') + ' entry for "' + target + '"')
 
       // clear actual cached entry
       if (!globalOptions.redisClient) {
-        memCache.delete(target);
+        memCache.delete(target)
       } else {
-        globalOptions.redisClient.del(target);
+        globalOptions.redisClient.del(target)
       }
 
       // remove from global index
@@ -168,90 +170,91 @@ function ApiCache() {
 
       // remove target from each group that it may exist in
       Object.keys(index.groups).forEach(function(groupName) {
-        index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target));
+        index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target))
 
         // delete group if now empty
         if (!index.groups[groupName].length) {
-          delete index.groups[groupName];
+          delete index.groups[groupName]
         }
-      });
+      })
     } else {
-      debug('clearing entire index');
+      debug('clearing entire index')
 
       if (!globalOptions.redisClient) {
-        memCache.clear();
+        memCache.clear()
       } else {
-        globalOptions.redisClient.flushdb();
+        globalOptions.redisClient.flushdb()
       }
-      this.resetIndex();
+      this.resetIndex()
     }
 
-    debug('after clearing', index)
-
-    return this.getIndex();
-  };
+    return this.getIndex()
+  }
 
   this.getDuration = function(duration) {
-    if (typeof duration === 'number') return duration;
+    if (typeof duration === 'number') return duration
 
     if (typeof duration === 'string') {
-      var split = duration.match(/^([\d\.,]+)\s(\w+)$/);
+      var split = duration.match(/^([\d\.,]+)\s(\w+)$/)
 
       if (split.length === 3) {
-        var len = parseFloat(split[1]);
-        var unit = split[2].replace(/s$/i,'').toLowerCase();
+        var len = parseFloat(split[1])
+        var unit = split[2].replace(/s$/i,'').toLowerCase()
         if (unit === 'm') {
           unit = 'ms'
         }
 
-        return (len || 1) * (t[unit] || 0);
+        return (len || 1) * (t[unit] || 0)
       }
     }
 
-    return globalOptions.defaultDuration;
-  };
+    return globalOptions.defaultDuration
+  }
 
   this.getIndex = function(group) {
     if (group) {
-      return index.groups[group];
+      return index.groups[group]
     } else {
-      return index;
+      return index
     }
-  };
+  }
 
   this.middleware = function cache(strDuration, middlewareToggle) {
-    var duration = instance.getDuration(strDuration);
+    var duration = instance.getDuration(strDuration)
 
     return function cache(req, res, next) {
       function bypass() {
-        debug('bypass detected, skipping cache.');
-        return next();
+        debug('bypass detected, skipping cache.')
+        return next()
       }
 
       // initial bypass chances
-      if (!globalOptions.enabled) return bypass();
-      if (req.headers['x-apicache-bypass']) return bypass();
+      if (!globalOptions.enabled) return bypass()
+      if (req.headers['x-apicache-bypass']) return bypass()
       if (typeof middlewareToggle === 'function') {
-        if (!middlewareToggle(req, res)) return bypass();
+        if (!middlewareToggle(req, res)) return bypass()
       } else if (middlewareToggle !== undefined && !middlewareToggle) {
-        return bypass();
+        return bypass()
       }
 
+      // embed timer
+      req.apicacheTimer = new Date()
+
       // In Express 4.x the url is ambigious based on where a router is mounted.  originalUrl will give the full Url
-      var key = req.originalUrl || req.url;
+      var key = req.originalUrl || req.url
 
       // Remove querystring from key if jsonp option is enabled
       if (globalOptions.jsonp) {
-        key = url.parse(key).pathname;
+        key = url.parse(key).pathname
       }
 
       if (globalOptions.appendKey.length > 0) {
-        var appendKey = req;
+        var appendKey = req
 
         for (var i = 0; i < globalOptions.appendKey.length; i++) {
-          appendKey = appendKey[globalOptions.appendKey[i]];
+          appendKey = appendKey[globalOptions.appendKey[i]]
         }
-        key += '$$appendKey=' + appendKey;
+        key += '$$appendKey=' + appendKey
       }
 
       // if not forced bypass of cache from client request, attempt cache hit
@@ -262,6 +265,10 @@ function ApiCache() {
 
         // send if cache hit from memory-cache
         if (cached) {
+          // console log
+          var elapsed = new Date() - req.apicacheTimer
+          debug('sending cached (redis) version of', key, logDuration(elapsed))
+
           return sendCachedResponse(res, cached)
         }
 
@@ -269,6 +276,12 @@ function ApiCache() {
         if (redis) {
           redis.hgetall(key, function (err, obj) {
             if (!err && obj) {
+              debug('sending cached (redis) version of', key)
+
+              // console log
+              var elapsed = new Date() - req.apicacheTimer
+              debug('sending cached (redis) version of', key, logDuration(elapsed))
+
               return sendCachedResponse(res, JSON.parse(obj.response))
             } else {
               return makeResponseCacheable(req, res, next, key, duration, strDuration)
@@ -278,28 +291,28 @@ function ApiCache() {
           makeResponseCacheable(req, res, next, key, duration, strDuration)
         }
       }
-    };
-  };
+    }
+  }
 
   this.options = function(options) {
     if (options) {
-      Object.assign(globalOptions, options);
+      Object.assign(globalOptions, options)
 
-      return this;
+      return this
     } else {
-      return globalOptions;
+      return globalOptions
     }
-  };
+  }
 
   this.resetIndex = function() {
     index = {
       all: [],
       groups: {}
-    };
-  };
+    }
+  }
 
   this.newInstance = function(config) {
-    var instance = new ApiCache();
+    var instance = new ApiCache()
 
     if (config) {
       instance.options(config)
@@ -313,7 +326,7 @@ function ApiCache() {
   }
 
   // initialize index
-  this.resetIndex();
+  this.resetIndex()
 }
 
-module.exports = new ApiCache();
+module.exports = new ApiCache()
