@@ -45,8 +45,11 @@ function ApiCache() {
   instances.push(this);
   this.id = instances.length;
 
-  function debug(msg, msg2) {
-    return globalOptions.debug ? console.log('[apicache]: ', msg, msg2) : message(msg, msg2)
+  function debug(a,b,c,d) {
+    var arr = (['\x1b[36m[apicache]\x1b[0m', a,b,c,d]).filter(function(arg) { return arg !== undefined })
+    var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
+
+    return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
   }
 
   function shouldCacheResponse(response) {

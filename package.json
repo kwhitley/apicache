@@ -40,7 +40,5 @@
     "redis": "^2.6.3",
     "supertest": "^2.0.0"
   },
-  "dependencies": {
-    "debug": "^2.2.0"
-  }
+  "dependencies": {}
 }
