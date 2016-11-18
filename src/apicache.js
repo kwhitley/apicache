@@ -1,4 +1,3 @@
-var message     = require('debug')('apicache');
 var url         = require('url');
 var MemoryCache = require('./memory-cache');
 var pkg         = require('../package.json');
