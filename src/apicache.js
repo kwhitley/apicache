@@ -84,7 +84,6 @@ function ApiCache() {
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     if (redis) {
-      debug('storing cached entry in redis', JSON.stringify(value))
       redis.hset(key, "response", JSON.stringify(value));
       redis.hset(key, "duration", duration);
       redis.expire(key, duration/1000);
@@ -133,6 +132,7 @@ function ApiCache() {
 
   this.clear = function(target) {
     debug('cache.clear called with target', target)
+    debug('current index', index)
 
     var group = index.groups[target];
 
@@ -154,18 +154,21 @@ function ApiCache() {
     } else if (target) {
       debug('clearing cached entry for "' + target + '"');
 
+      // clear actual cached entry
       if (!globalOptions.redisClient) {
         memCache.delete(target);
       } else {
         globalOptions.redisClient.del(target);
       }
 
+      // remove from global index
       index.all = index.all.filter(doesntMatch(target))
 
+      // remove target from each group that it may exist in
       Object.keys(index.groups).forEach(function(groupName) {
-        var group = index.groups[groupName]
+        index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target));
 
-        index.groups[groupName] = index.groups[groupName].filter(doesntMatch(group));
+        // delete group if now empty
         if (!index.groups[groupName].length) {
           delete index.groups[groupName];
         }
@@ -180,6 +183,8 @@ function ApiCache() {
       }
       this.resetIndex();
     }
+
+    debug('after clearing', index)
 
     return this.getIndex();
   };

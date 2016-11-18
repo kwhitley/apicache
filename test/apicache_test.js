@@ -149,6 +149,21 @@ describe('.clear(key?) {SETTER}', function() {
       })
   })
 
+  it('clears empty group after removing last specific endpoint', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/testcachegroup')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+        expect(Object.keys(mockAPI.apicache.clear('/api/testcachegroup').groups).length).to.equal(0)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+        done()
+      })
+  })
+
   it('works when called with no key', function(done) {
     var mockAPI = require('./mock_api')('10 seconds')
 
