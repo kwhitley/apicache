@@ -267,7 +267,7 @@ function ApiCache() {
         if (cached) {
           // console log
           var elapsed = new Date() - req.apicacheTimer
-          debug('sending cached (redis) version of', key, logDuration(elapsed))
+          debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
           return sendCachedResponse(res, cached)
         }
@@ -276,8 +276,6 @@ function ApiCache() {
         if (redis) {
           redis.hgetall(key, function (err, obj) {
             if (!err && obj) {
-              debug('sending cached (redis) version of', key)
-
               // console log
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
