@@ -1,4 +1,4 @@
-A simple API/JSON response caching middleware for Express/Node using plain-english durations.
+A simple API response caching middleware for Express/Node using plain-english durations.
 =======
 
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
@@ -52,7 +52,7 @@ let cache = apicache.middleware
 
 app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
   // do some work... this will only occur once per 5 minutes
-  res.json({ foo: 'bar' });
+  res.json({ foo: 'bar' })
 })
 ```
 
@@ -75,10 +75,13 @@ import redis from 'redis'
 
 let app = express()
 
-// if redisClient option is defined, apicache will use redis client instead of built-in memory store
-let cacheWithRedis = apicache.options({ redisClient: redis.createClient() }).middleware
+// if redisClient option is defined, apicache will use redis client
+// instead of built-in memory store
+let cacheWithRedis = apicache
+                      .options({ redisClient: redis.createClient() })
+                      .middleware
 
-app.get('/will-be-cached-with-redis', cacheWithRedis('5 minutes'), (req, res) => {
+app.get('/will-be-cached', cacheWithRedis('5 minutes'), (req, res) => {
   res.json({ success: true })
 })
 ```
@@ -90,7 +93,8 @@ let cache = apicache.middleware
 
 app.use(cache('5 minutes'))
 
-// routes are aoutmatically added to index, but may be further added to groups for quick deleting of collections
+// routes are aoutmatically added to index, but may be further added
+// to groups for quick deleting of collections
 app.get('/api/:collection/:item?', (req, res) => {
   req.apicacheGroup = req.params.collection
   res.json({ success: true })
@@ -118,17 +122,17 @@ GET /api/cache/clear/foo --> clears all cached entries for 'foo' group/collectio
 #### Use with middleware toggle for fine control
 ```js
 // higher-order function returns false for requests of other status codes (e.g. 403, 404, 500, etc)
-const onlyStatus200 = req => req.statusCode === 200;
+const onlyStatus200 = req => req.statusCode === 200
 
-const cacheSuccesses = cache('5 minutes', onlyStatus200);
+const cacheSuccesses = cache('5 minutes', onlyStatus200)
 
 app.get('/api/missing', cacheSuccesses, (req, res) => {
-  res.status(404).json({ results: 'will not be cached' });
-});
+  res.status(404).json({ results: 'will not be cached' })
+})
 
 app.get('/api/found', cacheSuccesses, (req, res) => {
-  res.json({ results: 'will be cached' });
-});
+  res.json({ results: 'will be cached' })
+})
 ```
 
 ## API
@@ -164,21 +168,21 @@ for instance. Adding a simple `req.apicacheGroup = [somevalue];` to your route e
 
 ```js
 
-var apicache  = require('apicache');
-var cache     = apicache.middleware;
+var apicache  = require('apicache')
+var cache     = apicache.middleware
 
 // GET collection/id
 app.get('/api/:collection/:id?', cache('1 hour'), function(req, res, next) {
-  req.apicacheGroup = req.params.collection;
+  req.apicacheGroup = req.params.collection
   // do some work
-  res.send({ foo: 'bar' });
+  res.send({ foo: 'bar' })
 });
 
 // POST collection/id
 app.post('/api/:collection/:id?', function(req, res, next) {
   // update model
-  apicache.clear(req.params.collection);
-  res.send('added a new item, so the cache has been cleared');
+  apicache.clear(req.params.collection)
+  res.send('added a new item, so the cache has been cleared')
 });
 
 ```
@@ -219,11 +223,6 @@ When sharing `GET` routes between admin and public sites, you'll likely want the
 routes to be cached from your public client, but NOT cached when from the admin client. This
 is achieved by sending a `"x-apicache-bypass": true` header along with the requst from the admin.
 The presence of this header flag will bypass the cache, ensuring you aren't looking at stale data.
-
-## Limitations
-
-- `apicache` is currently an in-memory cache, built upon [memory-cache](https://github.com/ptarjan/node-cache).  It may later be expanded to allow other cache-layers.
-- This should only be used for JSON responses (as from an API) - if for no other reason, because it will return the cached response as `application/json`.  There's a reason it's called `apicache`.
 
 ## Contributors
 
