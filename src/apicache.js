@@ -163,7 +163,7 @@ function ApiCache() {
       index.all = index.all.filter(doesntMatch(target))
 
       Object.keys(index.groups).forEach(function(groupName) {
-        var group = index.groupss[groupName]
+        var group = index.groups[groupName]
 
         index.groups[groupName] = index.groups[groupName].filter(doesntMatch(group));
         if (!index.groups[groupName].length) {

@@ -184,7 +184,7 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
