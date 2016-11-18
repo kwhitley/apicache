@@ -261,6 +261,53 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
   })
 
+  it('embeds cache-control header', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
+        expect(res1.headers['apicache-store']).to.equal(undefined)
+        expect(res1.headers['apicache-version']).to.equal(undefined)
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(res1.headers['cache-control'].indexOf('max-age=10') !== -1).to.equal(true)
+        expect(res1.headers['date'] !== undefined).to.equal(true)
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+            expect(res2.headers['apicache-store']).to.equal('memory')
+            expect(res2.headers['apicache-version']).to.equal(pkg.version)
+            expect(res2.headers['cache-control'].indexOf('max-age=10') !== -1).to.equal(true)
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('preserves etag header', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res1) {
+        var etag = res1.headers['etag']
+        expect(etag !== undefined).to.equal(true)
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.headers['etag']).to.equal(etag)
+            done()
+          })
+      })
+  })
+
   it('embeds returns content-type JSON from original response and cached response', function(done) {
     var mockAPI = require('./mock_api')('10 seconds')
 
