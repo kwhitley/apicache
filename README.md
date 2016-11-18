@@ -34,32 +34,90 @@ who really wants to calculate that each time?).
 npm install apicache
 ```
 
+## Dependencies
+
+None, unless using this with Redis.
+
 ## Usage
 
-To use, simply inject the middleware (example: `apicache('5 minutes')`) into your routes.  Everything else is automagic.
+To use, simply inject the middleware (example: `apicache.middleware('5 minutes', [optionalMiddlewareToggle])`) into your routes.  Everything else is automagic.
 
+#### Cache a route
 ```js
-var express = require('express')
-var app = express()
+import express from 'express'
+import apicache from 'apicache'
 
-var cache = require('apicache').middleware;
+let app = express()
+let cache = apicache.middleware
 
-app.get('/api/collection/:id?', cache('5 minutes'), function(req, res) {
+app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
   // do some work... this will only occur once per 5 minutes
   res.json({ foo: 'bar' });
-});
+})
+```
 
-// CACHE ALL REQUESTS
+#### Cache all routes
+```js
+let cache = apicache.middleware
 
 app.use(cache('5 minutes'))
 
 app.get('/will-be-cached', (req, res) => {
   res.json({ success: true })
 })
+```
 
-// ADVANCED USAGE USING MIDDLEWARE TOGGLE PARAM
+#### Use with Redis
+```js
+import express from 'express'
+import apicache from 'apicache'
+import redis from 'redis'
 
-// returns false for requests of other status codes (e.g. 403, 404, 500, etc)
+let app = express()
+
+// if redisClient option is defined, apicache will use redis client instead of built-in memory store
+let cacheWithRedis = apicache.options({ redisClient: redis.createClient() }).middleware
+
+app.get('/will-be-cached-with-redis', cacheWithRedis('5 minutes'), (req, res) => {
+  res.json({ success: true })
+})
+```
+
+#### Cache grouping and manual controls
+```js
+import apicache from 'apicache'
+let cache = apicache.middleware
+
+app.use(cache('5 minutes'))
+
+// routes are aoutmatically added to index, but may be further added to groups for quick deleting of collections
+app.get('/api/:collection/:item?', (req, res) => {
+  req.apicacheGroup = req.params.collection
+  res.json({ success: true })
+})
+
+// add route to display cache index
+app.get('/api/cache/index', (req, res) => {
+  res.json(apicache.getIndex())
+})
+
+// add route to manually clear target/group
+app.get('/api/cache/clear/:target?', (req, res) => {
+  res.json(apicache.clear(req.params.target))
+})
+
+/*
+
+GET /api/foo/bar --> caches entry at /api/foo/bar and adds a group called 'foo' to index
+GET /api/cache/index --> displays index
+GET /api/cache/clear/foo --> clears all cached entries for 'foo' group/collection
+
+*/
+```
+
+#### Use with middleware toggle for fine control
+```js
+// higher-order function returns false for requests of other status codes (e.g. 403, 404, 500, etc)
 const onlyStatus200 = req => req.statusCode === 200;
 
 const cacheSuccesses = cache('5 minutes', onlyStatus200);
@@ -71,7 +129,6 @@ app.get('/api/missing', cacheSuccesses, (req, res) => {
 app.get('/api/found', cacheSuccesses, (req, res) => {
   res.json({ results: 'will be cached' });
 });
-
 ```
 
 ## API
