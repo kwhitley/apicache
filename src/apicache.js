@@ -81,8 +81,6 @@ function ApiCache() {
   }
 
   function createCacheObject(status, headers, data, encoding) {
-    headers['apicache-store'] = globalOptions.redisClient ? 'redis' : 'memory'
-    headers['apicache-version'] = pkg.version
     return {
       status, headers, data, encoding
     }
@@ -128,7 +126,10 @@ function ApiCache() {
 
 
   function sendCachedResponse(response, cacheObject) {
-    Object.assign(response._headers, cacheObject.headers)
+    Object.assign(response._headers, cacheObject.headers, {
+      'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
+      'apicache-version': pkg.version
+    })
 
     // unstringify buffers
     var data = cacheObject.data
