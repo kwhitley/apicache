@@ -104,7 +104,7 @@ function ApiCache() {
     // monkeypatch res.end to create cache object
     res.__end = res.end
     res.end = function(content, encoding) {
-      if (shouldCacheResponse(res)) {
+      if (content && shouldCacheResponse(res)) {
         res.header({
           'cache-control': 'max-age=' + (duration / 1000).toFixed(0)
         })
@@ -133,7 +133,7 @@ function ApiCache() {
 
     // unstringify buffers
     var data = cacheObject.data
-    if (data.type === 'Buffer') {
+    if (data && data.type === 'Buffer') {
       data = new Buffer(data.data)
     }
 
