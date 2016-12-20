@@ -239,9 +239,10 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
 - **v0.5.0** - updated internals to use res.end instead of res.send/res.json/res.jsonp, allowing for any response type, adds redis tests
 - **v0.6.0** - removed final dependency (debug) and updated README
+- **v0.7.0** - internally sets cache-control/max-age headers of response object
