@@ -93,7 +93,7 @@ let cache = apicache.middleware
 
 app.use(cache('5 minutes'))
 
-// routes are aoutmatically added to index, but may be further added
+// routes are automatically added to index, but may be further added
 // to groups for quick deleting of collections
 app.get('/api/:collection/:item?', (req, res) => {
   req.apicacheGroup = req.params.collection
