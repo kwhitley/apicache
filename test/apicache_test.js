@@ -407,8 +407,11 @@ describe('Redis support', function() {
         expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
         expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
         expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        db.flushdb()
-        done()
+        db.hgetall('/api/testcachegroup', function(err, reply) {
+          expect(reply).to.equal(null)
+          db.flushdb()
+          done()
+        })
       })
   })
 
@@ -422,8 +425,11 @@ describe('Redis support', function() {
         expect(mockAPI.requestsProcessed).to.equal(1)
         expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
         expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
-        db.flushdb()
-        done()
+        db.hgetall('/api/movies', function(err, reply) {
+          expect(reply).to.equal(null)
+          db.flushdb()
+          done()
+        })
       })
   })
 
@@ -439,8 +445,11 @@ describe('Redis support', function() {
         expect(mockAPI.requestsProcessed).to.equal(1)
         expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
         expect(mockAPI.apicache.clear().all.length).to.equal(0)
-        db.flushdb()
-        done()
+        db.hgetall('/api/movies', function(err, reply) {
+          expect(reply).to.equal(null)
+          db.flushdb()
+          done()
+        })
       })
   })
 })
