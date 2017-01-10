@@ -100,25 +100,43 @@ function ApiCache() {
     setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
   }
 
+  function accumulateContent(res, content) {
+    if (content) {
+      if (typeof(content) == "string") {
+        res._apicache.content=(res._apicache.content || "") + content;
+      }
+      else {
+        res._apicache.cacheable=false;
+      }
+    }
+  }
+
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
     // monkeypatch res.end to create cache object
-    res.__end = res.end
-    res.end = function(content, encoding) {
-      if (content && shouldCacheResponse(res)) {
-        res.header({
-          'cache-control': 'max-age=' + (duration / 1000).toFixed(0)
-        })
+    res._apicache={write:res.write,end:res.end,cacheable:true}
 
-        addIndexEntries(key, req)
-        var cacheObject = createCacheObject(res.statusCode, res._headers, content, encoding)
-        cacheResponse(key, cacheObject, duration)
+    res.header('cache-control','max-age=' + (duration / 1000).toFixed(0))
+    res.write = function(content) {
+      accumulateContent(res,content);
+      return res._apicache.write.apply(this,arguments);
+    }
+    res.end = function(content,encoding) {
+      if (shouldCacheResponse(res)) {
 
-        // display log entry
-        var elapsed = new Date() - req.apicacheTimer
-        debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+        accumulateContent(res,content);
+
+        if (res._apicache.cacheable && res._apicache.content) {
+          addIndexEntries(key, req)
+          var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+          cacheResponse(key, cacheObject, duration)
+
+          // display log entry
+          var elapsed = new Date() - req.apicacheTimer
+          debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+        }
       }
 
-      return res.__end(content, encoding)
+      return res._apicache.end.apply(this,arguments);
     }
 
     next()
