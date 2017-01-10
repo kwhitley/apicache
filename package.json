@@ -1,6 +1,6 @@
 {
   "name": "apicache",
-  "version": "0.7.2",
+  "version": "0.7.4",
   "scripts": {
     "test": "redis-server & mocha $(find test -name '*.test.js') --recursive",
     "dev": "npm run test -- --watch",

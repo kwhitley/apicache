@@ -144,8 +144,7 @@ function ApiCache() {
 
 
   function sendCachedResponse(response, cacheObject) {
-    response._headers = response._headers||{}
-    Object.assign(response._headers, cacheObject.headers, {
+    Object.assign(response._headers || {}, cacheObject.headers || {}, {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
@@ -163,6 +162,7 @@ function ApiCache() {
 
   this.clear = function(target, isAutomatic) {
     var group = index.groups[target]
+    var redis = globalOptions.redisClient
 
     if (group) {
       debug('clearing group "' + target + '"')
@@ -173,7 +173,7 @@ function ApiCache() {
         if (!globalOptions.redisClient) {
           memCache.delete(key)
         } else {
-          globalOptions.redisClient.del(key)
+          redis.del(key)
         }
         index.all = index.all.filter(doesntMatch(key))
       })
@@ -183,10 +183,10 @@ function ApiCache() {
       debug('clearing ' + (isAutomatic ? 'expired' : 'cached') + ' entry for "' + target + '"')
 
       // clear actual cached entry
-      if (!globalOptions.redisClient) {
+      if (!redis) {
         memCache.delete(target)
       } else {
-        globalOptions.redisClient.del(target)
+        redis.del(target)
       }
 
       // remove from global index
@@ -204,10 +204,13 @@ function ApiCache() {
     } else {
       debug('clearing entire index')
 
-      if (!globalOptions.redisClient) {
+      if (!redis) {
         memCache.clear()
       } else {
-        globalOptions.redisClient.flushdb()
+        // clear redis keys one by one from internal index to prevent clearing non-apicache entries
+        index.all.forEach(function(key) {
+          redis.del(key)
+        })
       }
       this.resetIndex()
     }

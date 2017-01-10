@@ -93,7 +93,7 @@ let cache = apicache.middleware
 
 app.use(cache('5 minutes'))
 
-// routes are aoutmatically added to index, but may be further added
+// routes are automatically added to index, but may be further added
 // to groups for quick deleting of collections
 app.get('/api/:collection/:item?', (req, res) => {
   req.apicacheGroup = req.params.collection
@@ -239,9 +239,10 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
 - **v0.5.0** - updated internals to use res.end instead of res.send/res.json/res.jsonp, allowing for any response type, adds redis tests
 - **v0.6.0** - removed final dependency (debug) and updated README
+- **v0.7.0** - internally sets cache-control/max-age headers of response object
