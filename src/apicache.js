@@ -82,7 +82,10 @@ function ApiCache() {
 
   function createCacheObject(status, headers, data, encoding) {
     return {
-      status, headers, data, encoding
+      status: status,
+      headers: Object.assign({}, headers),
+      data: data,
+      encoding: encoding
     }
   }
 
@@ -100,25 +103,53 @@ function ApiCache() {
     setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
   }
 
+  function accumulateContent(res, content) {
+    if (content) {
+      if (typeof(content) == 'string') {
+        res._apicache.content = (res._apicache.content || '') + content;
+      } else {
+        res._apicache.content = content
+        // res._apicache.cacheable = false;
+      }
+    }
+  }
+
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
     // monkeypatch res.end to create cache object
-    res.__end = res.end
+    res._apicache = {
+      write: res.write,
+      end: res.end,
+      cacheable: true,
+      content: undefined
+    }
+
+    // add cache control headers
+    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+
+    // patch res.write
+    res.write = function(content) {
+      accumulateContent(res, content);
+      return res._apicache.write.apply(this, arguments);
+    }
+
+    // patch res.end
     res.end = function(content, encoding) {
-      if (content && shouldCacheResponse(res)) {
-        res.header({
-          'cache-control': 'max-age=' + (duration / 1000).toFixed(0)
-        })
+      if (shouldCacheResponse(res)) {
 
-        addIndexEntries(key, req)
-        var cacheObject = createCacheObject(res.statusCode, res._headers, content, encoding)
-        cacheResponse(key, cacheObject, duration)
+        accumulateContent(res, content);
 
-        // display log entry
-        var elapsed = new Date() - req.apicacheTimer
-        debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+        if (res._apicache.cacheable && res._apicache.content) {
+          addIndexEntries(key, req)
+          var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+          cacheResponse(key, cacheObject, duration)
+
+          // display log entry
+          var elapsed = new Date() - req.apicacheTimer
+          debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+        }
       }
 
-      return res.__end(content, encoding)
+      return res._apicache.end.apply(this, arguments);
     }
 
     next()
@@ -274,7 +305,6 @@ function ApiCache() {
 
         // send if cache hit from memory-cache
         if (cached) {
-          // console log
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
@@ -285,7 +315,6 @@ function ApiCache() {
         if (redis) {
           redis.hgetall(key, function (err, obj) {
             if (!err && obj) {
-              // console log
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
@@ -295,7 +324,7 @@ function ApiCache() {
             }
           })
         } else {
-          makeResponseCacheable(req, res, next, key, duration, strDuration)
+          return makeResponseCacheable(req, res, next, key, duration, strDuration)
         }
       }
     }
