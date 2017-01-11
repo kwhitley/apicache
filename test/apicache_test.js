@@ -145,7 +145,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
   })
 
-  it('properly returns a cached request', function(done) {
+  it('properly returns a cached JSON request', function(done) {
     var mockAPI = require('./mock_api')('10 seconds')
 
     request(mockAPI)
@@ -157,6 +157,31 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(mockAPI)
           .get('/api/movies')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+            expect(res2.body[0].title).to.equal('The Prestige')
+
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('properly returns a cached JSON request when gzipped', function(done) {
+    var mockAPI = require('./mock_api_gzip')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/gzip/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/gzip/movies')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .end(function(err, res2) {
@@ -182,6 +207,28 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(mockAPI)
           .get('/api/writeandend')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.text).to.equal('abc')
+
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('returns cached response from write+end when gzipped', function(done) {
+    var mockAPI = require('./mock_api_gzip')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/gzip/writeandend')
+      .end(function(err, res1, body) {
+        expect(res1.status).to.equal(200)
+        expect(res1.text).to.equal('abc')
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/gzip/writeandend')
           .end(function(err, res2) {
             expect(res2.status).to.equal(200)
             expect(res2.text).to.equal('abc')
@@ -318,7 +365,7 @@ describe('.middleware {MIDDLEWARE}', function() {
     setTimeout(function() {
       expect(mockAPI.apicache.getIndex().all).to.have.length(0)
       done()
-    }, 15)
+    }, 25)
   })
 
 })

@@ -87,7 +87,6 @@ function ApiCache() {
   }
 
   function cacheResponse(key, value, duration) {
-    console.log('caching response', key, value)
     var redis = globalOptions.redisClient
     if (redis) {
       redis.hset(key, "response", JSON.stringify(value))
@@ -126,14 +125,12 @@ function ApiCache() {
 
     // patch res.write
     res.write = function(content) {
-      // console.log('patched write', content)
       accumulateContent(res, content);
       return res._apicache.write.apply(this, arguments);
     }
 
     // patch res.end
     res.end = function(content, encoding) {
-      // console.log('patched end', content, encoding)
       if (shouldCacheResponse(res)) {
 
         accumulateContent(res, content);
@@ -161,8 +158,6 @@ function ApiCache() {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
-
-    console.log('building response from', cacheObject)
 
     // unstringify buffers
     var data = cacheObject.data
@@ -301,7 +296,6 @@ function ApiCache() {
 
       // if not forced bypass of cache from client request, attempt cache hit
       if (!req.headers['x-apicache-force-fetch']) {
-        console.log('attempting key hits for', key)
         // console.log('current cache:', memCache.cache)
         // attempt cache hit
         var redis = globalOptions.redisClient
@@ -309,7 +303,6 @@ function ApiCache() {
 
         // send if cache hit from memory-cache
         if (cached) {
-          console.log('cache hit in memory for', key)
           // console log
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
