@@ -236,6 +236,7 @@ Special thanks to all those that use this library and report issues, but especia
 - @gesposito - README update
 - @nmors - redis support
 - @maytis, @ashwinnaidu - redis expiration
+- @killdash9 - restify support and response accumulator method
 
 ### Bugfixes
 
@@ -246,3 +247,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.5.0** - updated internals to use res.end instead of res.send/res.json/res.jsonp, allowing for any response type, adds redis tests
 - **v0.6.0** - removed final dependency (debug) and updated README
 - **v0.7.0** - internally sets cache-control/max-age headers of response object
+- **v0.8.0** - modifies response accumulation (thanks @killdash9) to support res.write + res.end accumulation, allowing integration with restify.  Adds gzip support (Node v4.3.2+ now required) and tests.

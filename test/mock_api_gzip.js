@@ -15,7 +15,7 @@ function MockAPI(expiration, options) {
   var apicache = require('../src/apicache').newInstance(options)
 
   var app = express()
-  app.use(compression())
+  app.use(compression({ threshold: 1 }))
 
   instances.push(this)
 

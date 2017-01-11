@@ -82,7 +82,10 @@ function ApiCache() {
 
   function createCacheObject(status, headers, data, encoding) {
     return {
-      status, headers, data, encoding
+      status: status,
+      headers: Object.assign({}, headers),
+      data: data,
+      encoding: encoding
     }
   }
 
@@ -296,14 +299,12 @@ function ApiCache() {
 
       // if not forced bypass of cache from client request, attempt cache hit
       if (!req.headers['x-apicache-force-fetch']) {
-        // console.log('current cache:', memCache.cache)
         // attempt cache hit
         var redis = globalOptions.redisClient
         var cached = !redis ? memCache.getValue(key) : null
 
         // send if cache hit from memory-cache
         if (cached) {
-          // console log
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
@@ -314,7 +315,6 @@ function ApiCache() {
         if (redis) {
           redis.hgetall(key, function (err, obj) {
             if (!err && obj) {
-              // console log
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
