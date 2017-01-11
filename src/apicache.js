@@ -87,6 +87,7 @@ function ApiCache() {
   }
 
   function cacheResponse(key, value, duration) {
+    console.log('caching response', key, value)
     var redis = globalOptions.redisClient
     if (redis) {
       redis.hset(key, "response", JSON.stringify(value))
@@ -102,28 +103,40 @@ function ApiCache() {
 
   function accumulateContent(res, content) {
     if (content) {
-      if (typeof(content) == "string") {
-        res._apicache.content=(res._apicache.content || "") + content;
-      }
-      else {
-        res._apicache.cacheable=false;
+      if (typeof(content) == 'string') {
+        res._apicache.content = (res._apicache.content || '') + content;
+      } else {
+        res._apicache.content = content
+        // res._apicache.cacheable = false;
       }
     }
   }
 
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
     // monkeypatch res.end to create cache object
-    res._apicache={write:res.write,end:res.end,cacheable:true}
-
-    res.header('cache-control','max-age=' + (duration / 1000).toFixed(0))
-    res.write = function(content) {
-      accumulateContent(res,content);
-      return res._apicache.write.apply(this,arguments);
+    res._apicache = {
+      write: res.write,
+      end: res.end,
+      cacheable: true,
+      content: undefined
     }
-    res.end = function(content,encoding) {
+
+    // add cache control headers
+    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+
+    // patch res.write
+    res.write = function(content) {
+      // console.log('patched write', content)
+      accumulateContent(res, content);
+      return res._apicache.write.apply(this, arguments);
+    }
+
+    // patch res.end
+    res.end = function(content, encoding) {
+      // console.log('patched end', content, encoding)
       if (shouldCacheResponse(res)) {
 
-        accumulateContent(res,content);
+        accumulateContent(res, content);
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
@@ -136,7 +149,7 @@ function ApiCache() {
         }
       }
 
-      return res._apicache.end.apply(this,arguments);
+      return res._apicache.end.apply(this, arguments);
     }
 
     next()
@@ -148,6 +161,8 @@ function ApiCache() {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
+
+    console.log('building response from', cacheObject)
 
     // unstringify buffers
     var data = cacheObject.data
@@ -286,12 +301,15 @@ function ApiCache() {
 
       // if not forced bypass of cache from client request, attempt cache hit
       if (!req.headers['x-apicache-force-fetch']) {
+        console.log('attempting key hits for', key)
+        // console.log('current cache:', memCache.cache)
         // attempt cache hit
         var redis = globalOptions.redisClient
         var cached = !redis ? memCache.getValue(key) : null
 
         // send if cache hit from memory-cache
         if (cached) {
+          console.log('cache hit in memory for', key)
           // console log
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
@@ -313,7 +331,7 @@ function ApiCache() {
             }
           })
         } else {
-          makeResponseCacheable(req, res, next, key, duration, strDuration)
+          return makeResponseCacheable(req, res, next, key, duration, strDuration)
         }
       }
     }

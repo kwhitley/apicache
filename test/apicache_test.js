@@ -114,72 +114,6 @@ describe('.resetIndex() {SETTER}', function() {
 
 })
 
-describe('.clear(key?) {SETTER}', function() {
-  var apicache = require('../src/apicache.js')
-
-  it('is a function', function() {
-    expect(typeof apicache.clear).to.equal('function')
-  })
-
-  it('works when called with group key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/testcachegroup')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-        expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
-      })
-  })
-
-  it('works when called with specific endpoint (non-group) key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
-        done()
-      })
-  })
-
-  it('clears empty group after removing last specific endpoint', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/testcachegroup')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-        expect(Object.keys(mockAPI.apicache.clear('/api/testcachegroup').groups).length).to.equal(0)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
-      })
-  })
-
-  it('works when called with no key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-    expect(mockAPI.apicache.clear().all.length).to.equal(0)
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear().all.length).to.equal(0)
-        done()
-      })
-  })
-})
-
 describe('.middleware {MIDDLEWARE}', function() {
   var apicache = require('../src/apicache.js')
 
@@ -229,6 +163,28 @@ describe('.middleware {MIDDLEWARE}', function() {
             expect(res2.status).to.equal(200)
             expect(res2.body.length).to.equal(2)
             expect(res2.body[0].title).to.equal('The Prestige')
+
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('returns cached response from write+end', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/writeandend')
+      .end(function(err, res1, body) {
+        expect(res1.status).to.equal(200)
+        expect(res1.text).to.equal('abc')
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/writeandend')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.text).to.equal('abc')
 
             expect(mockAPI.requestsProcessed).to.equal(1)
             done()
@@ -450,6 +406,72 @@ describe('Redis support', function() {
           db.flushdb()
           done()
         })
+      })
+  })
+})
+
+describe('.clear(key?) {SETTER}', function() {
+  var apicache = require('../src/apicache.js')
+
+  it('is a function', function() {
+    expect(typeof apicache.clear).to.equal('function')
+  })
+
+  it('works when called with group key', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/testcachegroup')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+        expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+        done()
+      })
+  })
+
+  it('works when called with specific endpoint (non-group) key', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
+        done()
+      })
+  })
+
+  it('clears empty group after removing last specific endpoint', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/testcachegroup')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+        expect(Object.keys(mockAPI.apicache.clear('/api/testcachegroup').groups).length).to.equal(0)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+        done()
+      })
+  })
+
+  it('works when called with no key', function(done) {
+    var mockAPI = require('./mock_api')('10 seconds')
+
+    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
+    expect(mockAPI.apicache.clear().all.length).to.equal(0)
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res) {
+        expect(mockAPI.requestsProcessed).to.equal(1)
+        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
+        expect(mockAPI.apicache.clear().all.length).to.equal(0)
+        done()
       })
   })
 })
