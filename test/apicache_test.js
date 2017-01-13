@@ -240,7 +240,7 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 
   it('embeds store type and apicache version in cached responses', function(done) {
-    var mockAPI = require('./mock_api_restify')('10 seconds')
+    var mockAPI = require('./mock_api')('10 seconds')
 
     request(mockAPI)
       .get('/api/movies')

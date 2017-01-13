@@ -2,7 +2,7 @@
   "name": "apicache",
   "version": "0.8.1",
   "scripts": {
-    "test": "redis-server & mocha $(find test -name '*.test.js') --recursive",
+    "test": "mocha $(find test -name '*.test.js') --recursive",
     "dev": "npm run test -- --watch",
     "prepublish": "npm run test"
   },
@@ -39,7 +39,6 @@
     "express": "^4.14.0",
     "fakeredis": "^1.0.3",
     "mocha": "^3.0.2",
-    "redis": "^2.6.3",
     "restify": "^4.3.0",
     "supertest": "^2.0.0"
   },
