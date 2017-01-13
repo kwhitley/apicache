@@ -59,4 +59,6 @@ function MockAPI(expiration, options) {
   return app
 }
 
-module.exports = function(expiration, config) { return new MockAPI(expiration, config) }
+module.exports = {
+  create: function(expiration, config) { return new MockAPI(expiration, config) }
+};

@@ -40,6 +40,7 @@
     "fakeredis": "^1.0.3",
     "mocha": "^3.0.2",
     "restify": "^4.3.0",
+    "restify-etag-cache": "^1.0.10",
     "supertest": "^2.0.0"
   },
   "dependencies": {}
