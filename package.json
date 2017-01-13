@@ -37,8 +37,10 @@
     "chai": "^3.5.0",
     "compression": "^1.6.2",
     "express": "^4.14.0",
+    "fakeredis": "^1.0.3",
     "mocha": "^3.0.2",
     "redis": "^2.6.3",
+    "restify": "^4.3.0",
     "supertest": "^2.0.0"
   },
   "dependencies": {}
