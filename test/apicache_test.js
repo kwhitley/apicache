@@ -3,7 +3,7 @@ var expect = chai.expect
 var request = require('supertest')
 var apicache = require('../src/apicache')
 var pkg = require('../package.json')
-var redis = require('redis')
+var redis = require('fakeredis')
 var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
@@ -240,7 +240,32 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 
   it('embeds store type and apicache version in cached responses', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+    var mockAPI = require('./mock_api_restify')('10 seconds')
+
+    request(mockAPI)
+      .get('/api/movies')
+      .end(function(err, res1) {
+        expect(res1.status).to.equal(200)
+        expect(res1.body.length).to.equal(2)
+        expect(res1.headers['apicache-store']).to.equal(undefined)
+        expect(res1.headers['apicache-version']).to.equal(undefined)
+        expect(mockAPI.requestsProcessed).to.equal(1)
+
+        request(mockAPI)
+          .get('/api/movies')
+          .end(function(err, res2) {
+            expect(res2.status).to.equal(200)
+            expect(res2.body.length).to.equal(2)
+            expect(res2.headers['apicache-store']).to.equal('memory')
+            expect(res2.headers['apicache-version']).to.equal(pkg.version)
+            expect(mockAPI.requestsProcessed).to.equal(1)
+            done()
+          })
+      })
+  })
+
+  it('embeds store type and apicache version in cached responses for restify', function(done) {
+    var mockAPI = require('./mock_api_restify')('10 seconds')
 
     request(mockAPI)
       .get('/api/movies')

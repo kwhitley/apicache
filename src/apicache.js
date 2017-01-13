@@ -157,7 +157,8 @@ function ApiCache() {
 
 
   function sendCachedResponse(response, cacheObject) {
-    Object.assign(response._headers || {}, cacheObject.headers || {}, {
+    response._headers = response._headers || {}
+    Object.assign(response._headers, cacheObject.headers || {}, {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
