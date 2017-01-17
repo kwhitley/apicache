@@ -11,9 +11,10 @@ var instances = []
 function MockAPI(expiration, options) {
   var restify = require('restify')
   var apicache = require('../src/apicache').newInstance(options)
-  var restifyEtagCache = require('restify-etag-cache');
 
   var app = restify.createServer();
+
+  app.use(restify.gzipResponse());
 
   instances.push(this)
 
@@ -32,20 +33,13 @@ function MockAPI(expiration, options) {
 
   app.use(this.apicache.middleware(expiration))
 
-  app.use(function(req, res, next) {
-    res.charSet('utf-8');
-    next()
-  })
-
-  app.use(restifyEtagCache());
-
-  app.get('/api/movies', function(req, res) {
+  app.get('/api/gzip/movies', function(req, res) {
     app.requestsProcessed++
 
     res.json(movies)
   })
 
-  app.get('/api/writeandend', function(req, res) {
+  app.get('/api/gzip/writeandend', function(req, res) {
     app.requestsProcessed++
 
     res.write('a')
@@ -53,37 +47,6 @@ function MockAPI(expiration, options) {
     res.write('c')
 
     res.end()
-  })
-
-  app.get('/api/testcachegroup', function(req, res) {
-    app.requestsProcessed++
-    req.apicacheGroup = 'cachegroup'
-
-    res.json(movies)
-  })
-
-  app.get('/api/text', function(req, res) {
-    app.requestsProcessed++
-
-    res.send('plaintext')
-  })
-
-  app.get('/api/html', function(req, res) {
-    app.requestsProcessed++
-
-    res.send('<html>')
-  })
-
-  app.get('/api/missing', function(req, res) {
-    app.requestsProcessed++
-
-    res.json(404, { success: false, message: 'Resource not found' })
-  })
-
-  app.get('/api/movies/:index', function(req, res) {
-    app.requestsProcessed++
-
-    res.json(movies[index])
   })
 
   app.apicache = apicache
