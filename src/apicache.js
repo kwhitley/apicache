@@ -115,11 +115,11 @@ function ApiCache() {
   }
 
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
-    res.on('finish', function() {
       // monkeypatch res.end to create cache object
       res._apicache = {
         write: res.write,
         end: res.end,
+        json: res.json,
         cacheable: true,
         content: undefined
       }
@@ -152,8 +152,27 @@ function ApiCache() {
 
         return res._apicache.end.apply(this, arguments);
       }
-    });
-    next()
+      
+      // patch res.end
+      res.json = function(content, encoding) {
+        if (shouldCacheResponse(res)) {
+
+          accumulateContent(res, content);
+
+          if (res._apicache.cacheable && res._apicache.content) {
+            addIndexEntries(key, req)
+            var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+            cacheResponse(key, cacheObject, duration)
+
+            // display log entry
+            var elapsed = new Date() - req.apicacheTimer
+            debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+          }
+        }
+
+        return res._apicache.json.apply(this, arguments);
+      }
+      next()
   }
 
 
