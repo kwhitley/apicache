@@ -154,9 +154,9 @@ function ApiCache() {
       }
       
       // patch res.end
-      res.json = function(content, encoding) {
+      res.json = function(obj, encoding) {
         if (shouldCacheResponse(res)) {
-
+          var content = JSON.stringify(obj);
           accumulateContent(res, content);
 
           if (res._apicache.cacheable && res._apicache.content) {
