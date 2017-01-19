@@ -125,7 +125,7 @@ function ApiCache() {
       }
 
       // add cache control headers
-      res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+      //res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
 
       // patch res.write
       res.write = function(content) {
