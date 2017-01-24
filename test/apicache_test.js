@@ -8,13 +8,15 @@ var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
 var apis = [
-  {express: require('./mock_api')},
-  {restify: require('./mock_api_restify')}
+  { express: require('./api/basic') },
+  { restify: require('./api/restify') }
 ]
+
 var apisGzip = [
-  {express: require('./mock_api_gzip')},
-  {restify: require('./mock_api_gzip_restify')}
+  { express: require('./api/gzip') },
+  { restify: require('./api/restify-gzip') }
 ]
+
 var movies = [{
   title: 'The Prestige',
   director: 'Christopher Nolan',
@@ -30,7 +32,7 @@ function assertNumRequestsProcessed(app, n) {
 }
 
 describe('.options(opt?) {GETTER/SETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.options).to.equal('function')
@@ -61,7 +63,7 @@ describe('.options(opt?) {GETTER/SETTER}', function() {
 })
 
 describe('.getDuration(stringOrNumber) {GETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.getDuration).to.equal('function')
@@ -115,7 +117,7 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 })
 
 describe('.getIndex() {GETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.getIndex).to.equal('function')
@@ -127,7 +129,7 @@ describe('.getIndex() {GETTER}', function() {
 })
 
 describe('.resetIndex() {SETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.resetIndex).to.equal('function')
@@ -138,19 +140,19 @@ describe('.resetIndex() {SETTER}', function() {
 describe('.middleware {MIDDLEWARE}', function() {
 
   it('is a function', function() {
-    var apicache = require('../src/apicache.js')
+    var apicache = require('../src/apicache')
     expect(typeof apicache.middleware).to.equal('function')
     expect(apicache.middleware.length).to.equal(2)
   })
 
   it('returns the middleware function', function() {
-    var middleware = require('../src/apicache.js').middleware('10 seconds')
+    var middleware = require('../src/apicache').middleware('10 seconds')
     expect(typeof middleware).to.equal('function')
     expect(middleware.length).to.equal(3)
   })
 
   describe('uncompressed', function() {
-    apis.forEach(function(api) {
+    apis.forEach(function(api, index) {
       var name = Object.keys(api)[0]
 
       describe(name + ' tests', function() {
@@ -341,12 +343,12 @@ describe('.middleware {MIDDLEWARE}', function() {
           var app = mockAPI.create('10 seconds')
 
           return request(app)
-            .get('/api/gzip/movies')
+            .get('/api/movies')
             .expect(200, movies)
             .then(assertNumRequestsProcessed(app, 1))
             .then(function() {
               return request(app)
-                .get('/api/gzip/movies')
+                .get('/api/movies')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(200, movies)
@@ -358,12 +360,12 @@ describe('.middleware {MIDDLEWARE}', function() {
           var app = mockAPI.create('10 seconds')
 
           return request(app)
-            .get('/api/gzip/writeandend')
+            .get('/api/writeandend')
             .expect(200, 'abc')
             .then(assertNumRequestsProcessed(app, 1))
             .then(function() {
               return request(app)
-                .get('/api/gzip/writeandend')
+                .get('/api/writeandend')
                 .expect(200, 'abc')
                 .then(assertNumRequestsProcessed(app, 1))
             })
@@ -473,7 +475,7 @@ describe('Redis support', function() {
 describe('.clear(key?) {SETTER}', function() {
 
   it('is a function', function() {
-    var apicache = require('../src/apicache.js')
+    var apicache = require('../src/apicache')
     expect(typeof apicache.clear).to.equal('function')
   })
 
