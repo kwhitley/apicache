@@ -9,13 +9,12 @@ var movies = [{
 var instances = []
 
 function MockAPI(expiration, options) {
-  // console.log('creating MockAPI with expiration in ' + expiration + ' with ApiCache config', options)
-  var express = require('express')
-  var compression = require('compression')
+  var restify = require('restify')
   var apicache = require('../src/apicache').newInstance(options)
 
-  var app = express()
-  app.use(compression({ threshold: 1 }))
+  var app = restify.createServer();
+
+  app.use(restify.gzipResponse());
 
   instances.push(this)
 
@@ -23,10 +22,7 @@ function MockAPI(expiration, options) {
   this.id = instances.length
   this.app = app
 
-  // console.log('instantiating MockAPI:' + this.id + ' with expiration of ' + expiration)
-  // console.log('this.id vs this.apicache.id', this.id, this.apicache.id)
   instances.forEach((instance, id) => {
-    // console.log('instance id:apicache.id', instance.id, instance.apicache.id)
     if (instance.id !== this.id && this.apicache === instance.apicache) {
       console.log('WARNING: SHARED APICACHE INSTANCE', id, this.id, this.apicache.id, instance.apicache.id)
     }
@@ -59,4 +55,6 @@ function MockAPI(expiration, options) {
   return app
 }
 
-module.exports = function(expiration, config) { return new MockAPI(expiration, config) }
+module.exports = {
+  create: function(expiration, config) { return new MockAPI(expiration, config) }
+};

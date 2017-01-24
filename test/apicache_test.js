@@ -7,9 +7,23 @@ var redis = require('fakeredis')
 var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
+var movies = require('./api/lib/data.json')
+
+var apis = [
+  { name: 'express', server: require('./api/express') },
+  { name: 'express+gzip', server: require('./api/express-gzip') },
+  { name: 'restify', server: require('./api/restify') },
+  { name: 'restify+gzip', server: require('./api/restify-gzip') }
+]
+
+function assertNumRequestsProcessed(app, n) {
+  return function() {
+    expect(app.requestsProcessed).to.equal(n)
+  }
+}
 
 describe('.options(opt?) {GETTER/SETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.options).to.equal('function')
@@ -40,7 +54,7 @@ describe('.options(opt?) {GETTER/SETTER}', function() {
 })
 
 describe('.getDuration(stringOrNumber) {GETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.getDuration).to.equal('function')
@@ -94,7 +108,7 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 })
 
 describe('.getIndex() {GETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.getIndex).to.equal('function')
@@ -106,7 +120,7 @@ describe('.getIndex() {GETTER}', function() {
 })
 
 describe('.resetIndex() {SETTER}', function() {
-  var apicache = require('../src/apicache.js')
+  var apicache = require('../src/apicache')
 
   it('is a function', function() {
     expect(typeof apicache.resetIndex).to.equal('function')
@@ -115,435 +129,400 @@ describe('.resetIndex() {SETTER}', function() {
 })
 
 describe('.middleware {MIDDLEWARE}', function() {
-  var apicache = require('../src/apicache.js')
 
   it('is a function', function() {
+    var apicache = require('../src/apicache')
     expect(typeof apicache.middleware).to.equal('function')
+    expect(apicache.middleware.length).to.equal(2)
   })
 
-  it('does not interfere with initial request', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        done()
-      })
+  it('returns the middleware function', function() {
+    var middleware = require('../src/apicache').middleware('10 seconds')
+    expect(typeof middleware).to.equal('function')
+    expect(middleware.length).to.equal(3)
   })
 
-  it('properly returns a request while caching (first call)', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+  apis.forEach(api => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        done()
-      })
-  })
+      it('does not interfere with initial request', function() {
+        var app = mockAPI.create('10 seconds')
 
-  it('properly returns a cached JSON request', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-
-        request(mockAPI)
+        return request(app)
           .get('/api/movies')
-          .set('Accept', 'application/json')
-          .expect('Content-Type', /json/)
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.body[0].title).to.equal('The Prestige')
+          .expect(200)
+          .then(assertNumRequestsProcessed(app, 1))
+      })
 
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+      it('properly returns a request while caching (first call)', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+      })
+
+      it('skips cache when using header "x-apicache-bypass"', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('x-apicache-bypass', true)
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(2)
+              })
           })
       })
-  })
 
-  it('properly returns a cached JSON request when gzipped', function(done) {
-    var mockAPI = require('./mock_api_gzip')('10 seconds')
+       it('skips cache when using header "x-apicache-force-fetch (legacy)"', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/gzip/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-
-        request(mockAPI)
-          .get('/api/gzip/movies')
-          .set('Accept', 'application/json')
-          .expect('Content-Type', /json/)
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.body[0].title).to.equal('The Prestige')
-
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('x-apicache-force-fetch', true)
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(2)
+              })
           })
       })
-  })
 
-  it('returns cached response from write+end', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('properly returns a cached JSON request', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/writeandend')
-      .end(function(err, res1, body) {
-        expect(res1.status).to.equal(200)
-        expect(res1.text).to.equal('abc')
-        expect(mockAPI.requestsProcessed).to.equal(1)
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
 
-        request(mockAPI)
+      it('returns cached response from write+end', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
           .get('/api/writeandend')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.text).to.equal('abc')
-
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+          .expect(200, 'abc')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/writeandend')
+              .expect(200, 'abc')
+              .then(assertNumRequestsProcessed(app, 1))
           })
       })
-  })
 
-  it('returns cached response from write+end when gzipped', function(done) {
-    var mockAPI = require('./mock_api_gzip')('10 seconds')
+      it('embeds store type and apicache version in cached responses', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/gzip/writeandend')
-      .end(function(err, res1, body) {
-        expect(res1.status).to.equal(200)
-        expect(res1.text).to.equal('abc')
-        expect(mockAPI.requestsProcessed).to.equal(1)
-
-        request(mockAPI)
-          .get('/api/gzip/writeandend')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.text).to.equal('abc')
-
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
-          })
-      })
-  })
-
-  it('embeds store type and apicache version in cached responses', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
-
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(res1.headers['apicache-store']).to.equal(undefined)
-        expect(res1.headers['apicache-version']).to.equal(undefined)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-
-        request(mockAPI)
+        return request(app)
           .get('/api/movies')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.headers['apicache-store']).to.equal('memory')
-            expect(res2.headers['apicache-version']).to.equal(pkg.version)
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
           })
       })
-  })
 
-  it('embeds store type and apicache version in cached responses for restify', function(done) {
-    var mockAPI = require('./mock_api_restify')('10 seconds')
+      it('embeds cache-control header', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(res1.headers['apicache-store']).to.equal(undefined)
-        expect(res1.headers['apicache-version']).to.equal(undefined)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-
-        request(mockAPI)
+        return request(app)
           .get('/api/movies')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.headers['apicache-store']).to.equal('memory')
-            expect(res2.headers['apicache-version']).to.equal(pkg.version)
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+          .expect('Cache-Control', 'max-age=10')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.headers['date']).to.exist
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
           })
       })
-  })
 
-  it('embeds cache-control header', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('preserves etag header', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(res1.headers['apicache-store']).to.equal(undefined)
-        expect(res1.headers['apicache-version']).to.equal(undefined)
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(res1.headers['cache-control'].indexOf('max-age=10') !== -1).to.equal(true)
-        expect(res1.headers['date'] !== undefined).to.equal(true)
-
-        request(mockAPI)
+        return request(app)
           .get('/api/movies')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.headers['apicache-store']).to.equal('memory')
-            expect(res2.headers['apicache-version']).to.equal(pkg.version)
-            expect(res2.headers['cache-control'].indexOf('max-age=10') !== -1).to.equal(true)
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            done()
+          .expect(200)
+          .then(function(res) {
+            var etag = res.headers['etag']
+            expect(etag).to.exist
+            return etag
+          })
+          .then(function(etag) {
+            return request(app)
+              .get('/api/movies')
+              .expect(200)
+              .expect('etag', etag)
           })
       })
-  })
 
-  it('preserves etag header', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('embeds returns content-type JSON from original response and cached response', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        var etag = res1.headers['etag']
-        expect(etag !== undefined).to.equal(true)
-
-        request(mockAPI)
+        return request(app)
           .get('/api/movies')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.headers['etag']).to.equal(etag)
-            done()
+          .expect(200)
+          .expect('Content-Type', 'application/json; charset=utf-8')
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('Content-Type', 'application/json; charset=utf-8')
           })
       })
-  })
 
-  it('embeds returns content-type JSON from original response and cached response', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('does not cache a request when status code found in status code exclusions', function() {
+        var app = mockAPI.create('2 seconds', {
+          statusCodes: { exclude: [404] }
+        })
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.headers['content-type']).to.equal('application/json; charset=utf-8')
-
-        request(mockAPI)
-          .get('/api/movies')
-          .expect('Content-Type', 'application/json; charset=utf-8', done)
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function() {
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
       })
-  })
 
-  it('does not cache a request when status code found in status code exclusions', function(done) {
-    var mockAPI = require('./mock_api')('2 seconds', {
-      statusCodes: { exclude: [404] }
+      it('does not cache a request when status code not found in status code inclusions', function() {
+        var app = mockAPI.create('2 seconds', {
+          statusCodes: { include: [200] }
+        })
+
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function() {
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
+
+      it('removes a cache key after expiration', function(done) {
+        var app = mockAPI.create(10)
+
+        request(app)
+          .get('/api/movies')
+          .end(function(err, res) {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().all).to.include('/api/movies')
+          })
+
+        setTimeout(function() {
+          expect(app.apicache.getIndex().all).to.have.length(0)
+          done()
+        }, 25)
+      })
+
     })
-
-    request(mockAPI)
-      .get('/api/missing')
-      .end(function(err, res) {
-        expect(res.statusCode).to.equal(404)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
-      })
   })
-
-  it('does not cache a request when status code not found in status code inclusions', function(done) {
-    var mockAPI = require('./mock_api')('2 seconds', {
-      statusCodes: { include: [200] }
-    })
-
-    request(mockAPI)
-      .get('/api/missing')
-      .end(function(err, res) {
-        expect(res.statusCode).to.equal(404)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
-      })
-  })
-
-  it('removes a cache key after expiration', function(done) {
-    var mockAPI = require('./mock_api')(10)
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all).to.include('/api/movies')
-      })
-
-    setTimeout(function() {
-      expect(mockAPI.apicache.getIndex().all).to.have.length(0)
-      done()
-    }, 25)
-  })
-
 })
 
 describe('Redis support', function() {
-  it('properly caches a request', function(done) {
-    var db = redis.createClient()
-    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res1) {
-        expect(res1.status).to.equal(200)
-        expect(res1.body.length).to.equal(2)
-        expect(res1.headers['apicache-store']).to.equal(undefined)
-        expect(res1.headers['apicache-version']).to.equal(undefined)
-        expect(mockAPI.requestsProcessed).to.equal(1)
+  function hgetallIsNull(db, key) {
+    return new Promise(function(resolve, reject) {
+      db.hgetall(key, function(err, reply) {
+        if(err) {
+          reject(err)
+        } else {
+          expect(reply).to.equal(null)
+          db.flushdb()
+          resolve()
+        }
+      })
+    })
+  }
 
-        request(mockAPI)
+  apis.forEach((api) => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
+
+      it('properly caches a request', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
+
+        return request(app)
           .get('/api/movies')
-          .end(function(err, res2) {
-            expect(res2.status).to.equal(200)
-            expect(res2.body.length).to.equal(2)
-            expect(res2.headers['apicache-store']).to.equal('redis')
-            expect(res2.headers['apicache-version']).to.equal(pkg.version)
-            expect(mockAPI.requestsProcessed).to.equal(1)
-            db.flushdb()
-            done()
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect(200, movies)
+              .expect('apicache-store', 'redis')
+              .expect('apicache-version', pkg.version)
+              .then(assertNumRequestsProcessed(app, 1))
+              .then(function() {
+                db.flushdb()
+              })
           })
       })
-  })
 
-  it('can clear indexed cache groups', function(done) {
-    var db = redis.createClient()
-    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+      it('can clear indexed cache groups', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
 
-    request(mockAPI)
-      .get('/api/testcachegroup')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-        expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        db.hgetall('/api/testcachegroup', function(err, reply) {
-          expect(reply).to.equal(null)
-          db.flushdb()
-          done()
-        })
+        return request(app)
+          .get('/api/testcachegroup')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+            expect(Object.keys(app.apicache.clear('cachegroup').groups).length).to.equal(0)
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+            return hgetallIsNull(db, '/api/testcachegroup')
+          })
       })
-  })
 
-  it('can clear indexed entries by url/key (non-group)', function(done) {
-    var db = redis.createClient()
-    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+      it('can clear indexed entries by url/key (non-group)', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
-        db.hgetall('/api/movies', function(err, reply) {
-          expect(reply).to.equal(null)
-          db.flushdb()
-          done()
-        })
+       return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
+            return hgetallIsNull(db, '/api/movies')
+          })
       })
-  })
 
-  it('can clear all entries from index', function(done) {
-    var db = redis.createClient()
-    var mockAPI = require('./mock_api')('10 seconds', { redisClient: db })
+      it('can clear all entries from index', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
 
-    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-    expect(mockAPI.apicache.clear().all.length).to.equal(0)
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear().all.length).to.equal(0)
-        db.hgetall('/api/movies', function(err, reply) {
-          expect(reply).to.equal(null)
-          db.flushdb()
-          done()
-        })
+        expect(app.apicache.getIndex().all.length).to.equal(0)
+        expect(app.apicache.clear().all.length).to.equal(0)
+
+        return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.clear().all.length).to.equal(0)
+            return hgetallIsNull(db, '/api/movies')
+          })
       })
+    })
   })
 })
 
 describe('.clear(key?) {SETTER}', function() {
-  var apicache = require('../src/apicache.js')
 
   it('is a function', function() {
+    var apicache = require('../src/apicache')
     expect(typeof apicache.clear).to.equal('function')
   })
 
-  it('works when called with group key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+  apis.forEach(api => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
 
-    request(mockAPI)
-      .get('/api/testcachegroup')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-        expect(Object.keys(mockAPI.apicache.clear('cachegroup').groups).length).to.equal(0)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
+      it('works when called with group key', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/testcachegroup')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+            expect(Object.keys(app.apicache.clear('cachegroup').groups).length).to.equal(0)
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
       })
-  })
 
-  it('works when called with specific endpoint (non-group) key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('works when called with specific endpoint (non-group) key', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear('/api/movies').all.length).to.equal(0)
-        done()
+        return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
+          })
       })
-  })
 
-  it('clears empty group after removing last specific endpoint', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('clears empty group after removing last specific endpoint', function() {
+        var app = mockAPI.create('10 seconds')
 
-    request(mockAPI)
-      .get('/api/testcachegroup')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-        expect(Object.keys(mockAPI.apicache.clear('/api/testcachegroup').groups).length).to.equal(0)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-        done()
+        return request(app)
+          .get('/api/testcachegroup')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+            expect(Object.keys(app.apicache.clear('/api/testcachegroup').groups).length).to.equal(0)
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
       })
-  })
 
-  it('works when called with no key', function(done) {
-    var mockAPI = require('./mock_api')('10 seconds')
+      it('works when called with no key', function() {
+        var app = mockAPI.create('10 seconds')
 
-    expect(mockAPI.apicache.getIndex().all.length).to.equal(0)
-    expect(mockAPI.apicache.clear().all.length).to.equal(0)
-    request(mockAPI)
-      .get('/api/movies')
-      .end(function(err, res) {
-        expect(mockAPI.requestsProcessed).to.equal(1)
-        expect(mockAPI.apicache.getIndex().all.length).to.equal(1)
-        expect(mockAPI.apicache.clear().all.length).to.equal(0)
-        done()
+        expect(app.apicache.getIndex().all.length).to.equal(0)
+        expect(app.apicache.clear().all.length).to.equal(0)
+        return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.clear().all.length).to.equal(0)
+          })
       })
+
+    })
   })
 })
