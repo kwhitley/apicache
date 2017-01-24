@@ -7,23 +7,14 @@ var redis = require('fakeredis')
 var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
+var movies = require('./api/lib/data.json')
+
 var apis = [
-  { express: require('./api/basic') },
-  { restify: require('./api/restify') }
+  { name: 'express', server: require('./api/express') },
+  { name: 'express+gzip', server: require('./api/express-gzip') },
+  { name: 'restify', server: require('./api/restify') },
+  { name: 'restify+gzip', server: require('./api/restify-gzip') }
 ]
-
-var apisGzip = [
-  { express: require('./api/gzip') },
-  { restify: require('./api/restify-gzip') }
-]
-
-var movies = [{
-  title: 'The Prestige',
-  director: 'Christopher Nolan',
-},{
-  title: 'Schindler\'s List',
-  director: 'Steven Spielberg'
-}]
 
 function assertNumRequestsProcessed(app, n) {
   return function() {
@@ -152,11 +143,9 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 
   describe('uncompressed', function() {
-    apis.forEach(function(api, index) {
-      var name = Object.keys(api)[0]
-
-      describe(name + ' tests', function() {
-        var mockAPI = api[name]
+    apis.forEach(api => {
+      describe(api.name + ' tests', function() {
+        var mockAPI = api.server
 
         it('does not interfere with initial request', function() {
           var app = mockAPI.create('10 seconds')
@@ -333,11 +322,9 @@ describe('.middleware {MIDDLEWARE}', function() {
 
   describe('gzipped', function() {
 
-    apisGzip.forEach(function(api) {
-      var name = Object.keys(api)[0]
-
-      describe(name + ' tests', function() {
-        var mockAPI = api[name]
+    apis.forEach(api => {
+      describe(api.name + ' tests', function() {
+        var mockAPI = api.server
 
         it('properly returns a cached JSON request when gzipped', function() {
           var app = mockAPI.create('10 seconds')
@@ -391,11 +378,9 @@ describe('Redis support', function() {
     })
   }
 
-  apis.forEach(function(api) {
-    var name = Object.keys(api)[0]
-
-    describe(name + ' tests', function() {
-      var mockAPI = api[name]
+  apis.forEach((api) => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
 
       it('properly caches a request', function() {
         var db = redis.createClient()
@@ -479,11 +464,9 @@ describe('.clear(key?) {SETTER}', function() {
     expect(typeof apicache.clear).to.equal('function')
   })
 
-  apis.forEach(function(api) {
-    var name = Object.keys(api)[0]
-
-    describe(name + ' tests', function() {
-      var mockAPI = api[name]
+  apis.forEach(api => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
 
       it('works when called with group key', function() {
         var app = mockAPI.create('10 seconds')
