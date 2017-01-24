@@ -237,7 +237,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
-- [@svozza](https://github.com/svozza) - added restify tests and fixed header issue with restify
+- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Double thanks!!!
 
 ### Bugfixes
 
@@ -250,4 +250,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.7.0** - internally sets cache-control/max-age headers of response object
 - **v0.8.0** - modifies response accumulation (thanks @killdash9) to support res.write + res.end accumulation, allowing integration with restify.  Adds gzip support (Node v4.3.2+ now required) and tests.
 - **v0.8.1** - fixed restify support and added appropriate tests (thanks @svozza)
+- **v0.8.2** - test suite and mock API refactor (thanks @svozza)
 
