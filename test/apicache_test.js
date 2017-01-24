@@ -142,222 +142,223 @@ describe('.middleware {MIDDLEWARE}', function() {
     expect(middleware.length).to.equal(3)
   })
 
-  describe('uncompressed', function() {
-    apis.forEach(api => {
-      describe(api.name + ' tests', function() {
-        var mockAPI = api.server
+  apis.forEach(api => {
+    describe(api.name + ' tests', function() {
+      var mockAPI = api.server
 
-        it('does not interfere with initial request', function() {
-          var app = mockAPI.create('10 seconds')
+      it('does not interfere with initial request', function() {
+        var app = mockAPI.create('10 seconds')
 
-          return request(app)
-            .get('/api/movies')
-            .expect(200)
-            .then(assertNumRequestsProcessed(app, 1))
+        return request(app)
+          .get('/api/movies')
+          .expect(200)
+          .then(assertNumRequestsProcessed(app, 1))
+      })
+
+      it('properly returns a request while caching (first call)', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+      })
+
+      it('skips cache when using header "x-apicache-bypass"', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('x-apicache-bypass', true)
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(2)
+              })
+          })
+      })
+
+       it('skips cache when using header "x-apicache-force-fetch (legacy)"', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('x-apicache-force-fetch', true)
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(2)
+              })
+          })
+      })
+
+      it('properly returns a cached JSON request', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('returns cached response from write+end', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/writeandend')
+          .expect(200, 'abc')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/writeandend')
+              .expect(200, 'abc')
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('embeds store type and apicache version in cached responses', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('embeds cache-control header', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect('Cache-Control', 'max-age=10')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.headers['date']).to.exist
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('preserves etag header', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200)
+          .then(function(res) {
+            var etag = res.headers['etag']
+            expect(etag).to.exist
+            return etag
+          })
+          .then(function(etag) {
+            return request(app)
+              .get('/api/movies')
+              .expect(200)
+              .expect('etag', etag)
+          })
+      })
+
+      it('embeds returns content-type JSON from original response and cached response', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200)
+          .expect('Content-Type', 'application/json; charset=utf-8')
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('Content-Type', 'application/json; charset=utf-8')
+          })
+      })
+
+      it('does not cache a request when status code found in status code exclusions', function() {
+        var app = mockAPI.create('2 seconds', {
+          statusCodes: { exclude: [404] }
         })
 
-        it('properly returns a request while caching (first call)', function() {
-          var app = mockAPI.create('10 seconds')
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function() {
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
 
-          return request(app)
-            .get('/api/movies')
-            .expect(200, movies)
-            .then(assertNumRequestsProcessed(app, 1))
+      it('does not cache a request when status code not found in status code inclusions', function() {
+        var app = mockAPI.create('2 seconds', {
+          statusCodes: { include: [200] }
         })
 
-        it('properly returns a cached JSON request', function() {
-          var app = mockAPI.create('10 seconds')
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function() {
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
 
-          return request(app)
-            .get('/api/movies')
-            .expect(200, movies)
-            .then(assertNumRequestsProcessed(app, 1))
-            .then(function() {
-              return request(app)
-                .get('/api/movies')
-                .set('Accept', 'application/json')
-                .expect('Content-Type', /json/)
-                .expect(200, movies)
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
+      it('removes a cache key after expiration', function(done) {
+        var app = mockAPI.create(10)
 
-        it('returns cached response from write+end', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/writeandend')
-            .expect(200, 'abc')
-            .then(assertNumRequestsProcessed(app, 1))
-            .then(function() {
-              return request(app)
-                .get('/api/writeandend')
-                .expect(200, 'abc')
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
-
-        it('embeds store type and apicache version in cached responses', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/movies')
-            .expect(200, movies)
-            .then(function(res) {
-              expect(res.headers['apicache-store']).to.be.undefined
-              expect(res.headers['apicache-version']).to.be.undefined
-              expect(app.requestsProcessed).to.equal(1)
-            })
-            .then(function() {
-              return request(app)
-                .get('/api/movies')
-                .expect('apicache-store', 'memory')
-                .expect('apicache-version', pkg.version)
-                .expect(200, movies)
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
-
-        it('embeds cache-control header', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/movies')
-            .expect('Cache-Control', 'max-age=10')
-            .expect(200, movies)
-            .then(function(res) {
-              expect(res.headers['apicache-store']).to.be.undefined
-              expect(res.headers['apicache-version']).to.be.undefined
-              expect(app.requestsProcessed).to.equal(1)
-              expect(res.headers['date']).to.exist
-            })
-            .then(function() {
-              return request(app)
-                .get('/api/movies')
-                .expect('apicache-store', 'memory')
-                .expect('apicache-version', pkg.version)
-                .expect(200, movies)
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
-
-        it('preserves etag header', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/movies')
-            .expect(200)
-            .then(function(res) {
-              var etag = res.headers['etag']
-              expect(etag).to.exist
-              return etag
-            })
-            .then(function(etag) {
-              return request(app)
-                .get('/api/movies')
-                .expect(200)
-                .expect('etag', etag)
-            })
-        })
-
-        it('embeds returns content-type JSON from original response and cached response', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/movies')
-            .expect(200)
-            .expect('Content-Type', 'application/json; charset=utf-8')
-            .then(function() {
-              return request(app)
-                .get('/api/movies')
-                .expect('Content-Type', 'application/json; charset=utf-8')
-            })
-        })
-
-        it('does not cache a request when status code found in status code exclusions', function() {
-          var app = mockAPI.create('2 seconds', {
-            statusCodes: { exclude: [404] }
+        request(app)
+          .get('/api/movies')
+          .end(function(err, res) {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
 
-          return request(app)
-            .get('/api/missing')
-            .expect(404)
-            .then(function() {
-              expect(app.apicache.getIndex().all.length).to.equal(0)
-            })
-        })
-
-        it('does not cache a request when status code not found in status code inclusions', function() {
-          var app = mockAPI.create('2 seconds', {
-            statusCodes: { include: [200] }
-          })
-
-          return request(app)
-            .get('/api/missing')
-            .expect(404)
-            .then(function() {
-              expect(app.apicache.getIndex().all.length).to.equal(0)
-            })
-        })
-
-        it('removes a cache key after expiration', function(done) {
-          var app = mockAPI.create(10)
-
-          request(app)
-            .get('/api/movies')
-            .end(function(err, res) {
-              expect(app.apicache.getIndex().all.length).to.equal(1)
-              expect(app.apicache.getIndex().all).to.include('/api/movies')
-            })
-
-          setTimeout(function() {
-            expect(app.apicache.getIndex().all).to.have.length(0)
-            done()
-          }, 25)
-        })
-
+        setTimeout(function() {
+          expect(app.apicache.getIndex().all).to.have.length(0)
+          done()
+        }, 25)
       })
-    })
-  })
 
-  describe('gzipped', function() {
-
-    apis.forEach(api => {
-      describe(api.name + ' tests', function() {
-        var mockAPI = api.server
-
-        it('properly returns a cached JSON request when gzipped', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/movies')
-            .expect(200, movies)
-            .then(assertNumRequestsProcessed(app, 1))
-            .then(function() {
-              return request(app)
-                .get('/api/movies')
-                .set('Accept', 'application/json')
-                .expect('Content-Type', /json/)
-                .expect(200, movies)
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
-
-        it('returns cached response from write+end when gzipped', function() {
-          var app = mockAPI.create('10 seconds')
-
-          return request(app)
-            .get('/api/writeandend')
-            .expect(200, 'abc')
-            .then(assertNumRequestsProcessed(app, 1))
-            .then(function() {
-              return request(app)
-                .get('/api/writeandend')
-                .expect(200, 'abc')
-                .then(assertNumRequestsProcessed(app, 1))
-            })
-        })
-      })
     })
   })
 })

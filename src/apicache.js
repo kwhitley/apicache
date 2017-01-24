@@ -271,7 +271,7 @@ function ApiCache() {
 
       // initial bypass chances
       if (!globalOptions.enabled) return bypass()
-      if (req.headers['x-apicache-bypass']) return bypass()
+      if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
       if (typeof middlewareToggle === 'function') {
         if (!middlewareToggle(req, res)) return bypass()
       } else if (middlewareToggle !== undefined && !middlewareToggle) {
@@ -298,35 +298,32 @@ function ApiCache() {
         key += '$$appendKey=' + appendKey
       }
 
-      // if not forced bypass of cache from client request, attempt cache hit
-      if (!req.headers['x-apicache-force-fetch']) {
-        // attempt cache hit
-        var redis = globalOptions.redisClient
-        var cached = !redis ? memCache.getValue(key) : null
+      // attempt cache hit
+      var redis = globalOptions.redisClient
+      var cached = !redis ? memCache.getValue(key) : null
 
-        // send if cache hit from memory-cache
-        if (cached) {
-          var elapsed = new Date() - req.apicacheTimer
-          debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
+      // send if cache hit from memory-cache
+      if (cached) {
+        var elapsed = new Date() - req.apicacheTimer
+        debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
-          return sendCachedResponse(res, cached)
-        }
+        return sendCachedResponse(res, cached)
+      }
 
-        // send if cache hit from redis
-        if (redis) {
-          redis.hgetall(key, function (err, obj) {
-            if (!err && obj) {
-              var elapsed = new Date() - req.apicacheTimer
-              debug('sending cached (redis) version of', key, logDuration(elapsed))
+      // send if cache hit from redis
+      if (redis) {
+        redis.hgetall(key, function (err, obj) {
+          if (!err && obj) {
+            var elapsed = new Date() - req.apicacheTimer
+            debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              return sendCachedResponse(res, JSON.parse(obj.response))
-            } else {
-              return makeResponseCacheable(req, res, next, key, duration, strDuration)
-            }
-          })
-        } else {
-          return makeResponseCacheable(req, res, next, key, duration, strDuration)
-        }
+            return sendCachedResponse(res, JSON.parse(obj.response))
+          } else {
+            return makeResponseCacheable(req, res, next, key, duration, strDuration)
+          }
+        })
+      } else {
+        return makeResponseCacheable(req, res, next, key, duration, strDuration)
       }
     }
   }
