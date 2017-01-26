@@ -225,6 +225,38 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('properly caches a text request', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/text')
+          .expect(200, 'plaintext')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/text')
+              .expect('Content-Type', 'text/plain; charset=utf-8')
+              .expect(200, 'plaintext')
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('properly caches an html request', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/html')
+          .expect(200, '<html>')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/html')
+              .expect('Content-Type', 'text/html; charset=utf-8')
+              .expect(200, '<html>')
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
       it('returns cached response from write+end', function() {
         var app = mockAPI.create('10 seconds')
 
@@ -408,13 +440,65 @@ describe('Redis support', function() {
           })
       })
 
+      it('properly caches an html request', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
+
+        return request(app)
+          .get('/api/html')
+          .expect(200, '<html>')
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/html')
+              .expect(200, '<html>')
+              .expect('apicache-store', 'redis')
+              .expect('apicache-version', pkg.version)
+              .then(assertNumRequestsProcessed(app, 1))
+              .then(function() {
+                db.flushdb()
+              })
+          })
+      })
+
+      it('properly caches a text request', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
+
+        return request(app)
+          .get('/api/text')
+          .expect(200, 'plaintext')
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/text')
+              .expect('Content-Type', 'text/plain; charset=utf-8')
+              .expect(200, 'plaintext')
+              .expect('apicache-store', 'redis')
+              .expect('apicache-version', pkg.version)
+              .then(assertNumRequestsProcessed(app, 1))
+              .then(function() {
+                db.flushdb()
+              })
+          })
+      })
+
       it('can clear indexed cache groups', function() {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
         return request(app)
           .get('/api/testcachegroup')
-          .then(function(res) {
+          .then(function() {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
@@ -430,7 +514,7 @@ describe('Redis support', function() {
 
        return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function() {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
@@ -447,7 +531,7 @@ describe('Redis support', function() {
 
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function() {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear().all.length).to.equal(0)
