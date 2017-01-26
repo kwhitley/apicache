@@ -1,6 +1,7 @@
 A simple API response caching middleware for Express/Node using plain-english durations.
 =======
 
+[![npm version](https://badge.fury.io/js/apicache.svg)](https://badge.fury.io/js/apicache)
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
 
 ## Why?
