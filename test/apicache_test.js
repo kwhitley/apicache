@@ -143,7 +143,7 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 
   describe('options', function() {
-    var apicache = require('../src/apicache')
+    var apicache = require('../src/apicache').newInstance()
 
     it('uses global options if local ones not provided', function() {
       apicache.options({
