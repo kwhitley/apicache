@@ -110,7 +110,7 @@ function ApiCache() {
       } else if (Buffer.isBuffer(content)) {
         var oldContent = res._apicache.content
         if (!oldContent) {
-          oldContent = Buffer.alloc(0);
+          oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0);
         }
         res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length);
       } else {
