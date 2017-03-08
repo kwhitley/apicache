@@ -22,9 +22,16 @@ module.exports = function(app) {
   app.get('/api/writebufferandend', function(req, res) {
     app.requestsProcessed++
 
-    res.write(Buffer.from('a'))
-    res.write(Buffer.from('b'))
-    res.write(Buffer.from('c'))
+
+    if (process.versions.node.indexOf('4') === 0) {
+      res.write(new Buffer([0x61]))
+      res.write(new Buffer([0x62]))
+      res.write(new Buffer([0x63]))
+    } else {
+      res.write(Buffer.from('a'))
+      res.write(Buffer.from('b'))
+      res.write(Buffer.from('c'))
+    }
 
     res.end()
   })
