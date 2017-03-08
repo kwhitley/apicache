@@ -107,6 +107,12 @@ function ApiCache() {
     if (content) {
       if (typeof(content) == 'string') {
         res._apicache.content = (res._apicache.content || '') + content;
+      } else if (Buffer.isBuffer(content)) {
+        var oldContent = res._apicache.content
+        if (!oldContent) {
+          oldContent = Buffer.alloc(0);
+        }
+        res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length);
       } else {
         res._apicache.content = content
         // res._apicache.cacheable = false;
