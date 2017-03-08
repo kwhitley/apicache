@@ -240,6 +240,21 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('returns cached response from write Buffer+end', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/writebufferandend')
+          .expect(200, 'abc')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/writebufferandend')
+              .expect(200, 'abc')
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
       it('embeds store type and apicache version in cached responses', function() {
         var app = mockAPI.create('10 seconds')
 

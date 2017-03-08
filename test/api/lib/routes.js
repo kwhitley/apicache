@@ -19,6 +19,16 @@ module.exports = function(app) {
     res.end()
   })
 
+  app.get('/api/writebufferandend', function(req, res) {
+    app.requestsProcessed++
+
+    res.write(Buffer.from('a'))
+    res.write(Buffer.from('b'))
+    res.write(Buffer.from('c'))
+
+    res.end()
+  })
+
   app.get('/api/testcachegroup', function(req, res) {
     app.requestsProcessed++
     req.apicacheGroup = 'cachegroup'
