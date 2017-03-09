@@ -1,5 +1,5 @@
 {
-  "name": "apicache",
+  "name": "@mysolomon/apicache",
   "version": "0.8.3",
   "scripts": {
     "test": "mocha $(find test -name '*.test.js') --recursive",
