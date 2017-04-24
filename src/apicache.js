@@ -288,7 +288,7 @@ function ApiCache() {
       req.apicacheTimer = new Date()
 
       // In Express 4.x the url is ambigious based on where a router is mounted.  originalUrl will give the full Url
-      var key = req.originalUrl || req.url
+      var key = 'apicache/'+(req.originalUrl || req.url)
 
       // Remove querystring from key if jsonp option is enabled
       if (globalOptions.jsonp) {
@@ -348,6 +348,15 @@ function ApiCache() {
     index = {
       all: [],
       groups: {}
+    }
+    if (globalOptions.redisClient) {
+      //extra search for clearing redis by wildcard. not optimal at all, it's a fix...
+      globalOptions.redisClient.keys('apicache/*', function (err, rows) {
+        for (var i = 0, j = rows.length; i < j; ++i) {
+          debug('Removing ' + rows[i]);
+          globalOptions.redisClient.del(rows[i])
+        }
+      });
     }
   }
 
