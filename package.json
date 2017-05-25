@@ -37,11 +37,11 @@
     "chai": "^3.5.0",
     "compression": "^1.6.2",
     "express": "^4.14.0",
-    "fakeredis": "^1.0.3",
+    "fakeredis": "^2.0.0",
     "mocha": "^3.0.2",
     "restify": "^4.3.0",
     "restify-etag-cache": "^1.0.10",
-    "supertest": "^2.0.0"
+    "supertest": "^3.0.0"
   },
   "dependencies": {}
 }
