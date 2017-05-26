@@ -1,4 +1,4 @@
-A simple API response caching middleware for Express/Node using plain-english durations.
+A simple API response caching middleware for Express/Node using plain-english durations.  Supports Redis or built-in memory engine.
 =======
 
 [![npm version](https://badge.fury.io/js/apicache.svg)](https://badge.fury.io/js/apicache)
@@ -6,28 +6,7 @@ A simple API response caching middleware for Express/Node using plain-english du
 
 ## Why?
 
-Because caching of simple data/responses should ALSO be simple.
-
-This day and age, with less and less heavy lifting done on the server,
-the most common thing we find ourselves doing is
-letting the server power the API.  Whether the data is stored in Mongo, SQL,
-CouchDB, or whatever - you get a request, you fetch the data, and you return
-the data.  Sometimes these fetches are costly and you want to cache the response
-so the next hit doesn't hammer your server.  This is why caching exists.
-
-The problem is, with so many cache options, people are still left to fend for themselves
-when it comes to implementation.  It often boils down to a manual process similar to the following:
-
-1. Get the request
-2. Check your cache for the key/url.
-3. If found, intercept and output the cached version.
-4. If not, do the work, cache it, and output.
-
-You're still left wrapping the content of each request with this cache-checking mechanism.
-
-Now it can be as simple as telling the request that you want to use a cache, and for
-how long results should be cached (*in plain English*, not milliseconds, because
-who really wants to calculate that each time?).
+Because caching of simple data/responses should ALSO be simple, and calculating milliseconds or manually caching entries seems prehistoric.
 
 ## Installation
 
@@ -37,7 +16,7 @@ npm install apicache
 
 ## Dependencies
 
-None, unless using this with Redis.
+None (unless using Redis)
 
 ## Usage
 
@@ -257,4 +236,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.3** - added tests for x-apicache-bypass and x-apicache-force-fetch (legacy) and fixed a bug in the latter (thanks @Red-Lv)
 - **v0.8.4** - corrected buffer accumulation, with test support (thanks @ubergesundheit)
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
+- **v0.8.6** - README update
 
