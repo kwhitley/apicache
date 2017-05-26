@@ -34,7 +34,7 @@
     "email": "kevin3503@gmail.com"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
+    "chai": "^4.0.0",
     "compression": "^1.6.2",
     "express": "^4.14.0",
     "fakeredis": "^2.0.0",
