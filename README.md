@@ -240,6 +240,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
 - [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Double thanks!!!
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
+- [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 
 ### Bugfixes
 
@@ -255,3 +256,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.2** - test suite and mock API refactor (thanks @svozza)
 - **v0.8.3** - added tests for x-apicache-bypass and x-apicache-force-fetch (legacy) and fixed a bug in the latter (thanks @Red-Lv)
 - **v0.8.4** - corrected buffer accumulation, with test support (thanks @ubergesundheit)
+- **v0.8.5** - dev dependencies update (thanks @danielsogl)
+
