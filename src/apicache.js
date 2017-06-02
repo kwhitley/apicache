@@ -121,44 +121,64 @@ function ApiCache() {
   }
 
   function makeResponseCacheable(req, res, next, key, duration, strDuration) {
-    // monkeypatch res.end to create cache object
-    res._apicache = {
-      write: res.write,
-      end: res.end,
-      cacheable: true,
-      content: undefined
-    }
-
-    // add cache control headers
-    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
-
-    // patch res.write
-    res.write = function(content) {
-      accumulateContent(res, content);
-      return res._apicache.write.apply(this, arguments);
-    }
-
-    // patch res.end
-    res.end = function(content, encoding) {
-      if (shouldCacheResponse(res)) {
-
-        accumulateContent(res, content);
-
-        if (res._apicache.cacheable && res._apicache.content) {
-          addIndexEntries(key, req)
-          var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
-          cacheResponse(key, cacheObject, duration)
-
-          // display log entry
-          var elapsed = new Date() - req.apicacheTimer
-          debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
-        }
+      // monkeypatch res.end to create cache object
+      res._apicache = {
+        write: res.write,
+        end: res.end,
+        json: res.json,
+        cacheable: true,
+        content: undefined
       }
 
-      return res._apicache.end.apply(this, arguments);
-    }
+      // add cache control headers
+      //res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
 
-    next()
+      // patch res.write
+      res.write = function(content) {
+        accumulateContent(res, content);
+        return res._apicache.write.apply(this, arguments);
+      }
+
+      // patch res.end
+      res.end = function(content, encoding) {
+        if (shouldCacheResponse(res)) {
+
+          accumulateContent(res, content);
+
+          if (res._apicache.cacheable && res._apicache.content) {
+            addIndexEntries(key, req)
+            var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+            cacheResponse(key, cacheObject, duration)
+
+            // display log entry
+            var elapsed = new Date() - req.apicacheTimer
+            debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+          }
+        }
+
+        return res._apicache.end.apply(this, arguments);
+      }
+      
+      // patch res.end
+      res.json = function(obj, encoding) {
+        if (shouldCacheResponse(res)) {
+          var content = JSON.stringify(obj);
+          accumulateContent(res, content);
+
+          if (res._apicache.cacheable && res._apicache.content) {
+            addIndexEntries(key, req)
+            var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+            cacheResponse(key, cacheObject, duration)
+
+            // display log entry
+            var elapsed = new Date() - req.apicacheTimer
+            debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+          }
+        }
+
+        return res._apicache.json.apply(this, arguments);
+      }
+      next()
   }
 
 
