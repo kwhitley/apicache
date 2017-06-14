@@ -213,7 +213,6 @@ Special thanks to all those that use this library and report issues, but especia
 - [@tskillian](https://github.com/tskillian) - custom appendKey path support
 - [@agolden](https://github.com/agolden) - Content-Encoding preservation (for gzip, etc)
 - [@davidyang](https://github.com/davidyang) - express 4+ compatibility
-- [@gesposito](https://github.com/gesposito) - README update
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
@@ -224,6 +223,10 @@ Special thanks to all those that use this library and report issues, but especia
 ### Bugfixes
 
 - @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv
+
+### Documentation
+
+- @gesposito, @viebel
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
@@ -236,5 +239,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.3** - added tests for x-apicache-bypass and x-apicache-force-fetch (legacy) and fixed a bug in the latter (thanks @Red-Lv)
 - **v0.8.4** - corrected buffer accumulation, with test support (thanks @ubergesundheit)
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
-- **v0.8.6** - README update
+- **v0.8.6, v0.8.7** - README update
 
