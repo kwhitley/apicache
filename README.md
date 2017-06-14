@@ -101,8 +101,8 @@ GET /api/cache/clear/foo --> clears all cached entries for 'foo' group/collectio
 
 #### Use with middleware toggle for fine control
 ```js
-// higher-order function returns false for requests of other status codes (e.g. 403, 404, 500, etc)
-const onlyStatus200 = req => req.statusCode === 200
+// higher-order function returns false for responses of other status codes (e.g. 403, 404, 500, etc)
+const onlyStatus200 = (req, res) => res.statusCode === 200
 
 const cacheSuccesses = cache('5 minutes', onlyStatus200)
 
