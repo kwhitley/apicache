@@ -238,7 +238,7 @@ function ApiCache() {
     return this.getIndex()
   }
 
-  this.getDuration = function(duration) {
+  function parseDuration(duration, defaultDuration) {
     if (typeof duration === 'number') return duration
 
     if (typeof duration === 'string') {
@@ -255,7 +255,11 @@ function ApiCache() {
       }
     }
 
-    return globalOptions.defaultDuration
+    return defaultDuration
+  }
+
+  this.getDuration = function(duration) {
+    return parseDuration(duration, globalOptions.defaultDuration)
   }
 
   this.getIndex = function(group) {
@@ -337,6 +341,11 @@ function ApiCache() {
   this.options = function(options) {
     if (options) {
       Object.assign(globalOptions, options)
+
+      if ('defaultDuration' in options) {
+        // Convert the default duration to a number in milliseconds (if needed)
+        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000);
+      }
 
       return this
     } else {
