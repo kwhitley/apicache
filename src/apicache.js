@@ -163,8 +163,8 @@ function ApiCache() {
 
 
   function sendCachedResponse(response, cacheObject) {
-    response._headers = response._headers || {}
-    Object.assign(response._headers, cacheObject.headers || {}, {
+    var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
+    Object.assign(headers, cacheObject.headers || {}, {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
@@ -175,7 +175,7 @@ function ApiCache() {
       data = new Buffer(data.data)
     }
 
-    response.writeHead(cacheObject.status || 200, response._headers)
+    response.writeHead(cacheObject.status || 200, headers)
 
     return response.end(data, cacheObject.encoding)
   }
