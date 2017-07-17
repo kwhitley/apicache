@@ -219,6 +219,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Double thanks!!!
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
+- [@peteboere](https://github.com/peteboere) - Node v7 headers update
 
 ### Bugfixes
 
@@ -240,4 +241,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.4** - corrected buffer accumulation, with test support (thanks @ubergesundheit)
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
 - **v0.8.6, v0.8.7** - README update
+- **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
 
