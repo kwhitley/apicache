@@ -34,13 +34,13 @@
     "email": "kevin3503@gmail.com"
   },
   "devDependencies": {
-    "chai": "^4.0.0",
-    "compression": "^1.6.2",
-    "express": "^4.14.0",
+    "chai": "^4.1.0",
+    "compression": "^1.7.0",
+    "express": "^4.15.3",
     "fakeredis": "^2.0.0",
-    "mocha": "^3.0.2",
-    "restify": "^4.3.0",
-    "restify-etag-cache": "^1.0.10",
+    "mocha": "^3.4.2",
+    "restify": "^4.3.1",
+    "restify-etag-cache": "^1.0.11",
     "supertest": "^3.0.0"
   },
   "dependencies": {}

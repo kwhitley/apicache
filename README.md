@@ -3,6 +3,7 @@ A simple API response caching middleware for Express/Node using plain-english du
 
 [![npm version](https://badge.fury.io/js/apicache.svg)](https://badge.fury.io/js/apicache)
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
+[![NPM downloads](https://img.shields.io/npm/dt/apicache.svg?style=flat-square)](https://www.npmjs.com/package/apicache)
 
 ## Why?
 
