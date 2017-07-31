@@ -133,13 +133,159 @@ describe('.middleware {MIDDLEWARE}', function() {
   it('is a function', function() {
     var apicache = require('../src/apicache')
     expect(typeof apicache.middleware).to.equal('function')
-    expect(apicache.middleware.length).to.equal(2)
+    expect(apicache.middleware.length).to.equal(3)
   })
 
   it('returns the middleware function', function() {
     var middleware = require('../src/apicache').middleware('10 seconds')
     expect(typeof middleware).to.equal('function')
     expect(middleware.length).to.equal(3)
+  })
+
+  describe('options', function() {
+    var apicache = require('../src/apicache').newInstance()
+
+    it('uses global options if local ones not provided', function() {
+      apicache.options({
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds')
+      var middleware2 = apicache.middleware('20 seconds')
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 3600000,
+        enabled: true,
+        appendKey: [ 'test' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 3600000,
+        enabled: true,
+        appendKey: [ 'test' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] }
+      })
+    })
+
+    it('uses local options if they provided', function() {
+      apicache.options({
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        debug: true,
+        defaultDuration: 7200000,
+        appendKey: ['bar'],
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        debug: false,
+        defaultDuration: 1800000,
+        appendKey: ['foo'],
+        statusCodes: { include: [], exclude: ['200'] }
+      })
+      expect(middleware1.options()).to.eql({
+        debug: true,
+        defaultDuration: 7200000,
+        enabled: true,
+        appendKey: [ 'bar' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['200'] }
+      })
+    })
+
+    it('updates options if global ones changed', function() {
+      apicache.options({
+        debug: true,
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        defaultDuration: 7200000,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        defaultDuration: 1800000,
+        statusCodes: { include: [], exclude: ['200'] }
+      })
+      apicache.options({
+        debug: false,
+        appendKey: ['foo']
+      })
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 7200000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['200'] }
+      })
+    })
+
+    it('updates options if local ones changed', function() {
+      apicache.options({
+        debug: true,
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        defaultDuration: 7200000,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        defaultDuration: 900000,
+        statusCodes: { include: [], exclude: ['404'] }
+      })
+      middleware1.options({
+        debug: false,
+        defaultDuration: 1800000,
+        appendKey: ['foo']
+      })
+      middleware2.options({
+        defaultDuration: 450000,
+        enabled: false,
+        appendKey: ['foo']
+      })
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: true,
+        defaultDuration: 450000,
+        enabled: false,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] }
+      })
+    })
   })
 
   apis.forEach(api => {
