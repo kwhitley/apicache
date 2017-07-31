@@ -129,8 +129,6 @@ function ApiCache() {
       content: undefined
     }
 
-    // add cache control headers
-    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
 
     // patch res.write
     res.write = function(content) {
@@ -141,6 +139,9 @@ function ApiCache() {
     // patch res.end
     res.end = function(content, encoding) {
       if (shouldCacheResponse(res)) {
+
+        // add cache control headers
+        res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
 
         accumulateContent(res, content);
 
