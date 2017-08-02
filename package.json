@@ -1,6 +1,6 @@
 {
   "name": "apicache",
-  "version": "1.0.0",
+  "version": "0.8.8",
   "scripts": {
     "test": "nyc mocha $(find test -name '*.test.js') --recursive",
     "test:watch": "npm run test -- --watch",

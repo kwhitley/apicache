@@ -1,8 +1,10 @@
-A simple API response caching middleware for Express/Node using plain-english durations.  Supports Redis or built-in memory engine.
+A simple API response caching middleware for Express/Node using plain-english durations.
 =======
+#### Supports Redis or built-in memory engine with auto-clearing.
 
 [![npm version](https://badge.fury.io/js/apicache.svg)](https://badge.fury.io/js/apicache)
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
+[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=master)](https://coveralls.io/github/kwhitley/apicache?branch=master)
 [![NPM downloads](https://img.shields.io/npm/dt/apicache.svg?style=flat-square)](https://www.npmjs.com/package/apicache)
 
 ## Why?
@@ -17,7 +19,7 @@ npm install apicache
 
 ## Dependencies
 
-None (unless using Redis)
+None
 
 ## Usage
 
