@@ -3,7 +3,7 @@
   "version": "0.8.8",
   "scripts": {
     "test": "mocha $(find test -name '*.test.js') --recursive",
-    "dev": "npm run test -- --watch",
+    "test:watch": "npm run test -- --watch",
     "prepublish": "npm run test"
   },
   "engines": {
