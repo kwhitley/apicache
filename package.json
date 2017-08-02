@@ -2,8 +2,9 @@
   "name": "apicache",
   "version": "1.0.0",
   "scripts": {
-    "test": "mocha $(find test -name '*.test.js') --recursive",
+    "test": "nyc mocha $(find test -name '*.test.js') --recursive",
     "test:watch": "npm run test -- --watch",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "prepublish": "npm run test"
   },
   "engines": {
@@ -36,9 +37,11 @@
   "devDependencies": {
     "chai": "^4.1.0",
     "compression": "^1.7.0",
+    "coveralls": "^2.13.1",
     "express": "^4.15.3",
     "fakeredis": "^2.0.0",
     "mocha": "^3.4.2",
+    "nyc": "^11.1.0",
     "restify": "^4.3.1",
     "restify-etag-cache": "^1.0.11",
     "supertest": "^3.0.0"
