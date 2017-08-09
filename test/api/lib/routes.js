@@ -46,12 +46,14 @@ module.exports = function(app) {
   app.get('/api/text', function(req, res) {
     app.requestsProcessed++
 
+    res.header('content-type', 'text/plain');
     res.send('plaintext')
   })
 
   app.get('/api/html', function(req, res) {
     app.requestsProcessed++
 
+    res.header('content-type', 'text/html');
     res.send('<html>')
   })
 
