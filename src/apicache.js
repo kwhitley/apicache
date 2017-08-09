@@ -43,6 +43,7 @@ function ApiCache() {
     }
   }
 
+  var middlewareOptions = []
   var instance = this
   var index = null
 
@@ -180,6 +181,12 @@ function ApiCache() {
     return response.end(data, cacheObject.encoding)
   }
 
+  function syncOptions() {
+    for (var i in middlewareOptions) {
+      Object.assign(middlewareOptions[i].options, globalOptions, middlewareOptions[i].localOptions)
+    }
+  }
+
   this.clear = function(target, isAutomatic) {
     var group = index.groups[target]
     var redis = globalOptions.redisClient
@@ -266,17 +273,36 @@ function ApiCache() {
     }
   }
 
-  this.middleware = function cache(strDuration, middlewareToggle) {
+  this.middleware = function cache(strDuration, middlewareToggle, localOptions) {
     var duration = instance.getDuration(strDuration)
+    var opt = {}
 
-    return function cache(req, res, next) {
+    middlewareOptions.push({
+      options: opt
+    })
+
+    var options = function (localOptions) {
+      if (localOptions) {
+        middlewareOptions.find(function (middleware) {
+          return middleware.options === opt
+        }).localOptions = localOptions
+      }
+
+      syncOptions()
+
+      return opt
+    }
+
+    options(localOptions)
+
+    var cache = function(req, res, next) {
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
       }
 
       // initial bypass chances
-      if (!globalOptions.enabled) return bypass()
+      if (!opt.enabled) return bypass()
       if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
       if (typeof middlewareToggle === 'function') {
         if (!middlewareToggle(req, res)) return bypass()
@@ -291,21 +317,21 @@ function ApiCache() {
       var key = req.originalUrl || req.url
 
       // Remove querystring from key if jsonp option is enabled
-      if (globalOptions.jsonp) {
+      if (opt.jsonp) {
         key = url.parse(key).pathname
       }
 
-      if (globalOptions.appendKey.length > 0) {
+      if (opt.appendKey.length > 0) {
         var appendKey = req
 
-        for (var i = 0; i < globalOptions.appendKey.length; i++) {
-          appendKey = appendKey[globalOptions.appendKey[i]]
+        for (var i = 0; i < opt.appendKey.length; i++) {
+          appendKey = appendKey[opt.appendKey[i]]
         }
         key += '$$appendKey=' + appendKey
       }
 
       // attempt cache hit
-      var redis = globalOptions.redisClient
+      var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
 
       // send if cache hit from memory-cache
@@ -332,11 +358,16 @@ function ApiCache() {
         return makeResponseCacheable(req, res, next, key, duration, strDuration)
       }
     }
+
+    cache.options = options
+    
+    return cache
   }
 
   this.options = function(options) {
     if (options) {
       Object.assign(globalOptions, options)
+      syncOptions()
 
       return this
     } else {

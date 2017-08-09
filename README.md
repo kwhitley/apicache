@@ -121,10 +121,11 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 
 ## API
 
-- `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
+- `apicache.options([globalOptions])` - getter/setter for global options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
+- `apicache.middleware([duration], [toggleMiddleware], [localOptions])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request. Third param is the options that will override global ones and affect this middleware only.
+- `middleware.options([localOptions])` - getter/setter for middleware-specific options that will override global ones.
 - `apicache.getIndex()` - returns current cache index [of keys]
-- `apicache.middleware([duration], [toggleMiddleware])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request.
-- `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
+- `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
 - `apicache.newInstance([options])` - used to create a new ApiCache instance (by default, simply requiring this library shares a common instance)
 - `apicache.clone()` - used to create a new ApiCache instance with the same options as the current one
 
