@@ -115,7 +115,7 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 })
 ```
 
-#### Prevent cache-control header "max-age"
+#### Prevent cache-control header "max-age" from automatically being set to expiration age
 ```js
 let cache = apicache.options({
               headers: {
@@ -259,5 +259,8 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
 - **v0.8.6, v0.8.7** - README update
 - **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
-- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza for chasing this down and fixing upstream libs).  Added coveralls.  Added middleware.localOptions support (thanks @vectart)
+- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza
+ for chasing this down and fixing upstream libs).  Added coveralls.  Added
+ middleware.localOptions support (thanks @vectart).  Added ability to overwrite/embed headers
+ (e.g. "cache-control": "no-cache") through options.
 
