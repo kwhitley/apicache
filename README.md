@@ -212,6 +212,7 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
+- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etc, etc.  Triple thanks!!!
 - [@rutgernation](https://github.com/rutgernation) - JSONP support
 - [@enricsangra](https://github.com/enricsangra) - added x-apicache-force-fetch header
 - [@tskillian](https://github.com/tskillian) - custom appendKey path support
@@ -220,7 +221,6 @@ Special thanks to all those that use this library and report issues, but especia
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
-- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Double thanks!!!
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
@@ -246,4 +246,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
 - **v0.8.6, v0.8.7** - README update
 - **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
+- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza for chasing this down and fixing upstream libs).  Added coveralls.
 
