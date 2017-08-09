@@ -9,21 +9,17 @@ A simple API response caching middleware for Express/Node using plain-english du
 [![NPM downloads](https://img.shields.io/npm/dt/apicache.svg?style=flat-square)](https://www.npmjs.com/package/apicache)
 
 ## Why?
-
-Because caching of simple data/responses should ALSO be simple, and calculating milliseconds or manually caching entries seems prehistoric.
+Because route-caching of simple data/responses should ALSO be simple.
 
 ## Installation
-
 ```
 npm install apicache
 ```
 
 ## Dependencies
-
 None
 
 ## Usage
-
 To use, simply inject the middleware (example: `apicache.middleware('5 minutes', [optionalMiddlewareToggle])`) into your routes.  Everything else is automagic.
 
 #### Cache a route
