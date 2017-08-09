@@ -5,15 +5,16 @@ function MockAPI(expiration, options) {
   var apicache = require('../../src/apicache').newInstance(options)
   var app = restify.createServer()
 
+  let whichGzip = restify.gzipResponse && restify.gzipResponse() || restify.plugins.gzipResponse()
   // ENABLE COMPRESSION
-  app.use(restify.gzipResponse());
+  app.use(whichGzip)
 
   // ENABLE APICACHE
   app.use(apicache.middleware(expiration))
   app.apicache = apicache
 
   app.use(function(req, res, next) {
-    res.charSet('utf-8');
+    res.charSet('utf-8')
     next()
   })
 
