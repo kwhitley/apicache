@@ -40,6 +40,9 @@ function ApiCache() {
     statusCodes: {
       include: [],
       exclude: [],
+    },
+    headers: {
+      // 'cache-control':  'no-cache' // example of header overwrite
     }
   }
 
@@ -131,7 +134,14 @@ function ApiCache() {
     }
 
     // add cache control headers
-    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+    if (!globalOptions.headers['cache-control']) {
+      res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+    }
+
+    // append header overwrites if applicable
+    Object.keys(globalOptions.headers).forEach(function(name) {
+      res.header(name, globalOptions.headers[name])
+    })
 
     // patch res.write
     res.write = function(content) {
@@ -360,7 +370,7 @@ function ApiCache() {
     }
 
     cache.options = options
-    
+
     return cache
   }
 

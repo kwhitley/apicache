@@ -160,7 +160,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: [] }
+        statusCodes: { include: [], exclude: [] },
+        headers: {}
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -169,7 +170,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: [] }
+        statusCodes: { include: [], exclude: [] },
+        headers: {}
       })
     })
 
@@ -181,7 +183,10 @@ describe('.middleware {MIDDLEWARE}', function() {
         debug: true,
         defaultDuration: 7200000,
         appendKey: ['bar'],
-        statusCodes: { include: [], exclude: ['400'] }
+        statusCodes: { include: [], exclude: ['400'] },
+        headers: {
+          'cache-control': 'no-cache'
+        }
       })
       var middleware2 = apicache.middleware('20 seconds', null, {
         debug: false,
@@ -196,7 +201,10 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'bar' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: ['400'] }
+        statusCodes: { include: [], exclude: ['400'] },
+        headers: {
+          'cache-control': 'no-cache'
+        }
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -205,7 +213,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: ['200'] }
+        statusCodes: { include: [], exclude: ['200'] },
+        headers: {}
       })
     })
 
@@ -233,7 +242,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: ['400'] }
+        statusCodes: { include: [], exclude: ['400'] },
+        headers: {}
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -242,7 +252,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: ['200'] }
+        statusCodes: { include: [], exclude: ['200'] },
+        headers: {}
       })
     })
 
@@ -262,7 +273,10 @@ describe('.middleware {MIDDLEWARE}', function() {
       middleware1.options({
         debug: false,
         defaultDuration: 1800000,
-        appendKey: ['foo']
+        appendKey: ['foo'],
+        headers: {
+          'cache-control': 'no-cache'
+        }
       })
       middleware2.options({
         defaultDuration: 450000,
@@ -276,7 +290,10 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: [] }
+        statusCodes: { include: [], exclude: [] },
+        headers: {
+          'cache-control': 'no-cache'
+        }
       })
       expect(middleware2.options()).to.eql({
         debug: true,
@@ -285,7 +302,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
-        statusCodes: { include: [], exclude: [] }
+        statusCodes: { include: [], exclude: [] },
+        headers: {}
       })
     })
   })
@@ -430,6 +448,29 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/movies')
           .expect('Cache-Control', 'max-age=10')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.headers['date']).to.exist
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('allows cache-control header to be overwritten (e.g. "no-cache"', function() {
+        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' }})
+
+        return request(app)
+          .get('/api/movies')
+          .expect('Cache-Control', 'no-cache')
           .expect(200, movies)
           .then(function(res) {
             expect(res.headers['apicache-store']).to.be.undefined

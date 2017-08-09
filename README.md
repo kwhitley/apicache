@@ -115,6 +115,18 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 })
 ```
 
+#### Prevent cache-control header "max-age"
+```js
+let cache = apicache.options({
+              headers: {
+                'cache-control': 'no-cache'
+              }
+            })
+            .middleware
+
+let cache5min = cache('5 min') // continue to use normally
+```
+
 ## API
 
 - `apicache.options([globalOptions])` - getter/setter for global options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
@@ -129,14 +141,17 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 
 ```js
 {
-  debug:            false|true,   // if true, enables console output
-  defaultDuration:  3600000,      // should be a number (in ms), defaults to 1 hour
-  enabled:          true|false,   // if false, turns off caching globally (useful on dev)
-  redisClient:      client,       // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
-  appendKey:        [],           // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
+  debug:            false|true,     // if true, enables console output
+  defaultDuration:  3600000,        // should be a number (in ms), defaults to 1 hour
+  enabled:          true|false,     // if false, turns off caching globally (useful on dev)
+  redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
+  appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
   statusCodes: {
-    exclude:        [],           // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
-    include:        [],           // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
+    exclude:        [],             // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
+    include:        [],             // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
+  },
+  headers: {
+    // 'cache-control':  'no-cache' // example of header overwrite
   }
 }
 ```
