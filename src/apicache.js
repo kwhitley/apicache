@@ -96,9 +96,13 @@ function ApiCache() {
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     if (redis) {
-      redis.hset(key, "response", JSON.stringify(value))
-      redis.hset(key, "duration", duration)
-      redis.expire(key, duration/1000)
+      try {
+        redis.hset(key, "response", JSON.stringify(value))
+        redis.hset(key, "duration", duration)
+        redis.expire(key, duration/1000)
+      } catch (err) {
+        throw Error('[apicache] error in redis.hset()')
+      }
     } else {
       memCache.add(key, value, duration)
     }
@@ -210,7 +214,11 @@ function ApiCache() {
         if (!globalOptions.redisClient) {
           memCache.delete(key)
         } else {
-          redis.del(key)
+          try {
+            redis.del(key)
+          } catch(err) {
+            throw Error('[apicache] error in redis.del("' + key + '"")')
+          }
         }
         index.all = index.all.filter(doesntMatch(key))
       })
@@ -223,7 +231,11 @@ function ApiCache() {
       if (!redis) {
         memCache.delete(target)
       } else {
-        redis.del(target)
+        try {
+          redis.del(target)
+        } catch(err) {
+          throw Error('[apicache] error in redis.del("' + target + '"")')
+        }
       }
 
       // remove from global index
@@ -246,7 +258,11 @@ function ApiCache() {
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
         index.all.forEach(function(key) {
-          redis.del(key)
+          try {
+            redis.del(key)
+          } catch(err) {
+            throw Error('[apicache] error in redis.del("' + key + '"")')
+          }
         })
       }
       this.resetIndex()
@@ -354,16 +370,21 @@ function ApiCache() {
 
       // send if cache hit from redis
       if (redis) {
-        redis.hgetall(key, function (err, obj) {
-          if (!err && obj) {
-            var elapsed = new Date() - req.apicacheTimer
-            debug('sending cached (redis) version of', key, logDuration(elapsed))
+        try {
+          redis.hgetall(key, function (err, obj) {
+            if (!err && obj) {
+              var elapsed = new Date() - req.apicacheTimer
+              debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-            return sendCachedResponse(res, JSON.parse(obj.response))
-          } else {
-            return makeResponseCacheable(req, res, next, key, duration, strDuration)
-          }
-        })
+              return sendCachedResponse(res, JSON.parse(obj.response))
+            } else {
+              return makeResponseCacheable(req, res, next, key, duration, strDuration)
+            }
+          })
+        } catch (err) {
+          // bypass redis on error
+          return makeResponseCacheable(req, res, next, key, duration, strDuration)
+        }
       } else {
         return makeResponseCacheable(req, res, next, key, duration, strDuration)
       }
