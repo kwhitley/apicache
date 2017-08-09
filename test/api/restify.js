@@ -3,14 +3,7 @@ var addRoutes = require('./lib/routes')
 
 function MockAPI(expiration, options) {
   var apicache = require('../../src/apicache').newInstance(options)
-  var app = restify.createServer(
-    {
-      formatters: {
-        'text/html': function (req, res, body, cb) {
-          cb(null, body)
-        }
-      }
-    })
+  var app = restify.createServer()
 
   // ENABLE APICACHE
   app.use(apicache.middleware(expiration))
