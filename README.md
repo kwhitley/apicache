@@ -225,6 +225,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
+- [@vectart](https://github.com/vectart) - Added middleware.localOptions support
 
 ### Bugfixes
 
@@ -247,5 +248,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
 - **v0.8.6, v0.8.7** - README update
 - **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
-- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza for chasing this down and fixing upstream libs).  Added coveralls.
+- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza for chasing this down and fixing upstream libs).  Added coveralls.  Added middleware.localOptions support (thanks @vectart)
 
