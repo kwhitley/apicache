@@ -236,7 +236,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
-- [@vectart](https://github.com/vectart) - Added middleware.localOptions support
+- [@vectart](https://github.com/vectart) - Added middleware local options support
 
 ### Bugfixes
 
