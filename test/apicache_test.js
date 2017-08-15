@@ -391,6 +391,26 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('properly uses appendKey params', function() {
+        var app = mockAPI.create('10 seconds', { appendKey: ['method', 'url'] })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(app.apicache.getIndex().all.length).to.equal(1)
+                expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET+/api/movies')
+              })
+          })
+      })
+
       it('returns cached response from write+end', function() {
         var app = mockAPI.create('10 seconds')
 
@@ -657,6 +677,14 @@ describe('Redis support', function() {
             expect(app.apicache.clear().all.length).to.equal(0)
             return hgetallIsNull(db, '/api/movies')
           })
+      })
+
+      it('sends a response even if redis failure', function() {
+        var app = mockAPI.create('10 seconds', { redisClient: {} })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
       })
     })
   })

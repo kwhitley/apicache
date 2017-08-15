@@ -101,7 +101,7 @@ function ApiCache() {
         redis.hset(key, "duration", duration)
         redis.expire(key, duration/1000)
       } catch (err) {
-        throw Error('[apicache] error in redis.hset()')
+        console.log('[apicache] error in redis.hset()')
       }
     } else {
       memCache.add(key, value, duration)
@@ -348,12 +348,7 @@ function ApiCache() {
       }
 
       if (opt.appendKey.length > 0) {
-        var appendKey = req
-
-        for (var i = 0; i < opt.appendKey.length; i++) {
-          appendKey = appendKey[opt.appendKey[i]]
-        }
-        key += '$$appendKey=' + appendKey
+        key += '$$appendKey=' + opt.appendKey.map(function(attr) { return req[attr] }).join('+')
       }
 
       // attempt cache hit
