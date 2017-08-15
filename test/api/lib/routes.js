@@ -9,6 +9,13 @@ module.exports = function(app) {
     res.json(movies)
   })
 
+  app.get('/api/params/:where', function(req, res) {
+    app.requestsProcessed++
+
+    res.json(movies)
+  })
+
+
   app.get('/api/writeandend', function(req, res) {
     app.requestsProcessed++
 

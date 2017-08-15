@@ -41,6 +41,9 @@ function ApiCache() {
       include: [],
       exclude: [],
     },
+    events: {
+      'expire': undefined
+    },
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
     }
@@ -95,16 +98,18 @@ function ApiCache() {
 
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
+    var expireCallback = globalOptions.events.expire
+
     if (redis) {
       try {
         redis.hset(key, "response", JSON.stringify(value))
         redis.hset(key, "duration", duration)
-        redis.expire(key, duration/1000)
+        redis.expire(key, duration/1000, expireCallback)
       } catch (err) {
-        console.log('[apicache] error in redis.hset()')
+        debug('[apicache] error in redis.hset()')
       }
     } else {
-      memCache.add(key, value, duration)
+      memCache.add(key, value, duration, expireCallback)
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
@@ -348,7 +353,12 @@ function ApiCache() {
       }
 
       if (opt.appendKey.length > 0) {
-        key += '$$appendKey=' + opt.appendKey.map(function(attr) { return req[attr] }).join('+')
+        var appendKey = req
+
+        for (var i = 0; i < opt.appendKey.length; i++) {
+          appendKey = appendKey[opt.appendKey[i]]
+        }
+        key += '$$appendKey=' + appendKey
       }
 
       // attempt cache hit
