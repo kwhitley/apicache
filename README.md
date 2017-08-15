@@ -260,7 +260,7 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.6, v0.8.7** - README update
 - **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
 - **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza
- for chasing this down and fixing upstream libs).  Added coveralls.  Added
+ for chasing this down and fixing upstream in restify itself).  Added coveralls.  Added
  middleware.localOptions support (thanks @vectart).  Added ability to overwrite/embed headers
  (e.g. "cache-control": "no-cache") through options.
 
