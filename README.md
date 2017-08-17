@@ -1,26 +1,25 @@
-A simple API response caching middleware for Express/Node using plain-english durations.  Supports Redis or built-in memory engine.
+A simple API response caching middleware for Express/Node using plain-english durations.
 =======
+#### Supports Redis or built-in memory engine with auto-clearing.
 
-[![npm version](https://badge.fury.io/js/apicache.svg)](https://badge.fury.io/js/apicache)
+[![npm version](https://badge.fury.io/js/apicache.svg)](https://www.npmjs.com/package/apicache)
+[![node version support](https://img.shields.io/node/v/apicache.svg)](https://www.npmjs.com/package/apicache)
 [![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
+[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=master)](https://coveralls.io/github/kwhitley/apicache?branch=master)
 [![NPM downloads](https://img.shields.io/npm/dt/apicache.svg?style=flat-square)](https://www.npmjs.com/package/apicache)
 
 ## Why?
-
-Because caching of simple data/responses should ALSO be simple, and calculating milliseconds or manually caching entries seems prehistoric.
+Because route-caching of simple data/responses should ALSO be simple.
 
 ## Installation
-
 ```
 npm install apicache
 ```
 
 ## Dependencies
-
-None (unless using Redis)
+None
 
 ## Usage
-
 To use, simply inject the middleware (example: `apicache.middleware('5 minutes', [optionalMiddlewareToggle])`) into your routes.  Everything else is automagic.
 
 #### Cache a route
@@ -116,12 +115,25 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 })
 ```
 
+#### Prevent cache-control header "max-age" from automatically being set to expiration age
+```js
+let cache = apicache.options({
+              headers: {
+                'cache-control': 'no-cache'
+              }
+            })
+            .middleware
+
+let cache5min = cache('5 min') // continue to use normally
+```
+
 ## API
 
-- `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
+- `apicache.options([globalOptions])` - getter/setter for global options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
+- `apicache.middleware([duration], [toggleMiddleware], [localOptions])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request. Third param is the options that will override global ones and affect this middleware only.
+- `middleware.options([localOptions])` - getter/setter for middleware-specific options that will override global ones.
 - `apicache.getIndex()` - returns current cache index [of keys]
-- `apicache.middleware([duration], [toggleMiddleware])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request.
-- `apicache.options([options])` - getter/setter for options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
+- `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
 - `apicache.newInstance([options])` - used to create a new ApiCache instance (by default, simply requiring this library shares a common instance)
 - `apicache.clone()` - used to create a new ApiCache instance with the same options as the current one
 
@@ -129,14 +141,17 @@ app.get('/api/found', cacheSuccesses, (req, res) => {
 
 ```js
 {
-  debug:            false|true,   // if true, enables console output
-  defaultDuration:  3600000,      // should be a number (in ms), defaults to 1 hour
-  enabled:          true|false,   // if false, turns off caching globally (useful on dev)
-  redisClient:      client,       // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
-  appendKey:        [],           // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
+  debug:            false|true,     // if true, enables console output
+  defaultDuration:  3600000,        // should be a number (in ms), defaults to 1 hour
+  enabled:          true|false,     // if false, turns off caching globally (useful on dev)
+  redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
+  appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
   statusCodes: {
-    exclude:        [],           // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
-    include:        [],           // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
+    exclude:        [],             // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
+    include:        [],             // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
+  },
+  headers: {
+    // 'cache-control':  'no-cache' // example of header overwrite
   }
 }
 ```
@@ -209,6 +224,7 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
+- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etc, etc.  Triple thanks!!!
 - [@rutgernation](https://github.com/rutgernation) - JSONP support
 - [@enricsangra](https://github.com/enricsangra) - added x-apicache-force-fetch header
 - [@tskillian](https://github.com/tskillian) - custom appendKey path support
@@ -217,10 +233,10 @@ Special thanks to all those that use this library and report issues, but especia
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
-- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Double thanks!!!
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
+- [@vectart](https://github.com/vectart) - Added middleware local options support
 
 ### Bugfixes
 
@@ -243,4 +259,8 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.8.5** - dev dependencies update (thanks @danielsogl)
 - **v0.8.6, v0.8.7** - README update
 - **v0.8.8** - corrected to use node v7+ headers (thanks @peteboere)
+- **v0.9.0** - corrected Node v7.7 & v8 conflicts with restify (huge thanks to @svozza
+ for chasing this down and fixing upstream in restify itself).  Added coveralls.  Added
+ middleware.localOptions support (thanks @vectart).  Added ability to overwrite/embed headers
+ (e.g. "cache-control": "no-cache") through options.
 
