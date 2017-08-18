@@ -8,6 +8,7 @@ var a = apicache.clone()
 var b = apicache.clone()
 var c = apicache.clone()
 var movies = require('./api/lib/data.json')
+var _ = require('lodash');
 
 var apis = [
   { name: 'express', server: require('./api/express') },
@@ -153,18 +154,18 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
       var middleware1 = apicache.middleware('10 seconds')
       var middleware2 = apicache.middleware('20 seconds')
-      expect(middleware1.options()).to.eql({
+      expect(_.omit(middleware1.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 3600000,
         enabled: true,
-        appendKey: [ 'test' ],
+        appendKey: ['test'],
         jsonp: false,
         redisClient: false,
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
-      })
-      expect(middleware2.options()).to.eql({
+      });
+      expect(_.omit(middleware2.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 3600000,
         enabled: true,
@@ -198,7 +199,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
       })
-      expect(middleware1.options()).to.eql({
+      expect(_.omit(middleware1.options(), ['keyGen'])).to.eql({
         debug: true,
         defaultDuration: 7200000,
         enabled: true,
@@ -211,7 +212,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           'cache-control': 'no-cache'
         }
       })
-      expect(middleware2.options()).to.eql({
+      expect(_.omit(middleware2.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
@@ -241,7 +242,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         debug: false,
         appendKey: ['foo']
       })
-      expect(middleware1.options()).to.eql({
+      expect(_.omit(middleware1.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 7200000,
         enabled: true,
@@ -252,7 +253,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {}
       })
-      expect(middleware2.options()).to.eql({
+      expect(_.omit(middleware2.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
@@ -291,7 +292,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         enabled: false,
         appendKey: ['foo']
       })
-      expect(middleware1.options()).to.eql({
+      expect(_.omit(middleware1.options(), ['keyGen'])).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
@@ -304,7 +305,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           'cache-control': 'no-cache'
         }
       })
-      expect(middleware2.options()).to.eql({
+      expect(_.omit(middleware2.options(), ['keyGen'])).to.eql({
         debug: true,
         defaultDuration: 450000,
         enabled: false,

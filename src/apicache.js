@@ -1,29 +1,29 @@
-var url         = require('url')
+var url = require('url')
 var MemoryCache = require('./memory-cache')
-var pkg         = require('../package.json')
+var pkg = require('../package.json')
 
-var t           = {
-  ms:           1,
-  second:       1000,
-  minute:       60000,
-  hour:         3600000,
-  day:          3600000 * 24,
-  week:         3600000 * 24 * 7,
-  month:        3600000 * 24 * 30,
+var t = {
+  ms: 1,
+  second: 1000,
+  minute: 60000,
+  hour: 3600000,
+  day: 3600000 * 24,
+  week: 3600000 * 24 * 7,
+  month: 3600000 * 24 * 30,
 }
 
 var instances = []
 
-var matches = function(a) {
-  return function(b) { return a === b }
+var matches = function (a) {
+  return function (b) { return a === b }
 }
 
-var doesntMatch = function(a) {
-  return function(b) { return !matches(a)(b) }
+var doesntMatch = function (a) {
+  return function (b) { return !matches(a)(b) }
 }
 
-var logDuration = function(d, prefix) {
-  var str = (d > 1000) ? ((d/1000).toFixed(2) + 'sec') : (d + 'ms')
+var logDuration = function (d, prefix) {
+  var str = (d > 1000) ? ((d / 1000).toFixed(2) + 'sec') : (d + 'ms')
   return '\x1b[33m- ' + (prefix ? prefix + ' ' : '') + str + '\x1b[0m'
 }
 
@@ -31,18 +31,17 @@ function ApiCache() {
   var memCache = new MemoryCache
 
   var globalOptions = {
-    debug:              false,
-    defaultDuration:    3600000,
-    enabled:            true,
-    appendKey:          [],
-    jsonp:              false,
-    redisClient:        false,
+    debug: false,
+    defaultDuration: 3600000,
+    enabled: true,
+    appendKey: [],
+    jsonp: false,
+    redisClient: false,
     statusCodes: {
       include: [],
       exclude: [],
     },
-    keyGen
-    },
+    keyGen,
     events: {
       'expire': undefined
     },
@@ -58,8 +57,8 @@ function ApiCache() {
   instances.push(this)
   this.id = instances.length
 
-  function debug(a,b,c,d) {
-    var arr = (['\x1b[36m[apicache]\x1b[0m', a,b,c,d]).filter(function(arg) { return arg !== undefined })
+  function debug(a, b, c, d) {
+    var arr = (['\x1b[36m[apicache]\x1b[0m', a, b, c, d]).filter(function (arg) { return arg !== undefined })
     var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
 
     return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
@@ -106,7 +105,7 @@ function ApiCache() {
       try {
         redis.hset(key, "response", JSON.stringify(value))
         redis.hset(key, "duration", duration)
-        redis.expire(key, duration/1000, expireCallback)
+        redis.expire(key, duration / 1000, expireCallback)
       } catch (err) {
         debug('[apicache] error in redis.hset()')
       }
@@ -115,12 +114,12 @@ function ApiCache() {
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
-    setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
+    setTimeout(function () { instance.clear(key, true) }, Math.min(duration, 2147483647))
   }
 
   function accumulateContent(res, content) {
     if (content) {
-      if (typeof(content) == 'string') {
+      if (typeof (content) == 'string') {
         res._apicache.content = (res._apicache.content || '') + content;
       } else if (Buffer.isBuffer(content)) {
         var oldContent = res._apicache.content
@@ -150,18 +149,18 @@ function ApiCache() {
     }
 
     // append header overwrites if applicable
-    Object.keys(globalOptions.headers).forEach(function(name) {
+    Object.keys(globalOptions.headers).forEach(function (name) {
       res.header(name, globalOptions.headers[name])
     })
 
     // patch res.write
-    res.write = function(content) {
+    res.write = function (content) {
       accumulateContent(res, content);
       return res._apicache.write.apply(this, arguments);
     }
 
     // patch res.end
-    res.end = function(content, encoding) {
+    res.end = function (content, encoding) {
       if (shouldCacheResponse(res)) {
 
         accumulateContent(res, content);
@@ -208,35 +207,35 @@ function ApiCache() {
     }
   }
 
-function keyGen(req) {
+  function keyGen(req, opt) {
     // In Express 4.x the url is ambigious based on where a router is mounted.  originalUrl will give the full Url
     var key = req.originalUrl || req.url
-    
+
     // Remove querystring from key if jsonp option is enabled
     if (opt.jsonp) {
-        key = url.parse(key).pathname
+      key = url.parse(key).pathname
     }
-    
+
     if (opt.appendKey.length > 0) {
-        var appendKey = req
-        
-        for (var i = 0; i < opt.appendKey.length; i++) {
-            appendKey = appendKey[opt.appendKey[i]]
-        }
-        key += '$$appendKey=' + appendKey
+      var appendKey = req
+
+      for (var i = 0; i < opt.appendKey.length; i++) {
+        appendKey = appendKey[opt.appendKey[i]]
+      }
+      key += '$$appendKey=' + appendKey
     }
 
     return key;
-}
+  }
 
-  this.clear = function(target, isAutomatic) {
+  this.clear = function (target, isAutomatic) {
     var group = index.groups[target]
     var redis = globalOptions.redisClient
 
     if (group) {
       debug('clearing group "' + target + '"')
 
-      group.forEach(function(key) {
+      group.forEach(function (key) {
         debug('clearing cached entry for "' + key + '"')
 
         if (!globalOptions.redisClient) {
@@ -244,7 +243,7 @@ function keyGen(req) {
         } else {
           try {
             redis.del(key)
-          } catch(err) {
+          } catch (err) {
             throw Error('[apicache] error in redis.del("' + key + '"")')
           }
         }
@@ -261,7 +260,7 @@ function keyGen(req) {
       } else {
         try {
           redis.del(target)
-        } catch(err) {
+        } catch (err) {
           throw Error('[apicache] error in redis.del("' + target + '"")')
         }
       }
@@ -270,7 +269,7 @@ function keyGen(req) {
       index.all = index.all.filter(doesntMatch(target))
 
       // remove target from each group that it may exist in
-      Object.keys(index.groups).forEach(function(groupName) {
+      Object.keys(index.groups).forEach(function (groupName) {
         index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target))
 
         // delete group if now empty
@@ -285,10 +284,10 @@ function keyGen(req) {
         memCache.clear()
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
-        index.all.forEach(function(key) {
+        index.all.forEach(function (key) {
           try {
             redis.del(key)
-          } catch(err) {
+          } catch (err) {
             throw Error('[apicache] error in redis.del("' + key + '"")')
           }
         })
@@ -299,7 +298,7 @@ function keyGen(req) {
     return this.getIndex()
   }
 
-  this.getDuration = function(duration) {
+  this.getDuration = function (duration) {
     if (typeof duration === 'number') return duration
 
     if (typeof duration === 'string') {
@@ -307,7 +306,7 @@ function keyGen(req) {
 
       if (split.length === 3) {
         var len = parseFloat(split[1])
-        var unit = split[2].replace(/s$/i,'').toLowerCase()
+        var unit = split[2].replace(/s$/i, '').toLowerCase()
         if (unit === 'm') {
           unit = 'ms'
         }
@@ -319,7 +318,7 @@ function keyGen(req) {
     return globalOptions.defaultDuration
   }
 
-  this.getIndex = function(group) {
+  this.getIndex = function (group) {
     if (group) {
       return index.groups[group]
     } else {
@@ -349,7 +348,7 @@ function keyGen(req) {
 
     options(localOptions)
 
-    var cache = function(req, res, next) {
+    var cache = function (req, res, next) {
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
@@ -367,7 +366,7 @@ function keyGen(req) {
       // embed timer
       req.apicacheTimer = new Date()
 
-      var key = globalOptions.keyGen(req);
+      var key = globalOptions.keyGen(req, opt);
 
       // attempt cache hit
       var redis = opt.redisClient
@@ -408,7 +407,7 @@ function keyGen(req) {
     return cache
   }
 
-  this.options = function(options) {
+  this.options = function (options) {
     if (options) {
       Object.assign(globalOptions, options)
       syncOptions()
@@ -419,14 +418,14 @@ function keyGen(req) {
     }
   }
 
-  this.resetIndex = function() {
+  this.resetIndex = function () {
     index = {
       all: [],
       groups: {}
     }
   }
 
-  this.newInstance = function(config) {
+  this.newInstance = function (config) {
     var instance = new ApiCache()
 
     if (config) {
@@ -436,7 +435,7 @@ function keyGen(req) {
     return instance
   }
 
-  this.clone = function() {
+  this.clone = function () {
     return this.newInstance(this.options())
   }
 
