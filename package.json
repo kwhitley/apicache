@@ -1,9 +1,10 @@
 {
-  "name": "@mysolomon/apicache",
-  "version": "0.8.5",
+    "name": "@mysolomon/apicache",
+  "version": "0.9.0",
   "scripts": {
-    "test": "mocha $(find test -name '*.test.js') --recursive",
-    "dev": "npm run test -- --watch",
+    "test": "nyc mocha $(find test -name '*.test.js') --recursive",
+    "test:watch": "npm run test -- --watch",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "prepublish": "npm run test"
   },
   "engines": {
@@ -34,14 +35,16 @@
     "email": "kevin3503@gmail.com"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "compression": "^1.6.2",
-    "express": "^4.14.0",
-    "fakeredis": "^1.0.3",
-    "mocha": "^3.0.2",
-    "restify": "^4.3.0",
-    "restify-etag-cache": "^1.0.10",
-    "supertest": "^2.0.0"
+    "chai": "^4.1.1",
+    "compression": "^1.7.0",
+    "coveralls": "^2.13.1",
+    "express": "^4.15.4",
+    "fakeredis": "^2.0.0",
+    "mocha": "^3.5.0",
+    "nyc": "^11.1.0",
+    "restify": "^5.2.0",
+    "restify-etag-cache": "^1.0.12",
+    "supertest": "^3.0.0"
   },
   "dependencies": {}
 }

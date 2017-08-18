@@ -12,6 +12,8 @@ var movies = require('./api/lib/data.json')
 var apis = [
   { name: 'express', server: require('./api/express') },
   { name: 'express+gzip', server: require('./api/express-gzip') },
+
+  // THESE TESTS ARE REMOVED AS RESTIFY 4 and 5 ARE CURRENTLY BREAKING IN THE ENVIRONMENT
   { name: 'restify', server: require('./api/restify') },
   { name: 'restify+gzip', server: require('./api/restify-gzip') }
 ]
@@ -133,13 +135,187 @@ describe('.middleware {MIDDLEWARE}', function() {
   it('is a function', function() {
     var apicache = require('../src/apicache')
     expect(typeof apicache.middleware).to.equal('function')
-    expect(apicache.middleware.length).to.equal(2)
+    expect(apicache.middleware.length).to.equal(3)
   })
 
   it('returns the middleware function', function() {
     var middleware = require('../src/apicache').middleware('10 seconds')
     expect(typeof middleware).to.equal('function')
     expect(middleware.length).to.equal(3)
+  })
+
+  describe('options', function() {
+    var apicache = require('../src/apicache').newInstance()
+
+    it('uses global options if local ones not provided', function() {
+      apicache.options({
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds')
+      var middleware2 = apicache.middleware('20 seconds')
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 3600000,
+        enabled: true,
+        appendKey: [ 'test' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] },
+        events: { expire: undefined },
+        headers: {}
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 3600000,
+        enabled: true,
+        appendKey: [ 'test' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] },
+        events: { expire: undefined },
+        headers: {}
+      })
+    })
+
+    it('uses local options if they provided', function() {
+      apicache.options({
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        debug: true,
+        defaultDuration: 7200000,
+        appendKey: ['bar'],
+        statusCodes: { include: [], exclude: ['400'] },
+        events: { expire: undefined },
+        headers: {
+          'cache-control': 'no-cache'
+        }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        debug: false,
+        defaultDuration: 1800000,
+        appendKey: ['foo'],
+        statusCodes: { include: [], exclude: ['200'] },
+        events: { expire: undefined },
+      })
+      expect(middleware1.options()).to.eql({
+        debug: true,
+        defaultDuration: 7200000,
+        enabled: true,
+        appendKey: [ 'bar' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['400'] },
+        events: { expire: undefined },
+        headers: {
+          'cache-control': 'no-cache'
+        }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['200'] },
+        events: { expire: undefined },
+        headers: {}
+      })
+    })
+
+    it('updates options if global ones changed', function() {
+      apicache.options({
+        debug: true,
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        defaultDuration: 7200000,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        defaultDuration: 1800000,
+        statusCodes: { include: [], exclude: ['200'] }
+      })
+      apicache.options({
+        debug: false,
+        appendKey: ['foo']
+      })
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 7200000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['400'] },
+        events: { expire: undefined },
+        headers: {}
+      })
+      expect(middleware2.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: ['200'] },
+        events: { expire: undefined },
+        headers: {}
+      })
+    })
+
+    it('updates options if local ones changed', function() {
+      apicache.options({
+        debug: true,
+        appendKey: ['test']
+      })
+      var middleware1 = apicache.middleware('10 seconds', null, {
+        defaultDuration: 7200000,
+        statusCodes: { include: [], exclude: ['400'] }
+      })
+      var middleware2 = apicache.middleware('20 seconds', null, {
+        defaultDuration: 900000,
+        statusCodes: { include: [], exclude: ['404'] }
+      })
+      middleware1.options({
+        debug: false,
+        defaultDuration: 1800000,
+        appendKey: ['foo'],
+        headers: {
+          'cache-control': 'no-cache'
+        }
+      })
+      middleware2.options({
+        defaultDuration: 450000,
+        enabled: false,
+        appendKey: ['foo']
+      })
+      expect(middleware1.options()).to.eql({
+        debug: false,
+        defaultDuration: 1800000,
+        enabled: true,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] },
+        events: { expire: undefined },
+        headers: {
+          'cache-control': 'no-cache'
+        }
+      })
+      expect(middleware2.options()).to.eql({
+        debug: true,
+        defaultDuration: 450000,
+        enabled: false,
+        appendKey: [ 'foo' ],
+        jsonp: false,
+        redisClient: false,
+        statusCodes: { include: [], exclude: [] },
+        events: { expire: undefined },
+        headers: {}
+      })
+    })
   })
 
   apis.forEach(api => {
@@ -225,6 +401,19 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('properly uses appendKey params', function() {
+        var app = mockAPI.create('10 seconds', { appendKey: ['method'] })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET')
+          })
+      })
+
       it('returns cached response from write+end', function() {
         var app = mockAPI.create('10 seconds')
 
@@ -235,6 +424,21 @@ describe('.middleware {MIDDLEWARE}', function() {
           .then(function() {
             return request(app)
               .get('/api/writeandend')
+              .expect(200, 'abc')
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('returns cached response from write Buffer+end', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/writebufferandend')
+          .expect(200, 'abc')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/writebufferandend')
               .expect(200, 'abc')
               .then(assertNumRequestsProcessed(app, 1))
           })
@@ -267,6 +471,29 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/movies')
           .expect('Cache-Control', 'max-age=10')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.headers['date']).to.exist
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('allows cache-control header to be overwritten (e.g. "no-cache"', function() {
+        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' }})
+
+        return request(app)
+          .get('/api/movies')
+          .expect('Cache-Control', 'no-cache')
           .expect(200, movies)
           .then(function(res) {
             expect(res.headers['apicache-store']).to.be.undefined
@@ -359,6 +586,26 @@ describe('.middleware {MIDDLEWARE}', function() {
         }, 25)
       })
 
+      it('executes expiration callback from globalOptions.events.expire upon entry expiration', function(done) {
+        var callbackResponse = undefined
+        var cb = function(a,b) {
+          callbackResponse = b
+        }
+        var app = mockAPI.create(10, { events: { expire: cb }})
+
+        request(app)
+          .get('/api/movies')
+          .end(function(err, res) {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().all).to.include('/api/movies')
+          })
+
+        setTimeout(function() {
+          expect(app.apicache.getIndex().all).to.have.length(0)
+          expect(callbackResponse).to.equal('/api/movies')
+          done()
+        }, 25)
+      })
     })
   })
 })
@@ -453,6 +700,14 @@ describe('Redis support', function() {
             expect(app.apicache.clear().all.length).to.equal(0)
             return hgetallIsNull(db, '/api/movies')
           })
+      })
+
+      it('sends a response even if redis failure', function() {
+        var app = mockAPI.create('10 seconds', { redisClient: {} })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
       })
     })
   })
