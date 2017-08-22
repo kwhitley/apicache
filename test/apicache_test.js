@@ -160,6 +160,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
@@ -171,6 +172,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
@@ -205,6 +207,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'bar' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {
@@ -218,6 +221,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
         headers: {}
@@ -248,6 +252,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {}
@@ -259,6 +264,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
         headers: {}
@@ -298,6 +304,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {
@@ -311,6 +318,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        cacheHeaders: true,
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
