@@ -37,7 +37,7 @@ function ApiCache() {
     appendKey:          [],
     jsonp:              false,
     redisClient:        false,
-    cacheHeaders:       true,
+    headerBlacklist:    [],
     statusCodes: {
       include: [],
       exclude: [],
@@ -88,10 +88,19 @@ function ApiCache() {
     index.all.unshift(key)
   }
 
+  function filterBlacklistedHeaders(headers) {
+    return Object.keys(headers).filter(function (key) {
+      return !globalOptions.headerBlacklist.includes(key)
+    }).reduce(function (acc, header) {
+        acc[header] = headers[header];
+        return acc;
+    }, {});
+  }
+
   function createCacheObject(status, headers, data, encoding) {
     return {
       status: status,
-      headers: Object.assign({}, globalOptions.cacheHeaders ? headers : {}),
+      headers: filterBlacklistedHeaders(headers),
       data: data,
       encoding: encoding
     }
@@ -185,8 +194,8 @@ function ApiCache() {
 
   function sendCachedResponse(response, cacheObject) {
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
-    var cachedHeaders = globalOptions.cacheHeaders ? cacheObject.headers : {};
-    Object.assign(headers, cachedHeaders || {}, {
+
+    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers) || {}, {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
