@@ -195,7 +195,7 @@ function ApiCache() {
   function sendCachedResponse(response, cacheObject) {
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
 
-    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers) || {}, {
+    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
