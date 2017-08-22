@@ -90,7 +90,7 @@ function ApiCache() {
 
   function filterBlacklistedHeaders(headers) {
     return Object.keys(headers).filter(function (key) {
-      return !globalOptions.headerBlacklist.includes(key)
+      return globalOptions.headerBlacklist.indexOf(key) === -1;
     }).reduce(function (acc, header) {
         acc[header] = headers[header];
         return acc;
