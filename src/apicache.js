@@ -37,6 +37,7 @@ function ApiCache() {
     appendKey:          [],
     jsonp:              false,
     redisClient:        false,
+    cacheHeaders:       true,
     statusCodes: {
       include: [],
       exclude: [],
@@ -90,7 +91,7 @@ function ApiCache() {
   function createCacheObject(status, headers, data, encoding) {
     return {
       status: status,
-      headers: Object.assign({}, headers),
+      headers: Object.assign({}, globalOptions.cacheHeaders ? headers : {}),
       data: data,
       encoding: encoding
     }
@@ -184,7 +185,8 @@ function ApiCache() {
 
   function sendCachedResponse(response, cacheObject) {
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
-    Object.assign(headers, cacheObject.headers || {}, {
+    var cachedHeaders = globalOptions.cacheHeaders ? cacheObject.headers : {};
+    Object.assign(headers, cachedHeaders || {}, {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
