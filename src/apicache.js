@@ -35,6 +35,7 @@ function ApiCache() {
     defaultDuration:    3600000,
     enabled:            true,
     appendKey:          [],
+    stringify:          false,
     jsonp:              false,
     redisClient:        false,
     statusCodes: {
@@ -358,6 +359,11 @@ function ApiCache() {
         for (var i = 0; i < opt.appendKey.length; i++) {
           appendKey = appendKey[opt.appendKey[i]]
         }
+        
+        if(globalOptions.stringify){
+          appendKey = JSON.stringify(appendKey).replace(' ', '')
+        }  
+        
         key += '$$appendKey=' + appendKey
       }
 
