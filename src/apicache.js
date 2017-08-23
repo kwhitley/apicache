@@ -14,13 +14,8 @@ var t           = {
 
 var instances = []
 
-var matches = function(a) {
-  return function(b) { return a === b }
-}
-
-var doesntMatch = function(a) {
-  return function(b) { return !matches(a)(b) }
-}
+const matches = (a) => (b) => a === b
+const doesntMatch = (a) => (b) => !matches(a)(b)
 
 var logDuration = function(d, prefix) {
   var str = (d > 1000) ? ((d/1000).toFixed(2) + 'sec') : (d + 'ms')
@@ -148,7 +143,7 @@ function ApiCache() {
     }
 
     // append header overwrites if applicable
-    Object.keys(globalOptions.headers).forEach(function(name) {
+    Object.keys(globalOptions.headers).forEach(name => {
       res.header(name, globalOptions.headers[name])
     })
 
