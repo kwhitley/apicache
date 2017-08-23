@@ -160,6 +160,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
@@ -171,6 +172,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'test' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
@@ -205,6 +207,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'bar' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {
@@ -218,6 +221,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
         headers: {}
@@ -248,6 +252,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {}
@@ -259,6 +264,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
         headers: {}
@@ -298,6 +304,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {
@@ -311,6 +318,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: [ 'foo' ],
         jsonp: false,
         redisClient: false,
+        headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {}
@@ -362,7 +370,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-       it('skips cache when using header "x-apicache-force-fetch (legacy)"', function() {
+      it('skips cache when using header "x-apicache-force-fetch (legacy)"', function() {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
@@ -380,6 +388,25 @@ describe('.middleware {MIDDLEWARE}', function() {
                 expect(res.headers['apicache-store']).to.be.undefined
                 expect(res.headers['apicache-version']).to.be.undefined
                 expect(app.requestsProcessed).to.equal(2)
+              })
+          })
+      })
+
+      it('does not cache header in headerBlacklist', function() {
+        var app = mockAPI.create('10 seconds', {headerBlacklist: ['x-blacklisted']})
+
+        return request(app)
+          .get('/api/testheaderblacklist')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['x-blacklisted']).to.equal(res.headers['x-notblacklisted'])
+            return request(app)
+              .get('/api/testheaderblacklist')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res2) {
+                expect(res2.headers['x-blacklisted']).to.not.equal(res2.headers['x-notblacklisted'])
               })
           })
       })

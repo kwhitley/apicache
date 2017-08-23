@@ -146,6 +146,7 @@ let cache5min = cache('5 min') // continue to use normally
   enabled:          true|false,     // if false, turns off caching globally (useful on dev)
   redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
+  headerBlacklist:  [],             // list of headers that should never be cached
   statusCodes: {
     exclude:        [],             // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
     include:        [],             // list status codes to require (e.g. [200] caches ONLY responses with a success/200 code)
