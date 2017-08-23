@@ -263,4 +263,5 @@ Special thanks to all those that use this library and report issues, but especia
  for chasing this down and fixing upstream in restify itself).  Added coveralls.  Added
  middleware.localOptions support (thanks @vectart).  Added ability to overwrite/embed headers
  (e.g. "cache-control": "no-cache") through options.
+- **v0.9.1** - added eslint in prep for v1.x branch, minor ES6 to ES5 in master branch tests
 
