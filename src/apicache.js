@@ -154,7 +154,11 @@ function ApiCache() {
 
     // add cache control headers
     if (!globalOptions.headers['cache-control']) {
-      res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+      if(shouldCacheResponse(res)) {
+        res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
+      } else {
+        res.header('cache-control', 'no-cache, no-store, must-revalidate');
+      }
     }
 
     // append header overwrites if applicable
