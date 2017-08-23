@@ -318,7 +318,7 @@ describe('.middleware {MIDDLEWARE}', function() {
     })
   })
 
-  apis.forEach(api => {
+  apis.forEach(function(api) {
     describe(api.name + ' tests', function() {
       var mockAPI = api.server
 
@@ -626,7 +626,7 @@ describe('Redis support', function() {
     })
   }
 
-  apis.forEach((api) => {
+  apis.forEach(function(api) {
     describe(api.name + ' tests', function() {
       var mockAPI = api.server
 
@@ -720,7 +720,7 @@ describe('.clear(key?) {SETTER}', function() {
     expect(typeof apicache.clear).to.equal('function')
   })
 
-  apis.forEach(api => {
+  apis.forEach(function(api) {
     describe(api.name + ' tests', function() {
       var mockAPI = api.server
 
