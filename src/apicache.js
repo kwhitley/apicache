@@ -233,7 +233,7 @@ function ApiCache() {
           try {
             redis.del(key)
           } catch(err) {
-            throw Error('[apicache] error in redis.del("' + key + '"")')
+            console.log('[apicache] error in redis.del("' + key + '")')
           }
         }
         index.all = index.all.filter(doesntMatch(key))
@@ -250,7 +250,7 @@ function ApiCache() {
         try {
           redis.del(target)
         } catch(err) {
-          throw Error('[apicache] error in redis.del("' + target + '"")')
+          console.log('[apicache] error in redis.del("' + target + '")')
         }
       }
 
@@ -277,7 +277,7 @@ function ApiCache() {
           try {
             redis.del(key)
           } catch(err) {
-            throw Error('[apicache] error in redis.del("' + key + '"")')
+            console.log('[apicache] error in redis.del("' + key + '")')
           }
         })
       }

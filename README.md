@@ -238,14 +238,11 @@ Special thanks to all those that use this library and report issues, but especia
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
 - [@vectart](https://github.com/vectart) - Added middleware local options support
+- [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options
 
-### Bugfixes
+### Bugfixes, Documentation, etc.
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv
-
-### Documentation
-
-- @gesposito, @viebel
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
@@ -265,4 +262,4 @@ Special thanks to all those that use this library and report issues, but especia
  middleware.localOptions support (thanks @vectart).  Added ability to overwrite/embed headers
  (e.g. "cache-control": "no-cache") through options.
 - **v0.9.1** - added eslint in prep for v1.x branch, minor ES6 to ES5 in master branch tests
-
+- **v0.10.0** - added ability to blacklist headers (prevents caching) via options.headersBlacklist (thanks @andredigenova)
