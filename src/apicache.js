@@ -37,12 +37,20 @@ function ApiCache() {
     appendKey:          [],
     jsonp:              false,
     redisClient:        false,
+    headerBlacklist:    [],
     statusCodes: {
       include: [],
       exclude: [],
+    },
+    events: {
+      'expire': undefined
+    },
+    headers: {
+      // 'cache-control':  'no-cache' // example of header overwrite
     }
   }
 
+  var middlewareOptions = []
   var instance = this
   var index = null
 
@@ -80,10 +88,19 @@ function ApiCache() {
     index.all.unshift(key)
   }
 
+  function filterBlacklistedHeaders(headers) {
+    return Object.keys(headers).filter(function (key) {
+      return globalOptions.headerBlacklist.indexOf(key) === -1;
+    }).reduce(function (acc, header) {
+        acc[header] = headers[header];
+        return acc;
+    }, {});
+  }
+
   function createCacheObject(status, headers, data, encoding) {
     return {
       status: status,
-      headers: Object.assign({}, headers),
+      headers: filterBlacklistedHeaders(headers),
       data: data,
       encoding: encoding
     }
@@ -91,12 +108,18 @@ function ApiCache() {
 
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
+    var expireCallback = globalOptions.events.expire
+
     if (redis) {
-      redis.hset(key, "response", JSON.stringify(value))
-      redis.hset(key, "duration", duration)
-      redis.expire(key, duration/1000)
+      try {
+        redis.hset(key, "response", JSON.stringify(value))
+        redis.hset(key, "duration", duration)
+        redis.expire(key, duration/1000, expireCallback)
+      } catch (err) {
+        debug('[apicache] error in redis.hset()')
+      }
     } else {
-      memCache.add(key, value, duration)
+      memCache.add(key, value, duration, expireCallback)
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
@@ -130,7 +153,14 @@ function ApiCache() {
     }
 
     // add cache control headers
-    res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+    if (!globalOptions.headers['cache-control']) {
+      res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+    }
+
+    // append header overwrites if applicable
+    Object.keys(globalOptions.headers).forEach(function(name) {
+      res.header(name, globalOptions.headers[name])
+    })
 
     // patch res.write
     res.write = function(content) {
@@ -163,8 +193,9 @@ function ApiCache() {
 
 
   function sendCachedResponse(response, cacheObject) {
-    response._headers = response._headers || {}
-    Object.assign(response._headers, cacheObject.headers || {}, {
+    var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
+
+    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
       'apicache-version': pkg.version
     })
@@ -175,9 +206,15 @@ function ApiCache() {
       data = new Buffer(data.data)
     }
 
-    response.writeHead(cacheObject.status || 200, response._headers)
+    response.writeHead(cacheObject.status || 200, headers)
 
     return response.end(data, cacheObject.encoding)
+  }
+
+  function syncOptions() {
+    for (var i in middlewareOptions) {
+      Object.assign(middlewareOptions[i].options, globalOptions, middlewareOptions[i].localOptions)
+    }
   }
 
   this.clear = function(target, isAutomatic) {
@@ -193,7 +230,11 @@ function ApiCache() {
         if (!globalOptions.redisClient) {
           memCache.delete(key)
         } else {
-          redis.del(key)
+          try {
+            redis.del(key)
+          } catch(err) {
+            console.log('[apicache] error in redis.del("' + key + '")')
+          }
         }
         index.all = index.all.filter(doesntMatch(key))
       })
@@ -206,7 +247,11 @@ function ApiCache() {
       if (!redis) {
         memCache.delete(target)
       } else {
-        redis.del(target)
+        try {
+          redis.del(target)
+        } catch(err) {
+          console.log('[apicache] error in redis.del("' + target + '")')
+        }
       }
 
       // remove from global index
@@ -229,7 +274,11 @@ function ApiCache() {
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
         index.all.forEach(function(key) {
-          redis.del(key)
+          try {
+            redis.del(key)
+          } catch(err) {
+            console.log('[apicache] error in redis.del("' + key + '")')
+          }
         })
       }
       this.resetIndex()
@@ -270,17 +319,36 @@ function ApiCache() {
     }
   }
 
-  this.middleware = function cache(strDuration, middlewareToggle) {
+  this.middleware = function cache(strDuration, middlewareToggle, localOptions) {
     var duration = instance.getDuration(strDuration)
+    var opt = {}
 
-    return function cache(req, res, next) {
+    middlewareOptions.push({
+      options: opt
+    })
+
+    var options = function (localOptions) {
+      if (localOptions) {
+        middlewareOptions.find(function (middleware) {
+          return middleware.options === opt
+        }).localOptions = localOptions
+      }
+
+      syncOptions()
+
+      return opt
+    }
+
+    options(localOptions)
+
+    var cache = function(req, res, next) {
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
       }
 
       // initial bypass chances
-      if (!globalOptions.enabled) return bypass()
+      if (!opt.enabled) return bypass()
       if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
       if (typeof middlewareToggle === 'function') {
         if (!middlewareToggle(req, res)) return bypass()
@@ -295,21 +363,21 @@ function ApiCache() {
       var key = req.originalUrl || req.url
 
       // Remove querystring from key if jsonp option is enabled
-      if (globalOptions.jsonp) {
+      if (opt.jsonp) {
         key = url.parse(key).pathname
       }
 
-      if (globalOptions.appendKey.length > 0) {
+      if (opt.appendKey.length > 0) {
         var appendKey = req
 
-        for (var i = 0; i < globalOptions.appendKey.length; i++) {
-          appendKey = appendKey[globalOptions.appendKey[i]]
+        for (var i = 0; i < opt.appendKey.length; i++) {
+          appendKey = appendKey[opt.appendKey[i]]
         }
         key += '$$appendKey=' + appendKey
       }
 
       // attempt cache hit
-      var redis = globalOptions.redisClient
+      var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
 
       // send if cache hit from memory-cache
@@ -322,25 +390,35 @@ function ApiCache() {
 
       // send if cache hit from redis
       if (redis) {
-        redis.hgetall(key, function (err, obj) {
-          if (!err && obj) {
-            var elapsed = new Date() - req.apicacheTimer
-            debug('sending cached (redis) version of', key, logDuration(elapsed))
+        try {
+          redis.hgetall(key, function (err, obj) {
+            if (!err && obj) {
+              var elapsed = new Date() - req.apicacheTimer
+              debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-            return sendCachedResponse(res, JSON.parse(obj.response))
-          } else {
-            return makeResponseCacheable(req, res, next, key, duration, strDuration)
-          }
-        })
+              return sendCachedResponse(res, JSON.parse(obj.response))
+            } else {
+              return makeResponseCacheable(req, res, next, key, duration, strDuration)
+            }
+          })
+        } catch (err) {
+          // bypass redis on error
+          return makeResponseCacheable(req, res, next, key, duration, strDuration)
+        }
       } else {
         return makeResponseCacheable(req, res, next, key, duration, strDuration)
       }
     }
+
+    cache.options = options
+
+    return cache
   }
 
   this.options = function(options) {
     if (options) {
       Object.assign(globalOptions, options)
+      syncOptions()
 
       if ('defaultDuration' in options) {
         // Convert the default duration to a number in milliseconds (if needed)

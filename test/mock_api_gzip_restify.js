@@ -22,7 +22,7 @@ function MockAPI(expiration, options) {
   this.id = instances.length
   this.app = app
 
-  instances.forEach((instance, id) => {
+  instances.forEach(function(instance, id) {
     if (instance.id !== this.id && this.apicache === instance.apicache) {
       console.log('WARNING: SHARED APICACHE INSTANCE', id, this.id, this.apicache.id, instance.apicache.id)
     }

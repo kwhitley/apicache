@@ -9,6 +9,13 @@ module.exports = function(app) {
     res.json(movies)
   })
 
+  app.get('/api/params/:where', function(req, res) {
+    app.requestsProcessed++
+
+    res.json(movies)
+  })
+
+
   app.get('/api/writeandend', function(req, res) {
     app.requestsProcessed++
 
@@ -34,6 +41,14 @@ module.exports = function(app) {
     }
 
     res.end()
+  })
+
+  app.get('/api/testheaderblacklist', function(req, res) {
+    app.requestsProcessed++
+    res.set('x-blacklisted', app.requestsProcessed)
+    res.set('x-notblacklisted', app.requestsProcessed)
+
+    res.json(movies)
   })
 
   app.get('/api/testcachegroup', function(req, res) {
