@@ -142,7 +142,7 @@ let cache5min = cache('5 min') // continue to use normally
 ```js
 {
   debug:            false|true,     // if true, enables console output
-  defaultDuration:  3600000,        // should be a number (in ms), defaults to 1 hour
+  defaultDuration:  '1.5 hours',    // should be either a number (in ms) or a string, defaults to 1 hour
   enabled:          true|false,     // if false, turns off caching globally (useful on dev)
   redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
