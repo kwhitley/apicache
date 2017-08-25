@@ -10,7 +10,7 @@
     "prepublish": "npm run test"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=4.8.4"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
   "main": "./src/apicache.js",
