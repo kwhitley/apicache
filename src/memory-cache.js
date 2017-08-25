@@ -1,10 +1,8 @@
 function MemoryCache() {
-  this.cache = {}
-  this.size = 0
+  this.cache = new Map()
 }
 
 MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
-  var old = this.cache[key]
   var instance = this
 
   var entry = {
@@ -16,30 +14,25 @@ MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
     }, time)
   }
 
-  this.cache[key] = entry
-  this.size = Object.keys(this.cache).length
+  this.cache.set(key, entry)
 
   return entry
 }
 
 MemoryCache.prototype.delete = function(key) {
-  var entry = this.cache[key]
+  var entry = this.cache.get(key)
 
   if (entry) {
     clearTimeout(entry.timeout)
   }
 
-  delete this.cache[key]
+  this.cache.delete(key)
 
-  this.size = Object.keys(this.cache).length
-
-  return null
+  return this
 }
 
 MemoryCache.prototype.get = function(key) {
-  var entry = this.cache[key]
-
-  return entry
+  return this.cache.get(key)
 }
 
 MemoryCache.prototype.getValue = function(key) {
@@ -49,11 +42,9 @@ MemoryCache.prototype.getValue = function(key) {
 }
 
 MemoryCache.prototype.clear = function() {
-  Object.keys(this.cache).forEach(function(key) {
-    this.delete(key)
-  }, this)
+  this.cache.forEach(key => this.delete(key))
 
-  return true
+  return this
 }
 
 module.exports = MemoryCache
