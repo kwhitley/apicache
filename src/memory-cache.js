@@ -1,50 +1,51 @@
-function MemoryCache() {
-  this.cache = new Map()
-}
-
-MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
-  var instance = this
-
-  var entry = {
-    value: value,
-    expire: time + Date.now(),
-    timeout: setTimeout(function() {
-      instance.delete(key)
-      return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key)
-    }, time)
+class MemoryCache {
+  constructor() {
+    this.cache = new Map()
   }
 
-  this.cache.set(key, entry)
-
-  return entry
-}
-
-MemoryCache.prototype.delete = function(key) {
-  var entry = this.cache.get(key)
-
-  if (entry) {
-    clearTimeout(entry.timeout)
+  get(key) {
+    return this.cache.get(key)
   }
 
-  this.cache.delete(key)
+  getValue(key) {
+    let entry = this.get(key)
 
-  return this
-}
+    return entry && entry.value
+  }
 
-MemoryCache.prototype.get = function(key) {
-  return this.cache.get(key)
-}
+  set(key, value, time, timeoutCallback) {
+    let instance = this
 
-MemoryCache.prototype.getValue = function(key) {
-  var entry = this.get(key)
+    let entry = {
+      value: value,
+      expire: time + Date.now(),
+      timeout: setTimeout(function() {
+        instance.delete(key)
+        return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key)
+      }, time)
+    }
 
-  return entry && entry.value
-}
+    this.cache.set(key, entry)
 
-MemoryCache.prototype.clear = function() {
-  this.cache.forEach(key => this.delete(key))
+    return entry
+  }
 
-  return this
+  delete(key) {
+    let entry = this.cache.get(key)
+
+    // clear existing timeout for entry, if exists
+    if (entry) clearTimeout(entry.timeout)
+
+    this.cache.delete(key)
+
+    return this
+  }
+
+  clear() {
+    this.cache.forEach(key => this.delete(key))
+
+    return this
+  }
 }
 
 module.exports = MemoryCache

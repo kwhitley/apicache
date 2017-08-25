@@ -104,7 +104,7 @@ function ApiCache() {
         debug('[apicache] error in redis.hset()')
       }
     } else {
-      memCache.add(key, value, duration, expireCallback)
+      memCache.set(key, value, duration, expireCallback)
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
