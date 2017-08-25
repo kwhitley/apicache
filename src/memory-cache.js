@@ -1,3 +1,5 @@
+'use strict';
+
 class MemoryCache {
   constructor() {
     this.cache = new Map()
