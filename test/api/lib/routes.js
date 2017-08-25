@@ -29,15 +29,14 @@ module.exports = function(app) {
   app.get('/api/writebufferandend', function(req, res) {
     app.requestsProcessed++
 
-
-    if (process.versions.node.indexOf('4') === 0) {
-      res.write(new Buffer([0x61]))
-      res.write(new Buffer([0x62]))
-      res.write(new Buffer([0x63]))
-    } else {
+    if (Buffer.from) {
       res.write(Buffer.from('a'))
       res.write(Buffer.from('b'))
       res.write(Buffer.from('c'))
+    } else {
+      res.write(new Buffer([0x61]))
+      res.write(new Buffer([0x62]))
+      res.write(new Buffer([0x63]))
     }
 
     res.end()
