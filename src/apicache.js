@@ -148,17 +148,9 @@ function ApiCache() {
     res._apicache = {
       write: res.write,
       end: res.end,
+      send: res.send,
       cacheable: true,
       content: undefined
-    }
-
-    // add cache control headers
-    if (!globalOptions.headers['cache-control']) {
-      if(shouldCacheResponse(res)) {
-        res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
-      } else {
-        res.header('cache-control', 'no-cache, no-store, must-revalidate');
-      }
     }
 
     // append header overwrites if applicable
@@ -170,6 +162,19 @@ function ApiCache() {
     res.write = function(content) {
       accumulateContent(res, content);
       return res._apicache.write.apply(this, arguments);
+    }
+
+    res.send = function() {
+      // add cache control headers
+      if (!globalOptions.headers['cache-control']) {
+        if(shouldCacheResponse(res)) {
+          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
+        } else {
+          res.header('cache-control', 'no-cache, no-store, must-revalidate');
+        }
+      }
+
+      return res._apicache.send.apply(this, arguments);
     }
 
     // patch res.end

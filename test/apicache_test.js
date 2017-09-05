@@ -580,7 +580,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/missing')
           .expect(404)
           .then(function(res) {
-            expect(res.headers['cache-control', 'no-cache, no-store, must-revalidate'])
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
@@ -594,7 +594,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/missing')
           .expect(404)
           .then(function(res) {
-            expect(res.headers['cache-control', 'no-cache, no-store, must-revalidate'])
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
