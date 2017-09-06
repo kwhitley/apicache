@@ -633,6 +633,27 @@ describe('.middleware {MIDDLEWARE}', function() {
           done()
         }, 25)
       })
+
+      it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
+        var callbackResponse = undefined
+        var cb = function(a,b) {
+          callbackResponse = b
+        }
+        var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb }})
+
+        request(app)
+          .get('/api/movies')
+          .end(function(err, res) {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.getIndex().all).to.include('/api/movies')
+          })
+
+        setTimeout(function() {
+          expect(app.apicache.getIndex().all).to.have.length(0)
+          expect(callbackResponse).to.equal('/api/movies')
+          done()
+        }, 25)
+      })
     })
   })
 })

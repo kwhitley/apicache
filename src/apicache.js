@@ -291,7 +291,7 @@ function ApiCache() {
     if (typeof duration === 'number') return duration
 
     if (typeof duration === 'string') {
-      var split = duration.match(/^([\d\.,]+)\s(\w+)$/)
+      var split = duration.match(/^([\d\.,]+)\s?(\w+)$/)
 
       if (split.length === 3) {
         var len = parseFloat(split[1])
