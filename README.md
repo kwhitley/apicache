@@ -142,7 +142,7 @@ let cache5min = cache('5 min') // continue to use normally
 ```js
 {
   debug:            false|true,     // if true, enables console output
-  defaultDuration:  3600000,        // should be a number (in ms), defaults to 1 hour
+  defaultDuration:  '1 hour',       // should be either a number (in ms) or a string, defaults to 1 hour
   enabled:          true|false,     // if false, turns off caching globally (useful on dev)
   redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
   appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
@@ -239,6 +239,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
 - [@vectart](https://github.com/vectart) - Added middleware local options support
 - [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options
+- [@davebaol](https://github.com/davebaol) - Added string support to defaultDuration option (previously just numeric ms)
 
 ### Bugfixes, Documentation, etc.
 
@@ -263,3 +264,4 @@ Special thanks to all those that use this library and report issues, but especia
  (e.g. "cache-control": "no-cache") through options.
 - **v0.9.1** - added eslint in prep for v1.x branch, minor ES6 to ES5 in master branch tests
 - **v0.10.0** - added ability to blacklist headers (prevents caching) via options.headersBlacklist (thanks @andredigenova)
+- **v0.11.0** - Added string support to defaultDuration option, previously just numeric ms - thanks @davebaol

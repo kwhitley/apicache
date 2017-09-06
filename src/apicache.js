@@ -287,11 +287,11 @@ function ApiCache() {
     return this.getIndex()
   }
 
-  this.getDuration = function(duration) {
+  function parseDuration(duration, defaultDuration) {
     if (typeof duration === 'number') return duration
 
     if (typeof duration === 'string') {
-      var split = duration.match(/^([\d\.,]+)\s(\w+)$/)
+      var split = duration.match(/^([\d\.,]+)\s?(\w+)$/)
 
       if (split.length === 3) {
         var len = parseFloat(split[1])
@@ -304,7 +304,11 @@ function ApiCache() {
       }
     }
 
-    return globalOptions.defaultDuration
+    return defaultDuration
+  }
+
+  this.getDuration = function(duration) {
+    return parseDuration(duration, globalOptions.defaultDuration)
   }
 
   this.getIndex = function(group) {
@@ -415,6 +419,11 @@ function ApiCache() {
     if (options) {
       Object.assign(globalOptions, options)
       syncOptions()
+
+      if ('defaultDuration' in options) {
+        // Convert the default duration to a number in milliseconds (if needed)
+        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000);
+      }
 
       return this
     } else {
