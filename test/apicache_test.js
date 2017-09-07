@@ -447,6 +447,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writeandend')
           .expect(200, 'abc')
+          .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)
@@ -462,6 +463,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writebufferandend')
           .expect(200, 'abc')
+          .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)

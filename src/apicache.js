@@ -147,8 +147,8 @@ function ApiCache() {
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
+      writeHead: res.writeHead,
       end: res.end,
-      send: res.send,
       cacheable: true,
       content: undefined
     }
@@ -158,13 +158,7 @@ function ApiCache() {
       res.header(name, globalOptions.headers[name])
     })
 
-    // patch res.write
-    res.write = function(content) {
-      accumulateContent(res, content);
-      return res._apicache.write.apply(this, arguments);
-    }
-
-    res.send = function() {
+    res.writeHead = function() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if(shouldCacheResponse(res)) {
@@ -173,8 +167,14 @@ function ApiCache() {
           res.header('cache-control', 'no-cache, no-store, must-revalidate');
         }
       }
+      
+      return res._apicache.writeHead.apply(this, arguments)
+    }
 
-      return res._apicache.send.apply(this, arguments);
+    // patch res.write
+    res.write = function(content) {
+      accumulateContent(res, content);
+      return res._apicache.write.apply(this, arguments);
     }
 
     // patch res.end
