@@ -2,7 +2,7 @@ var express = require('express')
 var compression = require('compression')
 var addRoutes = require('./lib/routes')
 
-function MockAPI(expiration, options) {
+function MockAPI(expiration, options, toggle) {
   var apicache = require('../../src/apicache').newInstance(options)
   var app = express()
 
@@ -10,7 +10,7 @@ function MockAPI(expiration, options) {
   app.use(compression({ threshold: 1 }))
 
   // ENABLE APICACHE
-  app.use(apicache.middleware(expiration))
+  app.use(apicache.middleware(expiration, toggle))
   app.apicache = apicache
 
   // ADD API ROUTES
@@ -20,5 +20,5 @@ function MockAPI(expiration, options) {
 }
 
 module.exports = {
-  create: function(expiration, config) { return new MockAPI(expiration, config) }
+  create: function(expiration, config, toggle) { return new MockAPI(expiration, config, toggle) }
 }

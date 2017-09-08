@@ -226,6 +226,8 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
 - [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etc, etc.  Triple thanks!!!
+- [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options, correction to caching checks
+- [@peteboere](https://github.com/peteboere) - Node v7 headers update
 - [@rutgernation](https://github.com/rutgernation) - JSONP support
 - [@enricsangra](https://github.com/enricsangra) - added x-apicache-force-fetch header
 - [@tskillian](https://github.com/tskillian) - custom appendKey path support
@@ -236,9 +238,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
-- [@peteboere](https://github.com/peteboere) - Node v7 headers update
 - [@vectart](https://github.com/vectart) - Added middleware local options support
-- [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options
 - [@davebaol](https://github.com/davebaol) - Added string support to defaultDuration option (previously just numeric ms)
 
 ### Bugfixes, Documentation, etc.
@@ -265,3 +265,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.9.1** - added eslint in prep for v1.x branch, minor ES6 to ES5 in master branch tests
 - **v0.10.0** - added ability to blacklist headers (prevents caching) via options.headersBlacklist (thanks @andredigenova)
 - **v0.11.0** - Added string support to defaultDuration option, previously just numeric ms - thanks @davebaol
+- **v0.11.1** - correction to status code caching, and max-age headers are no longer sent when not cached.  middlewareToggle now works as intended with example of statusCode checking (checks during shouldCacheResponse cycle)

@@ -109,7 +109,7 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 
 })
 
-describe('.getIndex() {GETTER}', function() {
+describe('.getIndex([groupName]) {GETTER}', function() {
   var apicache = require('../src/apicache')
 
   it('is a function', function() {
@@ -118,6 +118,17 @@ describe('.getIndex() {GETTER}', function() {
 
   it('returns an object', function() {
     expect(typeof apicache.getIndex()).to.equal('object')
+  })
+
+  it('can clear indexed cache groups', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds')
+
+    return request(app)
+      .get('/api/testcachegroup')
+      .then(function(res) {
+        expect(app.apicache.getIndex('cachegroup').length).to.equal(1)
+      })
   })
 })
 
@@ -591,6 +602,22 @@ describe('.middleware {MIDDLEWARE}', function() {
         var app = mockAPI.create('2 seconds', {
           statusCodes: { include: [200] }
         })
+
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function(res) {
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
+
+      it('middlewareToggle works correctly to control statusCode caching (per example)', function() {
+        var onlyStatusCode200 = function(req, res) {
+          return res.statusCode === 200
+        }
+
+        var app = mockAPI.create('2 seconds', {}, onlyStatusCode200)
 
         return request(app)
           .get('/api/missing')

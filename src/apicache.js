@@ -64,11 +64,15 @@ function ApiCache() {
     return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
   }
 
-  function shouldCacheResponse(response) {
+  function shouldCacheResponse(request, response, toggle) {
     var opt = globalOptions
     var codes = opt.statusCodes
 
     if (!response) return false
+
+    if (toggle && !toggle(request, response)) {
+      return false
+    }
 
     if (codes.exclude && codes.exclude.length && codes.exclude.indexOf(response.statusCode) !== -1) return false
     if (codes.include && codes.include.length && codes.include.indexOf(response.statusCode) === -1) return false
@@ -143,7 +147,7 @@ function ApiCache() {
     }
   }
 
-  function makeResponseCacheable(req, res, next, key, duration, strDuration) {
+  function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle) {
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
@@ -161,13 +165,13 @@ function ApiCache() {
     res.writeHead = function() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
-        if(shouldCacheResponse(res)) {
+        if(shouldCacheResponse(req, res, toggle)) {
           res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
         } else {
           res.header('cache-control', 'no-cache, no-store, must-revalidate');
         }
       }
-      
+
       return res._apicache.writeHead.apply(this, arguments)
     }
 
@@ -179,7 +183,7 @@ function ApiCache() {
 
     // patch res.end
     res.end = function(content, encoding) {
-      if (shouldCacheResponse(res)) {
+      if (shouldCacheResponse(req, res, toggle)) {
 
         accumulateContent(res, content);
 
@@ -201,7 +205,11 @@ function ApiCache() {
   }
 
 
-  function sendCachedResponse(response, cacheObject) {
+  function sendCachedResponse(request, response, cacheObject, toggle) {
+    if (toggle && !toggle(request, response)) {
+      return false
+    }
+
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
@@ -359,11 +367,13 @@ function ApiCache() {
       // initial bypass chances
       if (!opt.enabled) return bypass()
       if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
-      if (typeof middlewareToggle === 'function') {
-        if (!middlewareToggle(req, res)) return bypass()
-      } else if (middlewareToggle !== undefined && !middlewareToggle) {
-        return bypass()
-      }
+
+      // REMOVED IN 0.11.1 TO CORRECT MIDDLEWARE TOGGLE EXECUTE ORDER
+      // if (typeof middlewareToggle === 'function') {
+      //   if (!middlewareToggle(req, res)) return bypass()
+      // } else if (middlewareToggle !== undefined && !middlewareToggle) {
+      //   return bypass()
+      // }
 
       // embed timer
       req.apicacheTimer = new Date()
@@ -394,7 +404,7 @@ function ApiCache() {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
-        return sendCachedResponse(res, cached)
+        return sendCachedResponse(req, res, cached, middlewareToggle)
       }
 
       // send if cache hit from redis
@@ -405,17 +415,17 @@ function ApiCache() {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              return sendCachedResponse(res, JSON.parse(obj.response))
+              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle)
             } else {
-              return makeResponseCacheable(req, res, next, key, duration, strDuration)
+              return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
             }
           })
         } catch (err) {
           // bypass redis on error
-          return makeResponseCacheable(req, res, next, key, duration, strDuration)
+          return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
         }
       } else {
-        return makeResponseCacheable(req, res, next, key, duration, strDuration)
+        return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
       }
     }
 
