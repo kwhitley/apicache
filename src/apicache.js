@@ -147,20 +147,29 @@ function ApiCache() {
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
+      writeHead: res.writeHead,
       end: res.end,
       cacheable: true,
       content: undefined
-    }
-
-    // add cache control headers
-    if (!globalOptions.headers['cache-control']) {
-      res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
     }
 
     // append header overwrites if applicable
     Object.keys(globalOptions.headers).forEach(function(name) {
       res.header(name, globalOptions.headers[name])
     })
+
+    res.writeHead = function() {
+      // add cache control headers
+      if (!globalOptions.headers['cache-control']) {
+        if(shouldCacheResponse(res)) {
+          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
+        } else {
+          res.header('cache-control', 'no-cache, no-store, must-revalidate');
+        }
+      }
+      
+      return res._apicache.writeHead.apply(this, arguments)
+    }
 
     // patch res.write
     res.write = function(content) {

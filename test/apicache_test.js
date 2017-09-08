@@ -447,6 +447,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writeandend')
           .expect(200, 'abc')
+          .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)
@@ -462,6 +463,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writebufferandend')
           .expect(200, 'abc')
+          .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)
@@ -579,7 +581,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/missing')
           .expect(404)
-          .then(function() {
+          .then(function(res) {
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
@@ -592,7 +595,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/missing')
           .expect(404)
-          .then(function() {
+          .then(function(res) {
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
