@@ -601,6 +601,22 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('middlewareToggle works correctly to control statusCode caching (per example)', function() {
+        var onlyStatusCode200 = function(req, res) {
+          return res.statusCode === 200
+        }
+
+        var app = mockAPI.create('2 seconds', {}, onlyStatusCode200)
+
+        return request(app)
+          .get('/api/missing')
+          .expect(404)
+          .then(function(res) {
+            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
+            expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
+
       it('removes a cache key after expiration', function(done) {
         var app = mockAPI.create(10)
 
