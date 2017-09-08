@@ -109,7 +109,7 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 
 })
 
-describe('.getIndex() {GETTER}', function() {
+describe('.getIndex([groupName]) {GETTER}', function() {
   var apicache = require('../src/apicache')
 
   it('is a function', function() {
@@ -118,6 +118,17 @@ describe('.getIndex() {GETTER}', function() {
 
   it('returns an object', function() {
     expect(typeof apicache.getIndex()).to.equal('object')
+  })
+
+  it('can clear indexed cache groups', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds')
+
+    return request(app)
+      .get('/api/testcachegroup')
+      .then(function(res) {
+        expect(app.apicache.getIndex('cachegroup').length).to.equal(1)
+      })
   })
 })
 
