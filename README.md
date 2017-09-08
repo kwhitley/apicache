@@ -266,3 +266,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.10.0** - added ability to blacklist headers (prevents caching) via options.headersBlacklist (thanks @andredigenova)
 - **v0.11.0** - Added string support to defaultDuration option, previously just numeric ms - thanks @davebaol
 - **v0.11.1** - correction to status code caching, and max-age headers are no longer sent when not cached.  middlewareToggle now works as intended with example of statusCode checking (checks during shouldCacheResponse cycle)
+- **v0.11.2** - dev-deps update, courtesy of @danielsogl
