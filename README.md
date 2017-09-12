@@ -267,3 +267,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.11.0** - Added string support to defaultDuration option, previously just numeric ms - thanks @davebaol
 - **v0.11.1** - correction to status code caching, and max-age headers are no longer sent when not cached.  middlewareToggle now works as intended with example of statusCode checking (checks during shouldCacheResponse cycle)
 - **v0.11.2** - dev-deps update, courtesy of @danielsogl
+- **v1.0.0** - stamping v0.11.2 into official production version, will now begin developing on branch v2.x (redesign)
