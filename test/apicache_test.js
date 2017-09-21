@@ -451,8 +451,10 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('properly uses custom appendKey(req, res) function', function() {
-        let appendKey = (req, res) => req.method + res.id
-        var app = mockAPI.create('10 seconds', { appendKey })
+        var appendKey = function(req, res) {
+          return req.method + res.id
+        }
+        var app = mockAPI.create('10 seconds', { appendKey: appendKey })
 
         return request(app)
           .get('/api/movies')
