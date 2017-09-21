@@ -9,6 +9,12 @@ function MockAPI(expiration, options, toggle) {
   // ENABLE COMPRESSION
   app.use(compression({ threshold: 1 }))
 
+  // EMBED UPSTREAM RESPONSE PARAM
+  app.use(function(req, res, next) {
+    res.id = 123
+    next()
+  })
+
   // ENABLE APICACHE
   app.use(apicache.middleware(expiration, toggle))
   app.apicache = apicache

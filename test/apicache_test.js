@@ -445,10 +445,22 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
-            expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET')
+          })
+      })
+
+      it('properly uses custom appendKey(req, res) function', function() {
+        var appendKey = function(req, res) {
+          return req.method + res.id
+        }
+        var app = mockAPI.create('10 seconds', { appendKey: appendKey })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(function() {
+            expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET123')
           })
       })
 
