@@ -145,7 +145,7 @@ let cache5min = cache('5 min') // continue to use normally
   defaultDuration:  '1 hour',       // should be either a number (in ms) or a string, defaults to 1 hour
   enabled:          true|false,     // if false, turns off caching globally (useful on dev)
   redisClient:      client,         // if provided, uses the [node-redis](https://github.com/NodeRedis/node_redis) client instead of [memory-cache](https://github.com/ptarjan/node-cache)
-  appendKey:        [],             // if you want the key (which is the URL) to be appended by something in the req object, put req properties here that point to what you want appended. I.E. req.session.id would be ['session', 'id']
+  appendKey:        fn(req, res),   // appendKey takes the req/res objects and returns a custom value to extend the cache key
   headerBlacklist:  [],             // list of headers that should never be cached
   statusCodes: {
     exclude:        [],             // list status codes to specifically exclude (e.g. [404, 403] cache all responses unless they had a 404 or 403 status)
@@ -155,6 +155,21 @@ let cache5min = cache('5 min') // continue to use normally
     // 'cache-control':  'no-cache' // example of header overwrite
   }
 }
+```
+
+## Custom Cache Keys
+
+Sometimes you need custom keys (e.g. save routes per-session, or per method).
+We've made it easy!
+
+**Note:** All req/res attributes used in the generation of the key must have been set
+previously (upstream).  The entire route logic block is skipped on future cache hits
+so it can't rely on those params.
+
+```js
+apicache.options({
+  appendKey: (req, res) => req.method + res.session.id
+})
 ```
 
 ## Cache Key Groups
@@ -268,3 +283,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.11.1** - correction to status code caching, and max-age headers are no longer sent when not cached.  middlewareToggle now works as intended with example of statusCode checking (checks during shouldCacheResponse cycle)
 - **v0.11.2** - dev-deps update, courtesy of @danielsogl
 - **v1.0.0** - stamping v0.11.2 into official production version, will now begin developing on branch v2.x (redesign)
+- **v1.1.0** - added the much-requested feature of a custom appendKey function (previously only took a path to a single request attribute).  Now takes (request, response) objects and returns some value to be appended to the cache key.

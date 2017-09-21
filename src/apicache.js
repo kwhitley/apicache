@@ -386,7 +386,10 @@ function ApiCache() {
         key = url.parse(key).pathname
       }
 
-      if (opt.appendKey.length > 0) {
+      // add appendKey (either custom function or response path)
+      if (typeof opt.appendKey === 'function') {
+        key += '$$appendKey=' + opt.appendKey(req, res)
+      } else if (opt.appendKey.length > 0) {
         var appendKey = req
 
         for (var i = 0; i < opt.appendKey.length; i++) {
