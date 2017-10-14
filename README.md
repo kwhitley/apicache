@@ -4,8 +4,8 @@ A simple API response caching middleware for Express/Node using plain-english du
 
 [![npm version](https://badge.fury.io/js/apicache.svg)](https://www.npmjs.com/package/apicache)
 [![node version support](https://img.shields.io/node/v/apicache.svg)](https://www.npmjs.com/package/apicache)
-[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=master)](https://travis-ci.org/kwhitley/apicache)
-[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=master)](https://coveralls.io/github/kwhitley/apicache?branch=master)
+[![Build Status via Travis CI](https://travis-ci.org/kwhitley/apicache.svg?branch=short-term-cache)](https://travis-ci.org/wfrank2509/apicache)
+[![Coverage Status](https://coveralls.io/repos/github/kwhitley/apicache/badge.svg?branch=short-term-cache)](https://coveralls.io/github/wfrank2509/apicache?branch=short-term-cache)
 [![NPM downloads](https://img.shields.io/npm/dt/apicache.svg?style=flat-square)](https://www.npmjs.com/package/apicache)
 
 ## Why?
