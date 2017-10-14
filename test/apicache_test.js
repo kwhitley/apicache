@@ -174,7 +174,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -186,7 +187,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
     })
 
@@ -223,7 +225,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        shortTermMemory: 0
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -235,7 +238,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
     })
 
@@ -254,7 +258,8 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
       apicache.options({
         debug: false,
-        appendKey: ['foo']
+        appendKey: ['foo'],
+        shortTermMemory: 0
       })
       expect(middleware1.options()).to.eql({
         debug: false,
@@ -266,7 +271,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -278,7 +284,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
     })
 
@@ -301,12 +308,14 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        shortTermMemory: 0
       })
       middleware2.options({
         defaultDuration: 450000,
         enabled: false,
-        appendKey: ['foo']
+        appendKey: ['foo'],
+        shortTermMemory: 0
       })
       expect(middleware1.options()).to.eql({
         debug: false,
@@ -320,7 +329,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        shortTermMemory: 0
       })
       expect(middleware2.options()).to.eql({
         debug: true,
@@ -332,7 +342,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        shortTermMemory: 0
       })
     })
   })
@@ -723,7 +734,32 @@ describe('Redis support', function() {
 
       it('properly caches a request', function() {
         var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
+        var app = mockAPI.create('10 seconds', { redisClient: db, debug: true })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect(200, movies)
+              .expect('apicache-store', 'redis')
+              .expect('apicache-version', pkg.version)
+              .then(assertNumRequestsProcessed(app, 1))
+              .then(function() {
+                db.flushdb()
+              })
+          })
+      })
+
+      it('properly caches a request with short-term', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db, shortTermMemory: '10 seconds', debug: true })
 
         return request(app)
           .get('/api/movies')

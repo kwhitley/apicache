@@ -1,6 +1,6 @@
 {
-  "name": "apicache",
-  "version": "1.1.0",
+  "name": "apicache-short-term",
+  "version": "1.1.0-beta-1",
   "scripts": {
     "lint": "eslint **/*.js",
     "pretest": "npm run lint",
@@ -16,7 +16,7 @@
   "main": "./src/apicache.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kwhitley/apicache.git"
+    "url": "https://github.com/wfrank2509/apicache.git"
   },
   "keywords": [
     "cache",
@@ -30,7 +30,7 @@
     "middleware",
     "memory"
   ],
-  "author": "Kevin R. Whitley <kevin3503@gmail.com> (http://krwhitley.com)",
+  "author": "Kevin R. Whitley <kevin3503@gmail.com> (http://krwhitley.com) / Forked by Wolfgang Frank <wolfgang.frank@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kwhitley/apicache/issues",
@@ -38,12 +38,12 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "compression": "^1.7.0",
-    "coveralls": "^2.13.1",
+    "compression": "^1.7.1",
+    "coveralls": "^2.13.3",
     "eslint": "^4.6.1",
-    "express": "^4.15.4",
+    "express": "^4.16.2",
     "fakeredis": "^2.0.0",
-    "mocha": "^3.5.0",
+    "mocha": "^3.5.3",
     "nyc": "^11.2.1",
     "restify": "^5.2.0",
     "restify-etag-cache": "^1.0.12",

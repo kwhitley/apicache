@@ -47,12 +47,14 @@ function ApiCache() {
     },
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
-    }
+    },
+    shortTermMemory: 0
   }
 
   var middlewareOptions = []
   var instance = this
   var index = null
+  var shortTermCache = new Map()
 
   instances.push(this)
   this.id = instances.length
@@ -62,6 +64,20 @@ function ApiCache() {
     var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
 
     return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
+  }
+
+  function addToShortTermMemory(key, value) {
+    var shortTermMemoryDuration = instance.getDuration(globalOptions.shortTermMemory)
+    var redis = globalOptions.redisClient
+    if (!redis || shortTermMemoryDuration <= 0) {
+      return
+    }
+    if (!shortTermCache.get(key)) {
+      shortTermCache.set(key, value)
+      setTimeout(function() {
+        shortTermCache.delete(key)
+      }, shortTermMemoryDuration)
+    }
   }
 
   function shouldCacheResponse(request, response, toggle) {
@@ -128,6 +144,7 @@ function ApiCache() {
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
     setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
+    addToShortTermMemory(key, value)
   }
 
   function accumulateContent(res, content) {
@@ -237,6 +254,8 @@ function ApiCache() {
   this.clear = function(target, isAutomatic) {
     var group = index.groups[target]
     var redis = globalOptions.redisClient
+
+    shortTermCache.clear()
 
     if (group) {
       debug('clearing group "' + target + '"')
@@ -401,12 +420,22 @@ function ApiCache() {
       // attempt cache hit
       var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
+      var shortTermMemoryDuration = instance.getDuration(opt.shortTermMemory)
+      if (redis && shortTermMemoryDuration !== 0) {
+        cached = shortTermCache.get(key)
+        if (cached) {
+          var elapsed = new Date() - req.apicacheTimer
+          debug('sending cached (short-term) version of', key, logDuration(elapsed))
+          addToShortTermMemory(key, cached)
+          return sendCachedResponse(req, res, cached, middlewareToggle)
+        }
+      }
 
       // send if cache hit from memory-cache
       if (cached) {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
-
+        addToShortTermMemory(key, cached)
         return sendCachedResponse(req, res, cached, middlewareToggle)
       }
 
@@ -417,7 +446,8 @@ function ApiCache() {
             if (!err && obj) {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
-
+              cached = JSON.parse(obj.response)
+              addToShortTermMemory(key, cached)
               return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle)
             } else {
               return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
