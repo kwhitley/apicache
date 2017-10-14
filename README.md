@@ -66,6 +66,26 @@ app.get('/will-be-cached', cacheWithRedis('5 minutes'), (req, res) => {
 })
 ```
 
+#### Use with Redis and short-term-cache
+```js
+import express from 'express'
+import apicache from 'apicache-short-term'
+import redis from 'redis'
+
+let app = express()
+
+// if redisClient option is defined, apicache will use redis client
+// instead of built-in memory store
+let cacheWithRedis = apicache
+                      .options({ redisClient: redis.createClient(), shortTermMemory: '2 minutes' })
+                      .middleware
+
+app.get('/will-be-cached', cacheWithRedis('5 minutes'), (req, res) => {
+  res.json({ success: true })
+})
+```
+
+
 #### Cache grouping and manual controls
 ```js
 import apicache from 'apicache'
