@@ -741,6 +741,7 @@ describe('Redis support', function() {
           .expect(200, movies)
           .then(function(res) {
             expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-short-term']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
           })
@@ -749,6 +750,7 @@ describe('Redis support', function() {
               .get('/api/movies')
               .expect(200, movies)
               .expect('apicache-store', 'redis')
+              .expect('apicache-short-term', 'false')
               .expect('apicache-version', pkg.version)
               .then(assertNumRequestsProcessed(app, 1))
               .then(function() {
@@ -766,6 +768,7 @@ describe('Redis support', function() {
           .expect(200, movies)
           .then(function(res) {
             expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-short-term']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
           })
@@ -774,6 +777,7 @@ describe('Redis support', function() {
               .get('/api/movies')
               .expect(200, movies)
               .expect('apicache-store', 'redis')
+              .expect('apicache-short-term', 'true')
               .expect('apicache-version', pkg.version)
               .then(assertNumRequestsProcessed(app, 1))
               .then(function() {

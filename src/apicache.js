@@ -222,7 +222,7 @@ function ApiCache() {
   }
 
 
-  function sendCachedResponse(request, response, cacheObject, toggle) {
+  function sendCachedResponse(request, response, cacheObject, toggle, shortTerm) {
     if (toggle && !toggle(request, response)) {
       return false
     }
@@ -231,6 +231,7 @@ function ApiCache() {
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
+      'apicache-short-term': shortTerm ? 'true' : 'false',
       'apicache-version': pkg.version
     })
 
@@ -427,7 +428,7 @@ function ApiCache() {
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (short-term) version of', key, logDuration(elapsed))
           addToShortTermMemory(key, cached)
-          return sendCachedResponse(req, res, cached, middlewareToggle)
+          return sendCachedResponse(req, res, cached, middlewareToggle, true)
         }
       }
 
