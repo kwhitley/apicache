@@ -19,6 +19,7 @@ module.exports = function(app) {
   app.get('/api/writeandend', function(req, res) {
     app.requestsProcessed++
 
+    res.header('Content-Type', 'text/plain')
     res.write('a')
     res.write('b')
     res.write('c')
@@ -30,6 +31,7 @@ module.exports = function(app) {
     app.requestsProcessed++
 
 
+    res.header('Content-Type', 'text/plain')
     if (process.versions.node.indexOf('4') === 0) {
       res.write(new Buffer([0x61]))
       res.write(new Buffer([0x62]))
@@ -60,12 +62,14 @@ module.exports = function(app) {
 
   app.get('/api/text', function(req, res) {
     app.requestsProcessed++
+    res.header('Content-Type', 'text/plain')
 
     res.send('plaintext')
   })
 
   app.get('/api/html', function(req, res) {
     app.requestsProcessed++
+    res.header('Content-Type', 'text/html')
 
     res.send('<html>')
   })
