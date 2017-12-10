@@ -677,6 +677,32 @@ describe('.middleware {MIDDLEWARE}', function() {
         }, 25)
       })
 
+      it('clearing cache cancels expiration callback', function(done) {
+        var app = mockAPI.create(20)
+
+        request(app)
+            .get('/api/movies')
+            .end(function(err, res) {
+              expect(app.apicache.getIndex().all.length).to.equal(1)
+              expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
+            })
+
+        setTimeout(function() {
+          request(app)
+              .get('/api/movies')
+              .end(function(err, res) {
+                expect(app.apicache.getIndex().all.length).to.equal(1)
+                expect(app.apicache.getIndex().all).to.include('/api/movies')
+              })
+        }, 10)
+
+        setTimeout(function() {
+          expect(app.apicache.getIndex().all.length).to.equal(1)
+          expect(app.apicache.getIndex().all).to.include('/api/movies')
+          done()
+        }, 25)
+      })
+
       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
         var callbackResponse = undefined
         var cb = function(a,b) {
