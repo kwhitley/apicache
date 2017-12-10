@@ -258,7 +258,7 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes, Documentation, etc.
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
@@ -284,3 +284,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v0.11.2** - dev-deps update, courtesy of @danielsogl
 - **v1.0.0** - stamping v0.11.2 into official production version, will now begin developing on branch v2.x (redesign)
 - **v1.1.0** - added the much-requested feature of a custom appendKey function (previously only took a path to a single request attribute).  Now takes (request, response) objects and returns some value to be appended to the cache key.
+- **v1.1.1** - bugfixes in expiration timeout clearing and content header preservation under compression (thanks @RowanMeara and @samimakicc).
