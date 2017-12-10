@@ -173,6 +173,7 @@ function ApiCache() {
         }
       }
 
+      res._apicache.headers = Object.assign({}, res._headers)
       return res._apicache.writeHead.apply(this, arguments)
     }
 
@@ -190,7 +191,8 @@ function ApiCache() {
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
-          var cacheObject = createCacheObject(res.statusCode, res._headers, res._apicache.content, encoding)
+          var headers = res._apicache.headers || res._headers
+          var cacheObject = createCacheObject(res.statusCode, headers, res._apicache.content, encoding)
           cacheResponse(key, cacheObject, duration)
 
           // display log entry
