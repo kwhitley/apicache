@@ -255,6 +255,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
 - [@vectart](https://github.com/vectart) - Added middleware local options support
 - [@davebaol](https://github.com/davebaol) - Added string support to defaultDuration option (previously just numeric ms)
+- [@Rauttis](https://github.com/rauttis) - Added ioredis support
 
 ### Bugfixes, Documentation, etc.
 
@@ -285,3 +286,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.0.0** - stamping v0.11.2 into official production version, will now begin developing on branch v2.x (redesign)
 - **v1.1.0** - added the much-requested feature of a custom appendKey function (previously only took a path to a single request attribute).  Now takes (request, response) objects and returns some value to be appended to the cache key.
 - **v1.1.1** - bugfixes in expiration timeout clearing and content header preservation under compression (thanks @RowanMeara and @samimakicc).
+- **v1.2.0** - Supports ioredis (thanks @Rauttis)
