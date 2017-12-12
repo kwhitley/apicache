@@ -421,7 +421,7 @@ function ApiCache() {
       if (redis) {
         try {
           redis.hgetall(key, function (err, obj) {
-            if (!err && obj) {
+            if (!err && obj && obj.response) {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
