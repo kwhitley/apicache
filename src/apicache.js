@@ -128,7 +128,7 @@ function ApiCache() {
 
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
-    var expireCallback = globalOptions.events.expire
+	  var expireCallback = globalOptions.events.expire ? globalOptions.events.expire : (e,r) => {}
 
     if (redis) {
       try {
@@ -417,7 +417,17 @@ function ApiCache() {
         }
         key += '$$appendKey=' + appendKey
       }
+	  
+      var isObjNullEmpty = function isObjNullEmpty(obj) {
+        if (obj === null) return true;
 
+        for(var key in obj) {
+          if(obj.hasOwnProperty(key))
+            return false;
+        }
+        return true;
+      }
+	  
       // attempt cache hit
       var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
@@ -444,7 +454,7 @@ function ApiCache() {
       if (redis) {
         try {
           redis.hgetall(key, function (err, obj) {
-            if (!err && obj) {
+            if (!err && !isObjNullEmpty(obj)) {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
               cached = JSON.parse(obj.response)
