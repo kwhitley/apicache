@@ -121,7 +121,7 @@ function ApiCache() {
         redis.hset(key, "duration", duration)
         redis.expire(key, duration/1000, expireCallback)
       } catch (err) {
-        debug('[apicache] error in redis.hset()')
+        debug('[apicache] error in redis.hset():\n' + err)
       }
     } else {
       memCache.add(key, value, duration, expireCallback)
