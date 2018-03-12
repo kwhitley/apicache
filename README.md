@@ -287,3 +287,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.1.0** - added the much-requested feature of a custom appendKey function (previously only took a path to a single request attribute).  Now takes (request, response) objects and returns some value to be appended to the cache key.
 - **v1.1.1** - bugfixes in expiration timeout clearing and content header preservation under compression (thanks @RowanMeara and @samimakicc).
 - **v1.2.0** - Supports ioredis (thanks @Rauttis)
+- **v1.2.1** - Updated deps
