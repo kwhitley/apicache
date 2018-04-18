@@ -3,9 +3,10 @@
   "version": "1.2.1",
   "scripts": {
     "lint": "eslint **/*.js",
-    "pretest": "npm run lint",
+    "transpile": "babel -d ./dist ./src -s",
+    "pretest": "npm run lint && npm run transpile",
     "test": "nyc mocha $(find test -name '*.test.js') --recursive",
-    "test:watch": "npm run test -- --watch",
+    "dev": "npm run test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "prepublish": "npm run test"
   },
@@ -37,6 +38,8 @@
     "email": "kevin3503@gmail.com"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "chai": "^4.1.2",
     "compression": "^1.7.2",
     "coveralls": "^3.0.0",
@@ -45,7 +48,7 @@
     "fakeredis": "^2.0.0",
     "mocha": "^5.0.4",
     "nyc": "^11.4.1",
-    "restify": "^6.3.4",
+    "restify": "^7.1.1",
     "restify-etag-cache": "^1.0.12",
     "supertest": "^3.0.0"
   },
