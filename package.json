@@ -3,8 +3,9 @@
   "version": "1.2.1",
   "scripts": {
     "lint": "eslint **/*.js",
-    "transpile": "babel -d ./dist ./src -s",
-    "pretest": "npm run lint && npm run transpile",
+    "apretranspile": "rm -rf ./dist/*",
+    "atranspile": "babel -d ./dist ./src",
+    "apretest": "npm run lint && npm run transpile",
     "test": "nyc mocha $(find test -name '*.test.js') --recursive",
     "dev": "npm run test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -14,7 +15,7 @@
     "node": ">=4.0.0"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
-  "main": "./src/apicache.js",
+  "main": "./dist/apicache.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/kwhitley/apicache.git"
@@ -38,7 +39,10 @@
     "email": "kevin3503@gmail.com"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-babel": "^1.2.3",
     "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.3",
+    "babel-plugin-istanbul": "^4.1.6",
     "babel-preset-env": "^1.6.1",
     "chai": "^4.1.2",
     "compression": "^1.7.2",

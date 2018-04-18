@@ -1,62 +1,87 @@
 'use strict';
 
-function MemoryCache() {
-  this.cache = {};
-  this.size = 0;
-}
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-MemoryCache.prototype.add = function (key, value, time, timeoutCallback) {
-  var old = this.cache[key];
-  var instance = this;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-  var entry = {
-    value: value,
-    expire: time + Date.now(),
-    timeout: setTimeout(function () {
-      instance.delete(key);
-      return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key);
-    }, time)
-  };
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-  this.cache[key] = entry;
-  this.size = Object.keys(this.cache).length;
+var MemoryCache = function () {
+  function MemoryCache() {
+    _classCallCheck(this, MemoryCache);
 
-  return entry;
-};
-
-MemoryCache.prototype.delete = function (key) {
-  var entry = this.cache[key];
-
-  if (entry) {
-    clearTimeout(entry.timeout);
+    this.cache = {};
+    this.size = 0;
   }
 
-  delete this.cache[key];
+  _createClass(MemoryCache, [{
+    key: 'add',
+    value: function add(key, value, time, timeoutCallback) {
+      var old = this.cache[key + 'a'];
+      var instance = this;
 
-  this.size = Object.keys(this.cache).length;
+      var entry = {
+        value: value,
+        expire: time + Date.now(),
+        timeout: setTimeout(function () {
+          instance.delete(key);
+          return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key);
+        }, time)
+      };
 
-  return null;
-};
+      this.cache[key] = entry;
+      this.size = Object.keys(this.cache).length;
 
-MemoryCache.prototype.get = function (key) {
-  var entry = this.cache[key];
+      return entry;
+    }
+  }, {
+    key: 'delete',
+    value: function _delete(key) {
+      var entry = this.cache[key];
 
-  return entry;
-};
+      if (entry) {
+        clearTimeout(entry.timeout);
+      }
 
-MemoryCache.prototype.getValue = function (key) {
-  var entry = this.get(key);
+      delete this.cache[key];
 
-  return entry && entry.value;
-};
+      this.size = Object.keys(this.cache).length;
 
-MemoryCache.prototype.clear = function () {
-  Object.keys(this.cache).forEach(function (key) {
-    this.delete(key);
-  }, this);
+      return null;
+    }
+  }, {
+    key: 'get',
+    value: function get(key) {
+      var entry = this.cache[key];
 
-  return true;
-};
+      return entry;
+    }
+  }, {
+    key: 'getValue',
+    value: function getValue(key) {
+      var entry = this.get(key);
+
+      return entry && entry.value;
+    }
+  }, {
+    key: 'clear',
+    value: function clear() {
+      var _this = this;
+
+      Object.keys(this.cache).forEach(function (key) {
+        return _this.delete(key);
+      }, this);
+
+      return true;
+    }
+  }]);
+
+  return MemoryCache;
+}();
+
+exports.default = MemoryCache;
+
 
 module.exports = MemoryCache;
-//# sourceMappingURL=memory-cache.js.map

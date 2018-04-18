@@ -1,8 +1,7 @@
-var url         = require('url')
-var MemoryCache = require('./memory-cache')
-var pkg         = require('../package.json')
+import MemoryCache from './memory-cache'
+import pkg from '../package.json'
 
-var t           = {
+const t = {
   ms:           1,
   second:       1000,
   minute:       60000,
@@ -12,18 +11,13 @@ var t           = {
   month:        3600000 * 24 * 30,
 }
 
-var instances = []
+const instances = []
 
-var matches = function(a) {
-  return function(b) { return a === b }
-}
-
-var doesntMatch = function(a) {
-  return function(b) { return !matches(a)(b) }
-}
-
-var logDuration = function(d, prefix) {
-  var str = (d > 1000) ? ((d/1000).toFixed(2) + 'sec') : (d + 'ms')
+// UTILITY FUNCTIONS
+const matches = (a) => (b) => a === b
+const doesntMatch = (a) => (b) => !matches(a)(b)
+const logDuration = (d, prefix) => {
+  let str = (d > 1000) ? ((d/1000).toFixed(2) + 'sec') : (d + 'ms')
   return '\x1b[33m- ' + (prefix ? prefix + ' ' : '') + str + '\x1b[0m'
 }
 
@@ -58,16 +52,16 @@ function ApiCache() {
   instances.push(this)
   this.id = instances.length
 
-  function debug(a,b,c,d) {
-    var arr = (['\x1b[36m[apicache]\x1b[0m', a,b,c,d]).filter(function(arg) { return arg !== undefined })
-    var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
+  const debug = (a,b,c,d) => {
+    let arr = (['\x1b[36m[apicache]\x1b[0m', a,b,c,d]).filter(arg => arg !== undefined)
+    let debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').includes('apicache')
 
     return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
   }
 
-  function shouldCacheResponse(request, response, toggle) {
-    var opt = globalOptions
-    var codes = opt.statusCodes
+  const shouldCacheResponse = (request, response, toggle) => {
+    let opt = globalOptions
+    let codes = opt.statusCodes
 
     if (!response) return false
 
@@ -81,8 +75,8 @@ function ApiCache() {
     return true
   }
 
-  function addIndexEntries(key, req) {
-    var groupName = req.apicacheGroup
+  const addIndexEntries = (key, req) => {
+    let groupName = req.apicacheGroup
 
     if (groupName) {
       debug('group detected "' + groupName + '"')
@@ -93,27 +87,25 @@ function ApiCache() {
     index.all.unshift(key)
   }
 
-  function filterBlacklistedHeaders(headers) {
-    return Object.keys(headers).filter(function (key) {
-      return globalOptions.headerBlacklist.indexOf(key) === -1;
-    }).reduce(function (acc, header) {
-        acc[header] = headers[header];
-        return acc;
-    }, {});
-  }
+  const filterBlacklistedHeaders = (headers) =>
+    Object
+      .keys(headers)
+      .filter((key) => globalOptions.headerBlacklist.indexOf(key) === -1)
+      .reduce((acc, header) => {
+        acc[header] = headers[header]
+        return acc
+      }, {})
 
-  function createCacheObject(status, headers, data, encoding) {
-    return {
-      status: status,
-      headers: filterBlacklistedHeaders(headers),
-      data: data,
-      encoding: encoding
-    }
-  }
+  const createCacheObject = (status, headers, data, encoding) => ({
+    status: status,
+    headers: filterBlacklistedHeaders(headers),
+    data: data,
+    encoding: encoding
+  })
 
-  function cacheResponse(key, value, duration) {
-    var redis = globalOptions.redisClient
-    var expireCallback = globalOptions.events.expire
+  const cacheResponse = (key, value, duration) => {
+    let redis = globalOptions.redisClient
+    let expireCallback = globalOptions.events.expire
 
     if (redis) {
       try {
@@ -128,27 +120,26 @@ function ApiCache() {
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
-    timers[key] = setTimeout(function() { instance.clear(key, true) }, Math.min(duration, 2147483647))
+    timers[key] = setTimeout(() => { instance.clear(key, true) }, Math.min(duration, 2147483647))
   }
 
-  function accumulateContent(res, content) {
+  const accumulateContent = (res, content) => {
     if (content) {
       if (typeof(content) == 'string') {
         res._apicache.content = (res._apicache.content || '') + content;
       } else if (Buffer.isBuffer(content)) {
-        var oldContent = res._apicache.content
+        let oldContent = res._apicache.content
         if (!oldContent) {
           oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0);
         }
         res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length);
       } else {
         res._apicache.content = content
-        // res._apicache.cacheable = false;
       }
     }
   }
 
-  function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle) {
+  const makeResponseCacheable = (req, res, next, key, duration, strDuration, toggle) => {
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
@@ -208,12 +199,12 @@ function ApiCache() {
   }
 
 
-  function sendCachedResponse(request, response, cacheObject, toggle) {
+  const sendCachedResponse = (request, response, cacheObject, toggle) => {
     if (toggle && !toggle(request, response)) {
       return false
     }
 
-    var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
+    let headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
@@ -221,7 +212,7 @@ function ApiCache() {
     })
 
     // unstringify buffers
-    var data = cacheObject.data
+    let data = cacheObject.data
     if (data && data.type === 'Buffer') {
       data = new Buffer(data.data)
     }
