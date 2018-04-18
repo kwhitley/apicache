@@ -113,7 +113,7 @@ function ApiCache() {
         redis.hset(key, "duration", duration)
         redis.expire(key, duration/1000, expireCallback)
       } catch (err) {
-        debug('[apicache] error in redis.hset()')
+        debug('[apicache] error in redis.hset();\n' + err)
       }
     } else {
       memCache.add(key, value, duration, expireCallback)
@@ -150,9 +150,7 @@ function ApiCache() {
     }
 
     // append header overwrites if applicable
-    Object.keys(globalOptions.headers).forEach(function(name) {
-      res.header(name, globalOptions.headers[name])
-    })
+    Object.keys(globalOptions.headers).forEach((name) => res.header(name, globalOptions.headers[name]))
 
     res.writeHead = function() {
       // add cache control headers
@@ -198,7 +196,6 @@ function ApiCache() {
     next()
   }
 
-
   const sendCachedResponse = (request, response, cacheObject, toggle) => {
     if (toggle && !toggle(request, response)) {
       return false
@@ -235,7 +232,7 @@ function ApiCache() {
     if (group) {
       debug('clearing group "' + target + '"')
 
-      group.forEach(function(key) {
+      group.forEach(key => {
         debug('clearing cached entry for "' + key + '"')
         clearTimeout(timers[key])
         delete timers[key]
@@ -271,7 +268,7 @@ function ApiCache() {
       index.all = index.all.filter(doesntMatch(target))
 
       // remove target from each group that it may exist in
-      Object.keys(index.groups).forEach(function(groupName) {
+      Object.keys(index.groups).forEach(groupName => {
         index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target))
 
         // delete group if now empty
@@ -286,7 +283,7 @@ function ApiCache() {
         memCache.clear()
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
-        index.all.forEach(function(key) {
+        index.all.forEach(key => {
           clearTimeout(timers[key])
           delete timers[key]
           try {
@@ -344,9 +341,9 @@ function ApiCache() {
 
     var options = function (localOptions) {
       if (localOptions) {
-        middlewareOptions.find(function (middleware) {
-          return middleware.options === opt
-        }).localOptions = localOptions
+        middlewareOptions
+          .find(middleware => middleware.options === opt)
+          .localOptions = localOptions
       }
 
       syncOptions()
