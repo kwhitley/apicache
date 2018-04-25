@@ -1,4 +1,5 @@
 var url         = require('url')
+var querystring = require('querystring')
 var MemoryCache = require('./memory-cache')
 var pkg         = require('../package.json')
 
@@ -37,6 +38,7 @@ function ApiCache() {
     appendKey:          [],
     jsonp:              false,
     redisClient:        false,
+    queryParamsBlacklist:[],
     headerBlacklist:    [],
     statusCodes: {
       include: [],
@@ -416,6 +418,20 @@ function ApiCache() {
       // Remove querystring from key if jsonp option is enabled
       if (opt.jsonp) {
         key = url.parse(key).pathname
+      }
+
+            // Remove blacklisted query params
+      if (opt.queryParamsBlacklist.length > 0) {
+        var queryParams = querystring.parse(url.parse(key).query)
+        var validQueryParams = Object.keys(queryParams)
+          .filter(function (key) {
+            return globalOptions.queryParamsBlacklist.indexOf(key) === -1
+          })
+          .reduce(function (acc, header) {
+            acc[header] = queryParams[header]
+            return acc
+          }, {})
+        key = url.parse(key).pathname + '?' + querystring.stringify(validQueryParams)
       }
 
       // add appendKey (either custom function or response path)
