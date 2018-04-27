@@ -420,18 +420,24 @@ function ApiCache() {
         key = url.parse(key).pathname
       }
 
-            // Remove blacklisted query params
+      // Remove blacklisted query params
       if (opt.queryParamsBlacklist.length > 0) {
         var queryParams = querystring.parse(url.parse(key).query)
-        var validQueryParams = Object.keys(queryParams)
-          .filter(function (key) {
-            return globalOptions.queryParamsBlacklist.indexOf(key) === -1
-          })
-          .reduce(function (acc, header) {
-            acc[header] = queryParams[header]
-            return acc
-          }, {})
-        key = url.parse(key).pathname + '?' + querystring.stringify(validQueryParams)
+        if (Object.keys(queryParams).length > 0) {
+          var validQueryParams = Object.keys(queryParams)
+            .filter(function(key) {
+              return globalOptions.queryParamsBlacklist.indexOf(key) === -1
+            })
+            .reduce(function(acc, header) {
+              acc[header] = queryParams[header]
+              return acc
+            }, {})
+
+          key = url.parse(key).pathname
+          if (Object.keys(validQueryParams).length > 0) {
+            key += '?' + querystring.stringify(validQueryParams)
+          }
+        }
       }
 
       // add appendKey (either custom function or response path)
