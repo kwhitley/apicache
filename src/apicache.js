@@ -126,13 +126,13 @@ function ApiCache() {
   const accumulateContent = (res, content) => {
     if (content) {
       if (typeof(content) == 'string') {
-        res._apicache.content = (res._apicache.content || '') + content;
+        res._apicache.content = (res._apicache.content || '') + content
       } else if (Buffer.isBuffer(content)) {
         let oldContent = res._apicache.content
         if (!oldContent) {
-          oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0);
+          oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0)
         }
-        res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length);
+        res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length)
       } else {
         res._apicache.content = content
       }
@@ -156,9 +156,9 @@ function ApiCache() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if(shouldCacheResponse(req, res, toggle)) {
-          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
+          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
         } else {
-          res.header('cache-control', 'no-cache, no-store, must-revalidate');
+          res.header('cache-control', 'no-cache, no-store, must-revalidate')
         }
       }
 
@@ -168,15 +168,15 @@ function ApiCache() {
 
     // patch res.write
     res.write = function(content) {
-      accumulateContent(res, content);
-      return res._apicache.write.apply(this, arguments);
+      accumulateContent(res, content)
+      return res._apicache.write.apply(this, arguments)
     }
 
     // patch res.end
     res.end = function(content, encoding) {
       if (shouldCacheResponse(req, res, toggle)) {
 
-        accumulateContent(res, content);
+        accumulateContent(res, content)
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
@@ -190,7 +190,7 @@ function ApiCache() {
         }
       }
 
-      return res._apicache.end.apply(this, arguments);
+      return res._apicache.end.apply(this, arguments)
     }
 
     next()
@@ -201,7 +201,7 @@ function ApiCache() {
       return false
     }
 
-    let headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
+    let headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
@@ -399,7 +399,7 @@ function ApiCache() {
 
       // send if cache hit from memory-cache
       if (cached) {
-        var elapsed = new Date() - req.apicacheTimer
+        var elapsed = new Date - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
         return sendCachedResponse(req, res, cached, middlewareToggle)
@@ -410,7 +410,7 @@ function ApiCache() {
         try {
           redis.hgetall(key, function (err, obj) {
             if (!err && obj && obj.response) {
-              var elapsed = new Date() - req.apicacheTimer
+              var elapsed = new Date - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
               return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle)
@@ -439,7 +439,7 @@ function ApiCache() {
 
       if ('defaultDuration' in options) {
         // Convert the default duration to a number in milliseconds (if needed)
-        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000);
+        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000)
       }
 
       return this
@@ -456,7 +456,7 @@ function ApiCache() {
   }
 
   this.newInstance = function(config) {
-    var instance = new ApiCache()
+    var instance = new ApiCache
 
     if (config) {
       instance.options(config)
