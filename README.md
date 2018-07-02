@@ -288,3 +288,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.1.1** - bugfixes in expiration timeout clearing and content header preservation under compression (thanks @RowanMeara and @samimakicc).
 - **v1.2.0** - Supports ioredis (thanks @Rauttis)
 - **v1.2.1** - Updated deps
+- **v1.2.2** - bugfix: ioredis.expire params (thanks @GoingFast and @luin)

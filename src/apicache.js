@@ -119,7 +119,7 @@ function ApiCache() {
       try {
         redis.hset(key, "response", JSON.stringify(value))
         redis.hset(key, "duration", duration)
-        redis.expire(key, duration/1000, expireCallback)
+        redis.expire(key, duration/1000, expireCallback || function() {})
       } catch (err) {
         debug('[apicache] error in redis.hset()')
       }
