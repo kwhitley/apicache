@@ -242,7 +242,7 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
-- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etc, etc.  Triple thanks!!!
+- [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etag/if-none-match support, etcetc, etc.  Triple thanks!!!
 - [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options, correction to caching checks
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
 - [@rutgernation](https://github.com/rutgernation) - JSONP support
@@ -291,3 +291,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.0** - Supports ioredis (thanks @Rauttis)
 - **v1.2.1** - Updated deps
 - **v1.2.2** - bugfix: ioredis.expire params (thanks @GoingFast and @luin)
+- **v1.2.3** - add etag to if-none-match 304 support (thanks for the test/issue @svozza)
