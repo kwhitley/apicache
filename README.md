@@ -12,12 +12,14 @@ A simple API response caching middleware for Express/Node using plain-english du
 Because route-caching of simple data/responses should ALSO be simple.
 
 ## Installation
-```
-npm install apicache
+```bash
+$ npm install --save apicache
 ```
 
-## Dependencies
-None
+##### *Optional: Typescript Types (courtesy of [@danielsogl](https://github.com/danielsogl))
+```bash
+$ npm install -D @types/apicache
+```
 
 ## Usage
 To use, simply inject the middleware (example: `apicache.middleware('5 minutes', [optionalMiddlewareToggle])`) into your routes.  Everything else is automagic.
@@ -252,14 +254,14 @@ Special thanks to all those that use this library and report issues, but especia
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
 - [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
-- [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date
+- [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date, Typescript Types
 - [@vectart](https://github.com/vectart) - Added middleware local options support
 - [@davebaol](https://github.com/davebaol) - Added string support to defaultDuration option (previously just numeric ms)
 - [@Rauttis](https://github.com/rauttis) - Added ioredis support
 
 ### Bugfixes, Documentation, etc.
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara, @GoingFast, @luin
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
