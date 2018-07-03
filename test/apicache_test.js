@@ -582,6 +582,24 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('respects if-none-match header', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200)
+          .then(function(res) {
+            return res.headers['etag']
+          })
+          .then(function(etag) {
+            return request(app)
+              .get('/api/movies')
+              .set('if-none-match', etag)
+              .expect(304)
+              .expect('etag', etag)
+          })
+      })
+
       it('embeds returns content-type JSON from original response and cached response', function() {
         var app = mockAPI.create('10 seconds')
 

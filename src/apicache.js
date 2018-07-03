@@ -198,6 +198,9 @@ function ApiCache() {
           // display log entry
           var elapsed = new Date() - req.apicacheTimer
           debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+          debug('_apicache.headers: ', res._apicache.headers)
+          debug('res._headers: ', res._headers)
+          debug('cacheObject: ', cacheObject)
         }
       }
 
@@ -224,6 +227,15 @@ function ApiCache() {
     var data = cacheObject.data
     if (data && data.type === 'Buffer') {
       data = new Buffer(data.data)
+    }
+
+    // test Etag against If-None-Match for 304
+    var cachedEtag = cacheObject.headers.etag
+    var requestEtag = request.headers['if-none-match']
+
+    if (requestEtag && cachedEtag === requestEtag) {
+      response.writeHead(304, headers)
+      return response.end()
     }
 
     response.writeHead(cacheObject.status || 200, headers)
