@@ -166,7 +166,8 @@ function ApiCache() {
     res.writeHead = function() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
-        if(shouldCacheResponse(req, res, toggle)) {
+        if (shouldCacheResponse(req, res, toggle)) {
+          debug('setting cache-control headers')
           res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
         } else {
           res.header('cache-control', 'no-cache, no-store, must-revalidate');
@@ -174,6 +175,11 @@ function ApiCache() {
       }
 
       res._apicache.headers = Object.assign({}, res._headers)
+
+      debug('res.headers', res.headers)
+      debug('res._headers', res._headers)
+      debug('res._apicache.headers', res._apicache.headers)
+
       return res._apicache.writeHead.apply(this, arguments)
     }
 
@@ -191,14 +197,21 @@ function ApiCache() {
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
+          // res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+          // res.setHeader('foo', 'bar')
+          // debug()
           var headers = res._apicache.headers || res._headers
+          // headers = Object.assign(headers, {
+          //   'foo': 'bar'
+          // })
+
           var cacheObject = createCacheObject(res.statusCode, headers, res._apicache.content, encoding)
           cacheResponse(key, cacheObject, duration)
 
           // display log entry
           var elapsed = new Date() - req.apicacheTimer
           debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
-          debug('_apicache.headers: ', res._apicache.headers)
+          debug('headers: ', headers)
           debug('res._headers: ', res._headers)
           debug('cacheObject: ', cacheObject)
         }
