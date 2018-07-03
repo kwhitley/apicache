@@ -95,11 +95,11 @@ function ApiCache() {
 
   function filterBlacklistedHeaders(headers) {
     return Object.keys(headers).filter(function (key) {
-      return globalOptions.headerBlacklist.indexOf(key) === -1;
+      return globalOptions.headerBlacklist.indexOf(key) === -1
     }).reduce(function (acc, header) {
-        acc[header] = headers[header];
-        return acc;
-    }, {});
+        acc[header] = headers[header]
+        return acc
+    }, {})
   }
 
   function createCacheObject(status, headers, data, encoding) {
@@ -134,16 +134,21 @@ function ApiCache() {
   function accumulateContent(res, content) {
     if (content) {
       if (typeof(content) == 'string') {
-        res._apicache.content = (res._apicache.content || '') + content;
+        res._apicache.content = (res._apicache.content || '') + content
       } else if (Buffer.isBuffer(content)) {
         var oldContent = res._apicache.content
-        if (!oldContent) {
-          oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0);
+
+        if (typeof oldContent === 'string') {
+          oldContent = !Buffer.from ? new Buffer(oldContent) : Buffer.from(oldContent)
         }
-        res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length);
+
+        if (!oldContent) {
+          oldContent = !Buffer.alloc ? new Buffer(0) : Buffer.alloc(0)
+        }
+
+        res._apicache.content = Buffer.concat([oldContent, content], oldContent.length + content.length)
       } else {
         res._apicache.content = content
-        // res._apicache.cacheable = false;
       }
     }
   }
@@ -167,9 +172,9 @@ function ApiCache() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if(shouldCacheResponse(req, res, toggle)) {
-          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0));
+          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
         } else {
-          res.header('cache-control', 'no-cache, no-store, must-revalidate');
+          res.header('cache-control', 'no-cache, no-store, must-revalidate')
         }
       }
 
@@ -179,15 +184,15 @@ function ApiCache() {
 
     // patch res.write
     res.write = function(content) {
-      accumulateContent(res, content);
-      return res._apicache.write.apply(this, arguments);
+      accumulateContent(res, content)
+      return res._apicache.write.apply(this, arguments)
     }
 
     // patch res.end
     res.end = function(content, encoding) {
       if (shouldCacheResponse(req, res, toggle)) {
 
-        accumulateContent(res, content);
+        accumulateContent(res, content)
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
@@ -204,19 +209,18 @@ function ApiCache() {
         }
       }
 
-      return res._apicache.end.apply(this, arguments);
+      return res._apicache.end.apply(this, arguments)
     }
 
     next()
   }
-
 
   function sendCachedResponse(request, response, cacheObject, toggle) {
     if (toggle && !toggle(request, response)) {
       return false
     }
 
-    var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers;
+    var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
@@ -463,7 +467,7 @@ function ApiCache() {
 
       if ('defaultDuration' in options) {
         // Convert the default duration to a number in milliseconds (if needed)
-        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000);
+        globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000)
       }
 
       return this

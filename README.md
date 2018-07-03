@@ -292,3 +292,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.1** - Updated deps
 - **v1.2.2** - bugfix: ioredis.expire params (thanks @GoingFast and @luin)
 - **v1.2.3** - add etag to if-none-match 304 support (thanks for the test/issue @svozza)
+- **v1.2.4** - force content type to Buffer, using old and new Buffer creation syntax
