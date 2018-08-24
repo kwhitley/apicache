@@ -421,6 +421,12 @@ function ApiCache() {
         key += '$$appendKey=' + appendKey
       }
 
+
+      if (typeof opt.getDuration === 'function') {
+        strDuration = opt.getDuration(req, res)
+        duration = instance.getDuration(strDuration)
+      }
+
       // attempt cache hit
       var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
