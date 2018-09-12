@@ -421,6 +421,11 @@ function ApiCache() {
         key += '$$appendKey=' + appendKey
       }
 
+      if (req.method.toLowerCase() === 'post') {
+        const postParamsKey = JSON.stringify(req.body).replace(/"/g, '')
+        key += `$$postParams=${postParamsKey}`
+      }
+      
       // attempt cache hit
       var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
