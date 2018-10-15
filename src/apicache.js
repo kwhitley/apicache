@@ -222,10 +222,7 @@ function ApiCache() {
 
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
 
-    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
-      'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
-      'apicache-version': pkg.version
-    })
+    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}))
 
     // unstringify buffers
     var data = cacheObject.data
