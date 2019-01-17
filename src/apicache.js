@@ -217,7 +217,7 @@ function ApiCache() {
 
   function sendCachedResponse(request, response, cacheObject, toggle, next) {
     if (toggle && !toggle(request, response)) {
-      return next();
+      return next()
     }
 
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
