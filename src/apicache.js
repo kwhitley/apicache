@@ -107,7 +107,8 @@ function ApiCache() {
       status: status,
       headers: filterBlacklistedHeaders(headers),
       data: data,
-      encoding: encoding
+      encoding: encoding,
+      timestamp: new Date().getTime()/1000 // seconds since epoch.  This is used to properly decrement max-age headers in cached responses.
     }
   }
 
@@ -215,7 +216,7 @@ function ApiCache() {
     next()
   }
 
-  function sendCachedResponse(request, response, cacheObject, toggle) {
+  function sendCachedResponse(request, response, cacheObject, toggle, duration) {
     if (toggle && !toggle(request, response)) {
       return false
     }
@@ -224,7 +225,9 @@ function ApiCache() {
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
-      'apicache-version': pkg.version
+      'apicache-version': pkg.version,
+      // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
+      'cache-control': 'max-age=' + ((duration/1000 - (new Date().getTime()/1000 - cacheObject.timestamp))).toFixed(0)
     })
 
     // unstringify buffers
@@ -430,7 +433,7 @@ function ApiCache() {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
-        return sendCachedResponse(req, res, cached, middlewareToggle)
+        return sendCachedResponse(req, res, cached, middlewareToggle, duration)
       }
 
       // send if cache hit from redis
@@ -441,7 +444,7 @@ function ApiCache() {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle)
+              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle, duration)
             } else {
               return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
             }
