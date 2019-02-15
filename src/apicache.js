@@ -165,16 +165,16 @@ function ApiCache() {
 
     // append header overwrites if applicable
     Object.keys(globalOptions.headers).forEach(function(name) {
-      res.header(name, globalOptions.headers[name])
+      res.setHeader(name, globalOptions.headers[name])
     })
 
     res.writeHead = function() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if(shouldCacheResponse(req, res, toggle)) {
-          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+          res.setHeader('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
         } else {
-          res.header('cache-control', 'no-cache, no-store, must-revalidate')
+          res.setHeader('cache-control', 'no-cache, no-store, must-revalidate')
         }
       }
 
