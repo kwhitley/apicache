@@ -222,10 +222,15 @@ function ApiCache() {
 
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
 
-    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
-      'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
-      'apicache-version': pkg.version
-    })
+    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}))
+
+    // only embed apicache headers when not in production environment
+    if (process.env.NODE_ENV !== 'production') {
+      Object.assign(headers, {
+        'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
+        'apicache-version': pkg.version
+      })
+    }
 
     // unstringify buffers
     var data = cacheObject.data
