@@ -4,3 +4,5 @@
 .DS_STORE
 *.rdb
 .nyc_output
+.yarn.lock
+package-lock.json
