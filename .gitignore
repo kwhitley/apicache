@@ -4,4 +4,3 @@
 .DS_STORE
 *.rdb
 .nyc_output
-package-lock.json
