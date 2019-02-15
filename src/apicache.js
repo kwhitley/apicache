@@ -215,9 +215,9 @@ function ApiCache() {
     next()
   }
 
-  function sendCachedResponse(request, response, cacheObject, toggle) {
+  function sendCachedResponse(request, response, cacheObject, toggle, next) {
     if (toggle && !toggle(request, response)) {
-      return false
+      return next()
     }
 
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
@@ -430,7 +430,7 @@ function ApiCache() {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
-        return sendCachedResponse(req, res, cached, middlewareToggle)
+        return sendCachedResponse(req, res, cached, middlewareToggle, next)
       }
 
       // send if cache hit from redis
@@ -441,7 +441,7 @@ function ApiCache() {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle)
+              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle, next)
             } else {
               return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
             }
