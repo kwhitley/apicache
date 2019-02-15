@@ -657,7 +657,7 @@ describe('.middleware {MIDDLEWARE}', function() {
             return request(app)
               .get('/api/movies')
               .expect(200, movies)
-              .then((res) => {
+              .then(function(res) {
                 expect(res.headers['apicache-version']).to.be.undefined
               })
           })
