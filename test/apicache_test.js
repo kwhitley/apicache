@@ -642,6 +642,27 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('middlewareToggle does not block response on falsy middlewareToggle', function() {
+        var hits = 0
+
+        var onlyOnce = function(req, res) {
+          return (hits++ === 0)
+        }
+
+        var app = mockAPI.create('2 seconds', {}, onlyOnce)
+
+        return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            return request(app)
+              .get('/api/movies')
+              .expect(200, movies)
+              .then((res) => {
+                expect(res.headers['apicache-version']).to.be.undefined
+              })
+          })
+      })
+
       it('middlewareToggle works correctly to control statusCode caching (per example)', function() {
         var onlyStatusCode200 = function(req, res) {
           return res.statusCode === 200
