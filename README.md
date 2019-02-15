@@ -295,3 +295,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.4** - force content type to Buffer, using old and new Buffer creation syntax
 - **v1.2.5** - uses native Node setHeader() rather than express.js header() (thanks @keithws and @daveross)
 - **v1.2.6** - middlewareToggle() now prevents response block on cache hit + falsy toggle (thanks @apascal)
+- **v1.3.0** - [securityfix] apicache headers no longer embedded in cached responses when NODE_ENV === 'production' (thanks for feedback @satya-jugran, @smddzcy, @adamelliotfields)
