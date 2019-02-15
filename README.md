@@ -261,7 +261,7 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes, tweaks, documentation, etc.
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara, @GoingFast, @luin, @daveross, @apascal
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara, @GoingFast, @luin, @keithws, @daveross, @apascal
 
 ### Changelog
 - **v0.4.0** - dropped lodash and memory-cache external dependencies, and bumped node version requirements to 4.0.0+ to allow Object.assign native support
@@ -293,5 +293,5 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.2** - bugfix: ioredis.expire params (thanks @GoingFast and @luin)
 - **v1.2.3** - add etag to if-none-match 304 support (thanks for the test/issue @svozza)
 - **v1.2.4** - force content type to Buffer, using old and new Buffer creation syntax
-- **v1.2.5** - uses native Node setHeader() rather than express.js header()
+- **v1.2.5** - uses native Node setHeader() rather than express.js header() (thanks @keithws and @daveross)
 - **v1.2.6** - middlewareToggle() now prevents response block on cache hit + falsy toggle (thanks @apascal)
