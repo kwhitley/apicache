@@ -166,16 +166,16 @@ function ApiCache() {
 
     // append header overwrites if applicable
     Object.keys(globalOptions.headers).forEach(function(name) {
-      res.header(name, globalOptions.headers[name])
+      res.setHeader(name, globalOptions.headers[name])
     })
 
     res.writeHead = function() {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if(shouldCacheResponse(req, res, toggle)) {
-          res.header('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+          res.setHeader('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
         } else {
-          res.header('cache-control', 'no-cache, no-store, must-revalidate')
+          res.setHeader('cache-control', 'no-cache, no-store, must-revalidate')
         }
       }
 
@@ -216,19 +216,25 @@ function ApiCache() {
     next()
   }
 
-  function sendCachedResponse(request, response, cacheObject, toggle, duration) {
+  function sendCachedResponse(request, response, cacheObject, toggle, next, duration) {
     if (toggle && !toggle(request, response)) {
-      return false
+      return next()
     }
 
     var headers = (typeof response.getHeaders === 'function') ? response.getHeaders() : response._headers
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
-      'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
-      'apicache-version': pkg.version,
       // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
       'cache-control': 'max-age=' + ((duration/1000 - (new Date().getTime()/1000 - cacheObject.timestamp))).toFixed(0)
     })
+
+    // only embed apicache headers when not in production environment
+    if (process.env.NODE_ENV !== 'production') {
+      Object.assign(headers, {
+        'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
+        'apicache-version': pkg.version
+      })
+    }
 
     // unstringify buffers
     var data = cacheObject.data
@@ -433,7 +439,7 @@ function ApiCache() {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
-        return sendCachedResponse(req, res, cached, middlewareToggle, duration)
+        return sendCachedResponse(req, res, cached, middlewareToggle, next, duration)
       }
 
       // send if cache hit from redis
@@ -444,7 +450,7 @@ function ApiCache() {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle, duration)
+              return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle, next, duration)
             } else {
               return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
             }

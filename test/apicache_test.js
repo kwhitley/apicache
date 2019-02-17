@@ -551,6 +551,32 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', function() {
+        var app = mockAPI.create('10 seconds')
+        process.env.NODE_ENV = 'production'
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(1)
+
+                process.env.NODE_ENV = undefined
+              })
+          })
+      })
+
       it('embeds cache-control header', function() {
         var app = mockAPI.create('10 seconds')
 
@@ -673,6 +699,27 @@ describe('.middleware {MIDDLEWARE}', function() {
           .then(function(res) {
             expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
+          })
+      })
+
+      it('middlewareToggle does not block response on falsy middlewareToggle', function() {
+        var hits = 0
+
+        var onlyOnce = function(req, res) {
+          return (hits++ === 0)
+        }
+
+        var app = mockAPI.create('2 seconds', {}, onlyOnce)
+
+        return request(app)
+          .get('/api/movies')
+          .then(function(res) {
+            return request(app)
+              .get('/api/movies')
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-version']).to.be.undefined
+              })
           })
       })
 
