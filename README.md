@@ -252,7 +252,7 @@ Special thanks to all those that use this library and report issues, but especia
 - [@davidyang](https://github.com/davidyang) - express 4+ compatibility
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
-- [@killdash9](https://github.com/killdash9) - restify support and response accumulator method
+- [@killdash9](https://github.com/killdash9) - restify support and response accumulator method, auto-decrementing cache-control header, etc
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date, Typescript Types
 - [@vectart](https://github.com/vectart) - Added middleware local options support
@@ -296,3 +296,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.5** - uses native Node setHeader() rather than express.js header() (thanks @keithws and @daveross)
 - **v1.2.6** - middlewareToggle() now prevents response block on cache hit + falsy toggle (thanks @apascal)
 - **v1.3.0** - [securityfix] apicache headers no longer embedded in cached responses when NODE_ENV === 'production' (thanks for feedback @satya-jugran, @smddzcy, @adamelliotfields).  Updated deps, now requiring Node v6.00+.
+- **v1.4.0** - cache-control header now auto-decrements in cached responses (thanks again, @killdash9)
