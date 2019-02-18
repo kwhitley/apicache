@@ -359,6 +359,40 @@ describe('.middleware {MIDDLEWARE}', function() {
           .then(assertNumRequestsProcessed(app, 1))
       })
 
+      it('returns max-age header on first request', function() {
+        var app = mockAPI.create('10 seconds')
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .expect('Cache-Control', /max-age/)
+      })
+
+      it('returns properly decremented max-age header on cached response', function(done) {
+        var app = mockAPI.create('10 seconds')
+
+        request(app)
+        .get('/api/movies')
+        .expect(200, movies)
+        .expect('Cache-Control', 'max-age=10')
+        .then(function(res){
+          setTimeout(function() {
+              request(app)
+                .get('/api/movies')
+                .expect(200,movies)
+                .expect('Cache-Control', 'max-age=9')
+                .then(function() {
+                  expect(app.requestsProcessed).to.equal(1)
+                  done()
+                }).
+                catch(function(err){
+                  done(err)
+                })
+          }, 1000)
+          })
+
+      })
+
       it('skips cache when using header "x-apicache-bypass"', function() {
         var app = mockAPI.create('10 seconds')
 
