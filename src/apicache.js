@@ -54,6 +54,7 @@ function ApiCache() {
   var instance = this
   var index = null
   var timers = {}
+  var performanceArray = [] // for tracking cache hit rate
 
   instances.push(this)
   this.id = instances.length
@@ -360,6 +361,18 @@ function ApiCache() {
     return parseDuration(duration, globalOptions.defaultDuration)
   }
 
+  /**
+   * Return cache performance statistics (hit rate).  Suitable for putting into a route:
+   * <code>
+   * app.get('/api/cache/performance', (req, res) => {
+   *    res.json(apicache.getPerformance())
+   * })
+   * </code>
+   */
+  this.getPerformance = function() {
+    return performanceArray.map(function(p){return p.report()});
+  }
+
   this.getIndex = function(group) {
     if (group) {
       return index.groups[group]
@@ -389,6 +402,103 @@ function ApiCache() {
     }
 
     options(localOptions)
+
+    /**
+     * A class for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
+     */
+    class CachePerformance {
+      constructor() {
+        /**
+         * Tracks the hit rate for the last 1000 requests.
+         * If there have been fewer than 1000 requests, the hit rate just considers the requests that have happened.
+         */
+        this.hitsLast1000=[]
+        /**
+         * Tracks the hit rate for the last 10000 requests.
+         * If there have been fewer than 10000 requests, the hit rate just considers the requests that have happened.
+         */
+        this.hitsLast10000=[]
+        /**
+         * Tracks the hit rate for the last 100000 requests.
+         * If there have been fewer than 100000 requests, the hit rate just considers the requests that have happened.
+         */
+        this.hitsLast100000=[]
+        /**
+         * The number of calls that have passed through the middleware since the server started.
+         */
+        this.callCount=0;
+        /**
+         * The key from the last cache hit.  This is useful in identifying which route these statistics apply to.
+         */
+        this.lastCacheHit=null;
+        /**
+         * The key from the last cache miss.  This is useful in identifying which route these statistics apply to.
+         */
+        this.lastCacheMiss=null;
+      }
+
+      /**
+       * Return performance statistics
+       */
+      report() {
+        return {
+          lastCacheHit: this.lastCacheHit,
+          lastCacheMiss: this.lastCacheMiss,
+          callCount: this.callCount,
+          hitRateLast1000: this.hitRate(this.hitsLast1000),
+          hitRateLast10000: this.hitRate(this.hitsLast10000),
+          hitRateLast100000: this.hitRate(this.hitsLast100000),
+        }
+      }
+
+      /**
+       * Computes a cache hit rate from an array of hits and misses.
+       * @param {boolean[]} array An array of booleans representing hits or misses
+       * @returns a number between 0 and 1, or null if the array has no entries
+       */
+      hitRate(array) {
+        var total=0
+        var hits = 0;
+        array.forEach(function(hit){
+          total++;
+          if (hit) hits++;
+        })
+        if (total == 0) return null;
+        return hits/total;
+      }
+
+      /**
+       * Records the hit or miss in the tracking arrays and increments the call count.
+       * @param {boolean} hit True if it was a hit, false if it was a miss
+       */
+      recordHit(hit) {
+        this.hitsLast1000[this.callCount % 1000] = hit;
+        this.hitsLast10000[this.callCount % 10000] = hit;
+        this.hitsLast100000[this.callCount % 100000] = hit;
+        this.callCount++
+      }
+      
+      /**
+       * Records a hit event, setting lastCacheMiss to the given key
+       * @param {string} key The key that had the cache hit
+       */
+      hit(key) {
+        this.recordHit(true);
+        this.lastCacheHit = key;
+      }
+      
+      /**
+       * Records a miss event, setting lastCacheMiss to the given key
+       * @param {string} key The key that had the cache miss
+       */
+      miss(key) {
+        this.recordHit(false);
+        this.lastCacheMiss = key;
+      }
+    }
+
+    var perf = new CachePerformance();
+    performanceArray.push(perf);
 
     var cache = function(req, res, next) {
       function bypass() {
@@ -439,6 +549,7 @@ function ApiCache() {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
+        perf.hit(key);
         return sendCachedResponse(req, res, cached, middlewareToggle, next, duration)
       }
 
@@ -450,16 +561,20 @@ function ApiCache() {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
 
+              perf.hit(key);
               return sendCachedResponse(req, res, JSON.parse(obj.response), middlewareToggle, next, duration)
             } else {
+              perf.miss(key);
               return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
             }
           })
         } catch (err) {
           // bypass redis on error
+          perf.miss(key);
           return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
         }
       } else {
+        perf.miss(key);
         return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
       }
     }

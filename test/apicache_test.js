@@ -109,6 +109,70 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 
 })
 
+describe('.getPerformance()', function() {
+  var apicache = require('../src/apicache')
+
+  it('is a function', function() {
+    expect(typeof apicache.getPerformance).to.equal('function')
+  })
+
+  it('returns an array', function() {
+    expect(Array.isArray(apicache.getPerformance())).to.be.true
+  })
+
+  it('returns a null hit rate if the api has not been called', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds')
+    expect(app.apicache.getPerformance()[0]).to.deep.equal({
+      callCount:0,
+      hitRateLast1000:null,
+      hitRateLast10000:null,
+      hitRateLast100000:null,
+      lastCacheHit:null,
+      lastCacheMiss:null,
+    })
+  })
+
+  it('returns a 0 hit rate if the api has been called once', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds')
+
+    return request(app)
+      .get('/api/movies')
+      .then(function(res) {
+        expect(app.apicache.getPerformance()[0]).to.deep.equal({
+          callCount:1,
+          hitRateLast1000:0,
+          hitRateLast10000:0,
+          hitRateLast100000:0,
+          lastCacheHit:null,
+          lastCacheMiss:"/api/movies",
+        })
+        })
+  })
+  it('returns a 0.5 hit rate if the api has been called twice', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds')
+
+    return request(app)
+      .get('/api/movies')
+      .then(function(res) {
+        request(app)
+        .get('/api/movies')
+        .then(function(res){
+          expect(app.apicache.getPerformance()[0]).to.deep.equal({
+            callCount:2,
+            hitRateLast1000:0.5,
+            hitRateLast10000:0.5,
+            hitRateLast100000:0.5,
+            lastCacheHit:null,
+            lastCacheMiss:"/api/movies",
+          })
+          })
+      })
+  })
+})
+
 describe('.getIndex([groupName]) {GETTER}', function() {
   var apicache = require('../src/apicache')
 

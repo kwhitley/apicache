@@ -82,6 +82,11 @@ app.get('/api/:collection/:item?', (req, res) => {
   res.json({ success: true })
 })
 
+// add route to display cache performance
+app.get('/api/cache/performance', (req, res) => {
+  res.json(apicache.getPerformance())
+})
+
 // add route to display cache index
 app.get('/api/cache/index', (req, res) => {
   res.json(apicache.getIndex())
@@ -134,6 +139,7 @@ let cache5min = cache('5 min') // continue to use normally
 - `apicache.options([globalOptions])` - getter/setter for global options.  If used as a setter, this function is chainable, allowing you to do things such as... say... return the middleware.
 - `apicache.middleware([duration], [toggleMiddleware], [localOptions])` - the actual middleware that will be used in your routes.  `duration` is in the following format "[length] [unit]", as in `"10 minutes"` or `"1 day"`.  A second param is a middleware toggle function, accepting request and response params, and must return truthy to enable cache for the request. Third param is the options that will override global ones and affect this middleware only.
 - `middleware.options([localOptions])` - getter/setter for middleware-specific options that will override global ones.
+- `apicache.getPerformance()` - returns current cache performance (cache hit rate)
 - `apicache.getIndex()` - returns current cache index [of keys]
 - `apicache.clear([target])` - clears cache target (key or group), or entire cache if no value passed, returns new index.
 - `apicache.newInstance([options])` - used to create a new ApiCache instance (by default, simply requiring this library shares a common instance)
