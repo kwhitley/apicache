@@ -420,12 +420,6 @@ function ApiCache() {
       this.hitsLast10000=[]
 
       /**
-       * Tracks the hit rate for the last 100000 requests.
-       * If there have been fewer than 100000 requests, the hit rate just considers the requests that have happened.
-       */
-      this.hitsLast100000=[]
-
-      /**
        * The number of calls that have passed through the middleware since the server started.
        */
       this.callCount=0;
@@ -450,7 +444,6 @@ function ApiCache() {
           callCount: this.callCount,
           hitRateLast1000: this.hitRate(this.hitsLast1000),
           hitRateLast10000: this.hitRate(this.hitsLast10000),
-          hitRateLast100000: this.hitRate(this.hitsLast100000),
         }
       }
 
@@ -477,7 +470,6 @@ function ApiCache() {
       this.recordHit=function(hit) {
         this.hitsLast1000[this.callCount % 1000] = hit;
         this.hitsLast10000[this.callCount % 10000] = hit;
-        this.hitsLast100000[this.callCount % 100000] = hit;
         this.callCount++
       }
       

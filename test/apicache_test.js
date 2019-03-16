@@ -127,7 +127,6 @@ describe('.getPerformance()', function() {
       callCount:0,
       hitRateLast1000:null,
       hitRateLast10000:null,
-      hitRateLast100000:null,
       lastCacheHit:null,
       lastCacheMiss:null,
     })
@@ -144,7 +143,6 @@ describe('.getPerformance()', function() {
           callCount:1,
           hitRateLast1000:0,
           hitRateLast10000:0,
-          hitRateLast100000:0,
           lastCacheHit:null,
           lastCacheMiss:"/api/movies",
         })
@@ -164,7 +162,6 @@ describe('.getPerformance()', function() {
             callCount:2,
             hitRateLast1000:0.5,
             hitRateLast10000:0.5,
-            hitRateLast100000:0.5,
             lastCacheHit:null,
             lastCacheMiss:"/api/movies",
           })
