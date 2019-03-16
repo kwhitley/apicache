@@ -404,43 +404,46 @@ function ApiCache() {
     options(localOptions)
 
     /**
-     * A class for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
+     * A function for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
      */
-    class CachePerformance {
-      constructor() {
-        /**
-         * Tracks the hit rate for the last 1000 requests.
-         * If there have been fewer than 1000 requests, the hit rate just considers the requests that have happened.
-         */
-        this.hitsLast1000=[]
-        /**
-         * Tracks the hit rate for the last 10000 requests.
-         * If there have been fewer than 10000 requests, the hit rate just considers the requests that have happened.
-         */
-        this.hitsLast10000=[]
-        /**
-         * Tracks the hit rate for the last 100000 requests.
-         * If there have been fewer than 100000 requests, the hit rate just considers the requests that have happened.
-         */
-        this.hitsLast100000=[]
-        /**
-         * The number of calls that have passed through the middleware since the server started.
-         */
-        this.callCount=0;
-        /**
-         * The key from the last cache hit.  This is useful in identifying which route these statistics apply to.
-         */
-        this.lastCacheHit=null;
-        /**
-         * The key from the last cache miss.  This is useful in identifying which route these statistics apply to.
-         */
-        this.lastCacheMiss=null;
-      }
+    function CachePerformance() {
+      /**
+       * Tracks the hit rate for the last 1000 requests.
+       * If there have been fewer than 1000 requests, the hit rate just considers the requests that have happened.
+       */
+      this.hitsLast1000=[]
+
+      /**
+       * Tracks the hit rate for the last 10000 requests.
+       * If there have been fewer than 10000 requests, the hit rate just considers the requests that have happened.
+       */
+      this.hitsLast10000=[]
+
+      /**
+       * Tracks the hit rate for the last 100000 requests.
+       * If there have been fewer than 100000 requests, the hit rate just considers the requests that have happened.
+       */
+      this.hitsLast100000=[]
+
+      /**
+       * The number of calls that have passed through the middleware since the server started.
+       */
+      this.callCount=0;
+
+      /**
+       * The key from the last cache hit.  This is useful in identifying which route these statistics apply to.
+       */
+      this.lastCacheHit=null;
+
+      /**
+       * The key from the last cache miss.  This is useful in identifying which route these statistics apply to.
+       */
+      this.lastCacheMiss=null;
 
       /**
        * Return performance statistics
        */
-      report() {
+      this.report=function() {
         return {
           lastCacheHit: this.lastCacheHit,
           lastCacheMiss: this.lastCacheMiss,
@@ -456,7 +459,7 @@ function ApiCache() {
        * @param {boolean[]} array An array of booleans representing hits or misses
        * @returns a number between 0 and 1, or null if the array has no entries
        */
-      hitRate(array) {
+      this.hitRate=function(array) {
         var total=0
         var hits = 0;
         array.forEach(function(hit){
@@ -471,7 +474,7 @@ function ApiCache() {
        * Records the hit or miss in the tracking arrays and increments the call count.
        * @param {boolean} hit True if it was a hit, false if it was a miss
        */
-      recordHit(hit) {
+      this.recordHit=function(hit) {
         this.hitsLast1000[this.callCount % 1000] = hit;
         this.hitsLast10000[this.callCount % 10000] = hit;
         this.hitsLast100000[this.callCount % 100000] = hit;
@@ -482,16 +485,16 @@ function ApiCache() {
        * Records a hit event, setting lastCacheMiss to the given key
        * @param {string} key The key that had the cache hit
        */
-      hit(key) {
+      this.hit=function(key) {
         this.recordHit(true);
         this.lastCacheHit = key;
       }
-      
+
       /**
        * Records a miss event, setting lastCacheMiss to the given key
        * @param {string} key The key that had the cache miss
        */
-      miss(key) {
+      this.miss=function(key) {
         this.recordHit(false);
         this.lastCacheMiss = key;
       }
