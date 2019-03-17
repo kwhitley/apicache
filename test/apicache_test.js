@@ -125,8 +125,12 @@ describe('.getPerformance()', function() {
     var app = api.create('10 seconds')
     expect(app.apicache.getPerformance()[0]).to.deep.equal({
       callCount:0,
+      hitCount: 0,
+      missCount: 0,
+      hitRate:null,
       hitRateLast1000:null,
       hitRateLast10000:null,
+      hitRateLast100000:null,
       lastCacheHit:null,
       lastCacheMiss:null,
     })
@@ -141,34 +145,42 @@ describe('.getPerformance()', function() {
       .then(function(res) {
         expect(app.apicache.getPerformance()[0]).to.deep.equal({
           callCount:1,
+          hitCount:0,
+          missCount:1,
+          hitRate:0,
           hitRateLast1000:0,
           hitRateLast10000:0,
+          hitRateLast100000:0,
           lastCacheHit:null,
           lastCacheMiss:"/api/movies",
         })
         })
   })
+
   it('returns a 0.5 hit rate if the api has been called twice', function() {
     var api = require('./api/express')
     var app = api.create('10 seconds')
-
-    return request(app)
-      .get('/api/movies')
-      .then(function(res) {
-        request(app)
-        .get('/api/movies')
+    var requests = []
+    for(var i=0; i<2; i++) {
+      requests.push(request(app)
+      .get('/api/movies'))
+    }
+    return Promise.all(requests)
         .then(function(res){
           expect(app.apicache.getPerformance()[0]).to.deep.equal({
             callCount:2,
+            hitCount: 1,
+            missCount: 1,
+            hitRate:0.5,
             hitRateLast1000:0.5,
             hitRateLast10000:0.5,
-            lastCacheHit:null,
+            hitRateLast100000:0.5,
+            lastCacheHit:"/api/movies",
             lastCacheMiss:"/api/movies",
           })
-          })
-      })
+        })
+    })
   })
-})
 
 describe('.getIndex([groupName]) {GETTER}', function() {
   var apicache = require('../src/apicache')
