@@ -4,3 +4,4 @@
 .DS_STORE
 *.rdb
 .nyc_output
+.idea

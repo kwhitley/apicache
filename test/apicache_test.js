@@ -619,6 +619,7 @@ describe('.middleware {MIDDLEWARE}', function() {
               .expect('apicache-store', 'memory')
               .expect('apicache-version', pkg.version)
               .expect(200, movies)
+              .expect('Cache-Control', 'no-cache')
               .then(assertNumRequestsProcessed(app, 1))
           })
       })
