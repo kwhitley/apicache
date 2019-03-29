@@ -407,6 +407,13 @@ function ApiCache() {
      * A function for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
      */
     function CachePerformance() {
+
+      /**
+       * Tracks the hit rate for the last 100 requests.
+       * If there have been fewer than 100 requests, the hit rate just considers the requests that have happened.
+       */
+      this.hitsLast100=new Uint8Array(100/4) // each hit is 2 bits
+
       /**
        * Tracks the hit rate for the last 1000 requests.
        * If there have been fewer than 1000 requests, the hit rate just considers the requests that have happened.
@@ -456,6 +463,7 @@ function ApiCache() {
           hitCount: this.hitCount,
           missCount: this.callCount - this.hitCount,
           hitRate: (this.callCount == 0)? null : this.hitCount/this.callCount,
+          hitRateLast100: this.hitRate(this.hitsLast100),
           hitRateLast1000: this.hitRate(this.hitsLast1000),
           hitRateLast10000: this.hitRate(this.hitsLast10000),
           hitRateLast100000: this.hitRate(this.hitsLast100000),
@@ -513,6 +521,7 @@ function ApiCache() {
        * @param {boolean} hit true records a hit, false records a miss
        */
       this.recordHit=function(hit) {
+        this.recordHitInArray(this.hitsLast100,hit)
         this.recordHitInArray(this.hitsLast1000,hit)
         this.recordHitInArray(this.hitsLast10000,hit)
         this.recordHitInArray(this.hitsLast100000,hit)
