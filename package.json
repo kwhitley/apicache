@@ -7,15 +7,10 @@
     "test": "nyc mocha $(find test -name '*.test.js') --recursive",
     "test:watch": "npm run test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "release": "release --push --tag",
-    "release:major": "yarn release - --major",
-    "release:minor": "yarn release - --minor",
-    "release:patch": "yarn release - --patch",
-    "release:next": "yarn release - --type=next",
     "prepublish": "npm run test"
   },
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=6.2.0"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
   "main": "./src/apicache.js",
@@ -45,15 +40,14 @@
     "chai": "^4.2.0",
     "compression": "^1.7.4",
     "coveralls": "^3.0.6",
-    "eslint": "^6.1.0",
+    "eslint": "^4.1.0",
     "express": "^4.17.1",
     "fakeredis": "^2.0.0",
     "mocha": "^6.2.0",
     "nyc": "^14.1.1",
     "restify": "^8.4.0",
     "restify-etag-cache": "^1.0.12",
-    "supertest": "^4.0.2",
-    "yarn-release": "^1.10.2"
+    "supertest": "^4.0.2"
   },
   "dependencies": {}
 }
