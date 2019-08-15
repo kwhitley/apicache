@@ -82,7 +82,7 @@ app.get('/api/:collection/:item?', (req, res) => {
   res.json({ success: true })
 })
 
-// add route to display cache performance
+// add route to display cache performance (courtesy of @killdash9)
 app.get('/api/cache/performance', (req, res) => {
   res.json(apicache.getPerformance())
 })
@@ -248,6 +248,7 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
+- [@killdash9](https://github.com/killdash9) - restify support, performance/stats system, and too much else at this point to list
 - [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify.  Node v7 + Restify v5 conflict resolution, etag/if-none-match support, etcetc, etc.  Triple thanks!!!
 - [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options, correction to caching checks
 - [@peteboere](https://github.com/peteboere) - Node v7 headers update
@@ -258,7 +259,6 @@ Special thanks to all those that use this library and report issues, but especia
 - [@davidyang](https://github.com/davidyang) - express 4+ compatibility
 - [@nmors](https://github.com/nmors) - redis support
 - [@maytis](https://github.com/maytis), [@ashwinnaidu](https://github.com/ashwinnaidu) - redis expiration
-- [@killdash9](https://github.com/killdash9) - restify support and response accumulator method, auto-decrementing cache-control header, etc
 - [@ubergesundheit](https://github.com/ubergesundheit) - Corrected buffer accumulation using res.write with Buffers
 - [@danielsogl](https://github.com/danielsogl) - Keeping dev deps up to date, Typescript Types
 - [@vectart](https://github.com/vectart) - Added middleware local options support
@@ -303,3 +303,4 @@ Special thanks to all those that use this library and report issues, but especia
 - **v1.2.6** - middlewareToggle() now prevents response block on cache hit + falsy toggle (thanks @apascal)
 - **v1.3.0** - [securityfix] apicache headers no longer embedded in cached responses when NODE_ENV === 'production' (thanks for feedback @satya-jugran, @smddzcy, @adamelliotfields).  Updated deps, now requiring Node v6.00+.
 - **v1.4.0** - cache-control header now auto-decrements in cached responses (thanks again, @killdash9)
+- **v1.5.0** - exposes apicache.getPerformance() for per-route cache metrics (@killdash9 continues to deliver)
