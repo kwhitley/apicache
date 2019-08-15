@@ -7,6 +7,11 @@
     "test": "nyc mocha $(find test -name '*.test.js') --recursive",
     "test:watch": "npm run test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "release": "release --push --tag",
+    "release:major": "yarn release - --major",
+    "release:minor": "yarn release - --minor",
+    "release:patch": "yarn release - --patch",
+    "release:next": "yarn release - --type=next",
     "prepublish": "npm run test"
   },
   "engines": {
@@ -30,24 +35,25 @@
     "middleware",
     "memory"
   ],
-  "author": "Kevin R. Whitley <kevin3503@gmail.com> (http://krwhitley.com)",
+  "author": "Kevin R. Whitley <krwhitley@gmail.com> (http://krwhitley.com)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kwhitley/apicache/issues",
-    "email": "kevin3503@gmail.com"
+    "email": "krwhitley@gmail.com"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "compression": "^1.7.3",
-    "coveralls": "^3.0.2",
+    "coveralls": "^3.0.3",
     "eslint": "^4.18.0",
     "express": "^4.16.4",
     "fakeredis": "^2.0.0",
-    "mocha": "^5.2.0",
-    "nyc": "^13.3.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.0.0",
     "restify": "^7.7.0",
     "restify-etag-cache": "^1.0.12",
-    "supertest": "^3.4.2"
+    "supertest": "^3.4.2",
+    "yarn-release": "^1.10.2"
   },
   "dependencies": {}
 }
