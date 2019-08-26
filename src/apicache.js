@@ -47,7 +47,8 @@ function ApiCache() {
     },
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
-    }
+    },
+    trackCachePerformance: false
   }
 
   var middlewareOptions = []
@@ -404,6 +405,13 @@ function ApiCache() {
     options(localOptions)
 
     /**
+     * A Function for non tracking performance
+     */
+    function NOOPCachePerformance() {
+      this.report = this.hit = this.miss = function() {}; // noop;
+    }
+
+    /**
      * A function for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
      */
     function CachePerformance() {
@@ -548,7 +556,10 @@ function ApiCache() {
       }
     }
 
-    var perf = new CachePerformance();
+    var perf = globalOptions.trackCachePerformance
+    ? new CachePerformance()
+    : new NOOPCachePerformance();
+
     performanceArray.push(perf);
 
     var cache = function(req, res, next) {

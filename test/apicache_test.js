@@ -122,7 +122,7 @@ describe('.getPerformance()', function() {
 
   it('returns a null hit rate if the api has not been called', function() {
     var api = require('./api/express')
-    var app = api.create('10 seconds')
+    var app = api.create('10 seconds', {trackCachePerformance: true})
     expect(app.apicache.getPerformance()[0]).to.deep.equal({
       callCount:0,
       hitCount: 0,
@@ -139,7 +139,7 @@ describe('.getPerformance()', function() {
 
   it('returns a 0 hit rate if the api has been called once', function() {
     var api = require('./api/express')
-    var app = api.create('10 seconds')
+    var app = api.create('10 seconds', {trackCachePerformance: true})
 
     return request(app)
       .get('/api/movies')
@@ -161,7 +161,7 @@ describe('.getPerformance()', function() {
 
   it('returns a 0.5 hit rate if the api has been called twice', function() {
     var api = require('./api/express')
-    var app = api.create('10 seconds')
+    var app = api.create('10 seconds', {trackCachePerformance: true})
     var requests = []
     for(var i=0; i<2; i++) {
       requests.push(request(app)
@@ -250,7 +250,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -262,7 +263,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false
       })
     })
 
@@ -299,7 +301,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        trackCachePerformance: false
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -311,7 +314,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false
       })
     })
 
@@ -342,7 +346,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -354,7 +359,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false
       })
     })
 
@@ -396,7 +402,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        trackCachePerformance: false
       })
       expect(middleware2.options()).to.eql({
         debug: true,
@@ -408,7 +415,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackCachePerformance: false
       })
     })
   })
