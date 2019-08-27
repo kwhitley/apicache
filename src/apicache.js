@@ -48,7 +48,7 @@ function ApiCache() {
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
     },
-    trackCachePerformance: false
+    trackPerformance: true
   }
 
   var middlewareOptions = []
@@ -556,7 +556,7 @@ function ApiCache() {
       }
     }
 
-    var perf = globalOptions.trackCachePerformance
+    var perf = globalOptions.trackPerformance
     ? new CachePerformance()
     : new NOOPCachePerformance();
 
@@ -654,6 +654,10 @@ function ApiCache() {
       if ('defaultDuration' in options) {
         // Convert the default duration to a number in milliseconds (if needed)
         globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000)
+      }
+
+      if(globalOptions.trackPerformance){
+        debug('WARNING: using trackPerformance flag can cause high memory usage!')
       }
 
       return this
