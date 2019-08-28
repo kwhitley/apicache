@@ -250,7 +250,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -262,7 +263,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true
       })
     })
 
@@ -299,7 +301,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        trackPerformance: true
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -311,7 +314,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true
       })
     })
 
@@ -342,7 +346,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -354,7 +359,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true
       })
     })
 
@@ -396,7 +402,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {
           'cache-control': 'no-cache'
-        }
+        },
+        trackPerformance: true
       })
       expect(middleware2.options()).to.eql({
         debug: true,
@@ -408,7 +415,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: true
       })
     })
   })
