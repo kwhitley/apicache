@@ -84,15 +84,21 @@ function ApiCache() {
   }
 
   function addIndexEntries(key, req) {
-    var groupName = req.apicacheGroup
+    var redis = globalOptions.redisClient
 
-    if (groupName) {
-      debug('group detected "' + groupName + '"')
-      var group = (index.groups[groupName] = index.groups[groupName] || [])
-      group.unshift(key)
+    if (redis) {
+      redis.lpush('apicache:index:all', key);
+    } else {
+      var groupName = req.apicacheGroup
+
+      if (groupName) {
+        debug('group detected "' + groupName + '"')
+        var group = (index.groups[groupName] = index.groups[groupName] || [])
+        group.unshift(key)
+      }
+
+      index.all.unshift(key)
     }
-
-    index.all.unshift(key)
   }
 
   function filterBlacklistedHeaders(headers) {
@@ -304,7 +310,17 @@ function ApiCache() {
       }
 
       // remove from global index
-      index.all = index.all.filter(doesntMatch(target))
+      if (redis) {
+        redis.lrem('apicache:index:all', -1, target, function(error, success) {
+          if (error) {
+            debug('Error removing index entry');
+          }
+          debug('Removed index entry from redis');
+        });
+
+      } else {
+        index.all = index.all.filter(doesntMatch(target))
+      }
 
       // remove target from each group that it may exist in
       Object.keys(index.groups).forEach(function(groupName) {
@@ -374,12 +390,31 @@ function ApiCache() {
     return performanceArray.map(function(p){return p.report()});
   }
 
+  /**
+   * This will be a breaking change
+   */
   this.getIndex = function(group) {
-    if (group) {
-      return index.groups[group]
-    } else {
-      return index
-    }
+    return new Promise(function(resolve, reject) {
+      var redis = globalOptions.redisClient;
+
+      if (redis) {
+        redis.lrange('apicache:index:all', 0, -1, function(error, elements) {
+          if (error) {
+            reject(error);
+          }
+
+          debug('Sending index from redis');
+
+          resolve({
+            all: elements
+          });
+        });
+      } else if (group) {
+        resolve(index.groups[group])
+      } else {
+        resolve(index)
+      }
+    })
   }
 
   this.middleware = function cache(strDuration, middlewareToggle, localOptions) {
@@ -514,14 +549,14 @@ function ApiCache() {
        * Each hit or miss is encoded as to bits as follows:
        * 00 means no hit or miss has been recorded in these bits
        * 01 encodes a hit
-       * 10 encodes a miss 
+       * 10 encodes a miss
        */
       this.recordHitInArray=function(array,hit) {
         var arrayIndex = ~~(this.callCount/4) % array.length;
-        var bitOffset = this.callCount % 4 * 2; // 2 bits per record, 4 records per uint8 array element 
+        var bitOffset = this.callCount % 4 * 2; // 2 bits per record, 4 records per uint8 array element
         var clearMask = ~(3<<bitOffset);
         var record = (hit?1:2) << bitOffset;
-        array[arrayIndex] = (array[arrayIndex] & clearMask) | record;    
+        array[arrayIndex] = (array[arrayIndex] & clearMask) | record;
       }
 
       /**
@@ -536,7 +571,7 @@ function ApiCache() {
         if (hit) this.hitCount++;
         this.callCount++
       }
-      
+
       /**
        * Records a hit event, setting lastCacheMiss to the given key
        * @param {string} key The key that had the cache hit
