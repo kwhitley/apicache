@@ -31,6 +31,10 @@ var logDuration = function(d, prefix) {
   return '\x1b[33m- ' + (prefix ? prefix + ' ' : '') + str + '\x1b[0m'
 }
 
+function getSafeHeaders(res) {
+  return res.getHeaders ? res.getHeaders() : res._headers
+}
+
 function ApiCache() {
   var memCache = new MemoryCache()
 
@@ -52,6 +56,7 @@ function ApiCache() {
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
     },
+    trackPerformance: false,
   }
 
   var middlewareOptions = []
@@ -195,7 +200,7 @@ function ApiCache() {
         }
       }
 
-      res._apicache.headers = Object.assign({}, res._headers)
+      res._apicache.headers = Object.assign({}, getSafeHeaders(res))
       return res._apicache.writeHead.apply(this, arguments)
     }
 
@@ -212,7 +217,7 @@ function ApiCache() {
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
-          var headers = res._apicache.headers || res._headers
+          var headers = res._apicache.headers || getSafeHeaders(res)
           var cacheObject = createCacheObject(
             res.statusCode,
             headers,
@@ -225,7 +230,7 @@ function ApiCache() {
           var elapsed = new Date() - req.apicacheTimer
           debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
           debug('_apicache.headers: ', res._apicache.headers)
-          debug('res._headers: ', res._headers)
+          debug('res.getHeaders(): ', getSafeHeaders(res))
           debug('cacheObject: ', cacheObject)
         }
       }
@@ -241,8 +246,7 @@ function ApiCache() {
       return next()
     }
 
-    var headers =
-      typeof response.getHeaders === 'function' ? response.getHeaders() : response._headers
+    var headers = getSafeHeaders(response)
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
       // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
@@ -265,7 +269,8 @@ function ApiCache() {
     // unstringify buffers
     var data = cacheObject.data
     if (data && data.type === 'Buffer') {
-      data = new Buffer(data.data)
+      data =
+        typeof data.data === 'number' ? new Buffer.alloc(data.data) : new Buffer.from(data.data)
     }
 
     // test Etag against If-None-Match for 304
@@ -431,6 +436,13 @@ function ApiCache() {
     options(localOptions)
 
     /**
+     * A Function for non tracking performance
+     */
+    function NOOPCachePerformance() {
+      this.report = this.hit = this.miss = function() {} // noop;
+    }
+
+    /**
      * A function for tracking and reporting hit rate.  These statistics are returned by the getPerformance() call above.
      */
     function CachePerformance() {
@@ -574,7 +586,8 @@ function ApiCache() {
       }
     }
 
-    var perf = new CachePerformance()
+    var perf = globalOptions.trackPerformance ? new CachePerformance() : new NOOPCachePerformance()
+
     performanceArray.push(perf)
 
     var cache = function(req, res, next) {
@@ -684,6 +697,10 @@ function ApiCache() {
       if ('defaultDuration' in options) {
         // Convert the default duration to a number in milliseconds (if needed)
         globalOptions.defaultDuration = parseDuration(globalOptions.defaultDuration, 3600000)
+      }
+
+      if (globalOptions.trackPerformance) {
+        debug('WARNING: using trackPerformance flag can cause high memory usage!')
       }
 
       return this
