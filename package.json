@@ -55,7 +55,7 @@
   "dependencies": {},
   "husky": {
     "hooks": {
-      "pre-commit": "pretty-quick --staged && yarn test"
+      "pre-commit": "pretty-quick --staged && npm run test"
     }
   }
 }
