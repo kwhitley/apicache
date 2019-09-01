@@ -469,7 +469,7 @@ describe('.middleware {MIDDLEWARE}', function() {
                 .catch(function(err) {
                   done(err)
                 })
-            }, 1000)
+            }, 500)
           })
       })
 
