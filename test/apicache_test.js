@@ -15,7 +15,7 @@ var apis = [
 
   // THESE TESTS ARE REMOVED AS RESTIFY 4 and 5 ARE CURRENTLY BREAKING IN THE ENVIRONMENT
   { name: 'restify', server: require('./api/restify') },
-  { name: 'restify+gzip', server: require('./api/restify-gzip') }
+  { name: 'restify+gzip', server: require('./api/restify-gzip') },
 ]
 
 function assertNumRequestsProcessed(app, n) {
@@ -32,25 +32,27 @@ describe('.options(opt?) {GETTER/SETTER}', function() {
   })
 
   describe('.options() {GETTER}', function() {
-    it ('returns global options as object', function() {
+    it('returns global options as object', function() {
       expect(typeof apicache.options()).to.equal('object')
     })
   })
 
   describe('.options(opt) {SETTER}', function() {
-    it ('is chainable', function() {
+    it('is chainable', function() {
       expect(apicache.options({})).to.equal(apicache)
     })
 
-    it ('extends defaults', function() {
+    it('extends defaults', function() {
       expect(apicache.options({ foo: 'bar' }).options().foo).to.equal('bar')
     })
 
-    it ('allows overrides of defaults', function() {
+    it('allows overrides of defaults', function() {
       var newDuration = 11
 
       expect(apicache.options()).to.have.property('defaultDuration')
-      expect(apicache.options({ defaultDuration: newDuration }).options().defaultDuration).to.equal(newDuration)
+      expect(apicache.options({ defaultDuration: newDuration }).options().defaultDuration).to.equal(
+        newDuration
+      )
     })
   })
 })
@@ -106,7 +108,80 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
       expect(apicache.getDuration('6 months')).to.equal(1000 * 60 * 60 * 24 * 30 * 6)
     })
   })
+})
 
+describe('.getPerformance()', function() {
+  var apicache = require('../src/apicache')
+
+  it('is a function', function() {
+    expect(typeof apicache.getPerformance).to.equal('function')
+  })
+
+  it('returns an array', function() {
+    expect(Array.isArray(apicache.getPerformance())).to.be.true
+  })
+
+  it('returns a null hit rate if the api has not been called', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds', { trackPerformance: true })
+    expect(app.apicache.getPerformance()[0]).to.deep.equal({
+      callCount: 0,
+      hitCount: 0,
+      missCount: 0,
+      hitRate: null,
+      hitRateLast100: null,
+      hitRateLast1000: null,
+      hitRateLast10000: null,
+      hitRateLast100000: null,
+      lastCacheHit: null,
+      lastCacheMiss: null,
+    })
+  })
+
+  it('returns a 0 hit rate if the api has been called once', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds', { trackPerformance: true })
+
+    return request(app)
+      .get('/api/movies')
+      .then(function(res) {
+        expect(app.apicache.getPerformance()[0]).to.deep.equal({
+          callCount: 1,
+          hitCount: 0,
+          missCount: 1,
+          hitRate: 0,
+          hitRateLast100: 0,
+          hitRateLast1000: 0,
+          hitRateLast10000: 0,
+          hitRateLast100000: 0,
+          lastCacheHit: null,
+          lastCacheMiss: '/api/movies',
+        })
+      })
+  })
+
+  it('returns a 0.5 hit rate if the api has been called twice', function() {
+    var api = require('./api/express')
+    var app = api.create('10 seconds', { trackPerformance: true })
+    var requests = []
+    for (var i = 0; i < 2; i++) {
+      requests.push(request(app).get('/api/movies'))
+    }
+    return Promise.all(requests).then(function(res) {
+      expect(app.apicache.getPerformance()[0]).to.deep.equal({
+        callCount: 2,
+        hitCount: 1,
+        missCount: 1,
+        hitRate: 0.5,
+        hitRateLast100: 0.5,
+        hitRateLast1000: 0.5,
+        hitRateLast10000: 0.5,
+        hitRateLast100000: 0.5,
+        lastCacheHit: '/api/movies',
+        lastCacheMiss: '/api/movies',
+      })
+    })
+  })
 })
 
 describe('.getIndex([groupName]) {GETTER}', function() {
@@ -138,11 +213,9 @@ describe('.resetIndex() {SETTER}', function() {
   it('is a function', function() {
     expect(typeof apicache.resetIndex).to.equal('function')
   })
-
 })
 
 describe('.middleware {MIDDLEWARE}', function() {
-
   it('is a function', function() {
     var apicache = require('../src/apicache')
     expect(typeof apicache.middleware).to.equal('function')
@@ -160,7 +233,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
     it('uses global options if local ones not provided', function() {
       apicache.options({
-        appendKey: ['test']
+        appendKey: ['test'],
       })
       var middleware1 = apicache.middleware('10 seconds')
       var middleware2 = apicache.middleware('20 seconds')
@@ -168,31 +241,33 @@ describe('.middleware {MIDDLEWARE}', function() {
         debug: false,
         defaultDuration: 3600000,
         enabled: true,
-        appendKey: [ 'test' ],
+        appendKey: ['test'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
         defaultDuration: 3600000,
         enabled: true,
-        appendKey: [ 'test' ],
+        appendKey: ['test'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
     })
 
     it('uses local options if they provided', function() {
       apicache.options({
-        appendKey: ['test']
+        appendKey: ['test'],
       })
       var middleware1 = apicache.middleware('10 seconds', null, {
         debug: true,
@@ -201,8 +276,8 @@ describe('.middleware {MIDDLEWARE}', function() {
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {
-          'cache-control': 'no-cache'
-        }
+          'cache-control': 'no-cache',
+        },
       })
       var middleware2 = apicache.middleware('20 seconds', null, {
         debug: false,
@@ -215,124 +290,130 @@ describe('.middleware {MIDDLEWARE}', function() {
         debug: true,
         defaultDuration: 7200000,
         enabled: true,
-        appendKey: [ 'bar' ],
+        appendKey: ['bar'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
         headers: {
-          'cache-control': 'no-cache'
-        }
+          'cache-control': 'no-cache',
+        },
+        trackPerformance: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
-        appendKey: [ 'foo' ],
+        appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
     })
 
     it('updates options if global ones changed', function() {
       apicache.options({
         debug: true,
-        appendKey: ['test']
+        appendKey: ['test'],
       })
       var middleware1 = apicache.middleware('10 seconds', null, {
         defaultDuration: 7200000,
-        statusCodes: { include: [], exclude: ['400'] }
+        statusCodes: { include: [], exclude: ['400'] },
       })
       var middleware2 = apicache.middleware('20 seconds', null, {
         defaultDuration: 1800000,
-        statusCodes: { include: [], exclude: ['200'] }
+        statusCodes: { include: [], exclude: ['200'] },
       })
       apicache.options({
         debug: false,
-        appendKey: ['foo']
+        appendKey: ['foo'],
       })
       expect(middleware1.options()).to.eql({
         debug: false,
         defaultDuration: 7200000,
         enabled: true,
-        appendKey: [ 'foo' ],
+        appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
-        appendKey: [ 'foo' ],
+        appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
     })
 
     it('updates options if local ones changed', function() {
       apicache.options({
         debug: true,
-        appendKey: ['test']
+        appendKey: ['test'],
       })
       var middleware1 = apicache.middleware('10 seconds', null, {
         defaultDuration: 7200000,
-        statusCodes: { include: [], exclude: ['400'] }
+        statusCodes: { include: [], exclude: ['400'] },
       })
       var middleware2 = apicache.middleware('20 seconds', null, {
         defaultDuration: 900000,
-        statusCodes: { include: [], exclude: ['404'] }
+        statusCodes: { include: [], exclude: ['404'] },
       })
       middleware1.options({
         debug: false,
         defaultDuration: 1800000,
         appendKey: ['foo'],
         headers: {
-          'cache-control': 'no-cache'
-        }
+          'cache-control': 'no-cache',
+        },
       })
       middleware2.options({
         defaultDuration: 450000,
         enabled: false,
-        appendKey: ['foo']
+        appendKey: ['foo'],
       })
       expect(middleware1.options()).to.eql({
         debug: false,
         defaultDuration: 1800000,
         enabled: true,
-        appendKey: [ 'foo' ],
+        appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
         headers: {
-          'cache-control': 'no-cache'
-        }
+          'cache-control': 'no-cache',
+        },
+        trackPerformance: false,
       })
       expect(middleware2.options()).to.eql({
         debug: true,
         defaultDuration: 450000,
         enabled: false,
-        appendKey: [ 'foo' ],
+        appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
-        headers: {}
+        headers: {},
+        trackPerformance: false,
       })
     })
   })
@@ -372,25 +453,24 @@ describe('.middleware {MIDDLEWARE}', function() {
         var app = mockAPI.create('10 seconds')
 
         request(app)
-        .get('/api/movies')
-        .expect(200, movies)
-        .expect('Cache-Control', 'max-age=10')
-        .then(function(res){
-          setTimeout(function() {
+          .get('/api/movies')
+          .expect(200, movies)
+          .expect('Cache-Control', 'max-age=10')
+          .then(function(res) {
+            setTimeout(function() {
               request(app)
                 .get('/api/movies')
-                .expect(200,movies)
+                .expect(200, movies)
                 .expect('Cache-Control', 'max-age=9')
                 .then(function() {
                   expect(app.requestsProcessed).to.equal(1)
                   done()
-                }).
-                catch(function(err){
+                })
+                .catch(function(err) {
                   done(err)
                 })
-          }, 1000)
+            }, 500)
           })
-
       })
 
       it('skips cache when using header "x-apicache-bypass"', function() {
@@ -438,7 +518,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('does not cache header in headerBlacklist', function() {
-        var app = mockAPI.create('10 seconds', {headerBlacklist: ['x-blacklisted']})
+        var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
         return request(app)
           .get('/api/testheaderblacklist')
@@ -601,7 +681,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('allows cache-control header to be overwritten (e.g. "no-cache"', function() {
-        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' }})
+        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
 
         return request(app)
           .get('/api/movies')
@@ -677,7 +757,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
       it('does not cache a request when status code found in status code exclusions', function() {
         var app = mockAPI.create('2 seconds', {
-          statusCodes: { exclude: [404] }
+          statusCodes: { exclude: [404] },
         })
 
         return request(app)
@@ -691,7 +771,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
       it('does not cache a request when status code not found in status code inclusions', function() {
         var app = mockAPI.create('2 seconds', {
-          statusCodes: { include: [200] }
+          statusCodes: { include: [200] },
         })
 
         return request(app)
@@ -707,7 +787,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         var hits = 0
 
         var onlyOnce = function(req, res) {
-          return (hits++ === 0)
+          return hits++ === 0
         }
 
         var app = mockAPI.create('2 seconds', {}, onlyOnce)
@@ -758,10 +838,10 @@ describe('.middleware {MIDDLEWARE}', function() {
 
       it('executes expiration callback from globalOptions.events.expire upon entry expiration', function(done) {
         var callbackResponse = undefined
-        var cb = function(a,b) {
+        var cb = function(a, b) {
           callbackResponse = b
         }
-        var app = mockAPI.create(10, { events: { expire: cb }})
+        var app = mockAPI.create(10, { events: { expire: cb } })
 
         request(app)
           .get('/api/movies')
@@ -781,19 +861,19 @@ describe('.middleware {MIDDLEWARE}', function() {
         var app = mockAPI.create(20)
 
         request(app)
-            .get('/api/movies')
-            .end(function(err, res) {
-              expect(app.apicache.getIndex().all.length).to.equal(1)
-              expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
-            })
+          .get('/api/movies')
+          .end(function(err, res) {
+            expect(app.apicache.getIndex().all.length).to.equal(1)
+            expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
+          })
 
         setTimeout(function() {
           request(app)
-              .get('/api/movies')
-              .end(function(err, res) {
-                expect(app.apicache.getIndex().all.length).to.equal(1)
-                expect(app.apicache.getIndex().all).to.include('/api/movies')
-              })
+            .get('/api/movies')
+            .end(function(err, res) {
+              expect(app.apicache.getIndex().all.length).to.equal(1)
+              expect(app.apicache.getIndex().all).to.include('/api/movies')
+            })
         }, 10)
 
         setTimeout(function() {
@@ -805,10 +885,10 @@ describe('.middleware {MIDDLEWARE}', function() {
 
       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
         var callbackResponse = undefined
-        var cb = function(a,b) {
+        var cb = function(a, b) {
           callbackResponse = b
         }
-        var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb }})
+        var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb } })
 
         request(app)
           .get('/api/movies')
@@ -828,11 +908,10 @@ describe('.middleware {MIDDLEWARE}', function() {
 })
 
 describe('Redis support', function() {
-
   function hgetallIsNull(db, key) {
     return new Promise(function(resolve, reject) {
       db.hgetall(key, function(err, reply) {
-        if(err) {
+        if (err) {
           reject(err)
         } else {
           expect(reply).to.equal(null)
@@ -892,7 +971,7 @@ describe('Redis support', function() {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
-       return request(app)
+        return request(app)
           .get('/api/movies')
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
@@ -931,7 +1010,6 @@ describe('Redis support', function() {
 })
 
 describe('.clear(key?) {SETTER}', function() {
-
   it('is a function', function() {
     var apicache = require('../src/apicache')
     expect(typeof apicache.clear).to.equal('function')
@@ -994,7 +1072,6 @@ describe('.clear(key?) {SETTER}', function() {
             expect(app.apicache.clear().all.length).to.equal(0)
           })
       })
-
     })
   })
 })
