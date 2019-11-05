@@ -387,7 +387,16 @@ function ApiCache() {
     return defaultDuration
   }
 
-  this.getDuration = function(duration) {
+  /**
+   * Function that parses cache duration string to milliseconds
+   * Can be overriden with custom logic depending on request and response
+   * Sic! Use "appendKey" option to generate custom cache key for this case!
+   * @param {string|number} duration
+   * @param {Object} req Express request
+   * @param {Object} res Express response
+   * @returns {number} cache time in ms
+   */
+  this.getDuration = function(duration, req, res) {
     return parseDuration(duration, globalOptions.defaultDuration)
   }
 
@@ -414,7 +423,6 @@ function ApiCache() {
   }
 
   this.middleware = function cache(strDuration, middlewareToggle, localOptions) {
-    var duration = instance.getDuration(strDuration)
     var opt = {}
 
     middlewareOptions.push({
@@ -591,6 +599,8 @@ function ApiCache() {
     performanceArray.push(perf)
 
     var cache = function(req, res, next) {
+      var duration = instance.getDuration(strDuration, req, res)
+
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
