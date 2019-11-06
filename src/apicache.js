@@ -644,7 +644,7 @@ function ApiCache() {
       }
 
       // send if cache hit from redis
-      if (redis) {
+      if (redis && redis.connected) {
         try {
           redis.hgetall(key, function(err, obj) {
             if (!err && obj && obj.response) {
