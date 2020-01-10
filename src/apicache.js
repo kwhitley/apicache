@@ -132,7 +132,7 @@ function ApiCache() {
     var redis = globalOptions.redisClient
     var expireCallback = globalOptions.events.expire
 
-    if (redis) {
+    if (redis && redis.connected) {
       try {
         redis.hset(key, 'response', JSON.stringify(value))
         redis.hset(key, 'duration', duration)

@@ -269,10 +269,11 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Bugfixes, tweaks, documentation, etc.
 
-- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara, @GoingFast, @luin, @keithws, @daveross, @apascal
+- @Amhri, @Webcascade, @conmarap, @cjfurelid, @scambier, @lukechilds, @Red-Lv, @gesposito, @viebel, @RowanMeara, @GoingFast, @luin, @keithws, @daveross, @apascal, @guybrush
 
 ### Changelog
 
+- **v1.5.3** - multiple fixes: Redis should be connected before using (thanks @guybrush)
 - **v1.5.2** - multiple fixes: Buffer deprecation and \_headers deprecation, { trackPerformance: false } by default per discussion (sorry semver...)
 - **v1.5.1** - adds { trackPerformance } option to enable/disable performance tracking (thanks @fernandolguevara)
 - **v1.5.0** - exposes apicache.getPerformance() for per-route cache metrics (@killdash9 continues to deliver)
