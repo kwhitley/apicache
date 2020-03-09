@@ -473,6 +473,54 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('returns decremented max-age header when overwritten one is higher than cache duration', function(done) {
+        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'max-age=15' } })
+
+        request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .expect('Cache-Control', 'max-age=15')
+          .then(function(res) {
+            setTimeout(function() {
+              request(app)
+                .get('/api/movies')
+                .expect(200, movies)
+                .expect('Cache-Control', 'max-age=9')
+                .then(function() {
+                  expect(app.requestsProcessed).to.equal(1)
+                  done()
+                })
+                .catch(function(err) {
+                  done(err)
+                })
+            }, 500)
+          })
+      })
+
+      it('returns overwritten max-age header when lower than cache duration', function(done) {
+        var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'max-age=5' } })
+
+        request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .expect('Cache-Control', 'max-age=5')
+          .then(function(res) {
+            setTimeout(function() {
+              request(app)
+                .get('/api/movies')
+                .expect(200, movies)
+                .expect('Cache-Control', 'max-age=5')
+                .then(function() {
+                  expect(app.requestsProcessed).to.equal(1)
+                  done()
+                })
+                .catch(function(err) {
+                  done(err)
+                })
+            }, 500)
+          })
+      })
+
       it('skips cache when using header "x-apicache-bypass"', function() {
         var app = mockAPI.create('10 seconds')
 
@@ -696,6 +744,33 @@ describe('.middleware {MIDDLEWARE}', function() {
           .then(function() {
             return request(app)
               .get('/api/movies')
+              .expect('Cache-Control', 'no-cache')
+              .expect('apicache-store', 'memory')
+              .expect('apicache-version', pkg.version)
+              .expect(200, movies)
+              .then(assertNumRequestsProcessed(app, 1))
+          })
+      })
+
+      it('allows cache-control header to be overwritten by local options', function() {
+        var globalOptions = { headers: { 'cache-control': 'no-cache' } }
+        var localOptions = { headers: { 'cache-control': 'no-store' } }
+        var app = mockAPI.create('10 seconds', globalOptions, null, localOptions)
+
+        return request(app)
+          .get('/api/movies')
+          .expect('Cache-Control', 'no-store')
+          .expect(200, movies)
+          .then(function(res) {
+            expect(res.headers['apicache-store']).to.be.undefined
+            expect(res.headers['apicache-version']).to.be.undefined
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.headers['date']).to.exist
+          })
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .expect('Cache-Control', 'no-store')
               .expect('apicache-store', 'memory')
               .expect('apicache-version', pkg.version)
               .expect(200, movies)

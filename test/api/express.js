@@ -1,7 +1,7 @@
 var express = require('express')
 var addRoutes = require('./lib/routes')
 
-function MockAPI(expiration, options, toggle) {
+function MockAPI(expiration, options, toggle, localOptions) {
   var apicache = require('../../src/apicache').newInstance(options)
   var app = express()
 
@@ -12,7 +12,7 @@ function MockAPI(expiration, options, toggle) {
   })
 
   // ENABLE APICACHE
-  app.use(apicache.middleware(expiration, toggle))
+  app.use(apicache.middleware(expiration, toggle, localOptions))
   app.apicache = apicache
 
   // ADD API ROUTES
@@ -22,6 +22,7 @@ function MockAPI(expiration, options, toggle) {
 }
 
 module.exports = {
-  create: function(expiration, config, toggle) { return new MockAPI(expiration, config, toggle) }
+  create: function(expiration, config, toggle, extraConfig) {
+    return new MockAPI(expiration, config, toggle, extraConfig)
+  },
 }
-

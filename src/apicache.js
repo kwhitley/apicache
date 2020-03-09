@@ -175,7 +175,7 @@ function ApiCache() {
     }
   }
 
-  function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle) {
+  function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle, options) {
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
@@ -186,13 +186,13 @@ function ApiCache() {
     }
 
     // append header overwrites if applicable
-    Object.keys(globalOptions.headers).forEach(function(name) {
-      res.setHeader(name, globalOptions.headers[name])
+    Object.keys(options.headers).forEach(function(name) {
+      res.setHeader(name, options.headers[name])
     })
 
     res.writeHead = function() {
       // add cache control headers
-      if (!globalOptions.headers['cache-control']) {
+      if (!options.headers['cache-control']) {
         if (shouldCacheResponse(req, res, toggle)) {
           res.setHeader('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
         } else {
@@ -247,15 +247,20 @@ function ApiCache() {
     }
 
     var headers = getSafeHeaders(response)
+    var cacheObjectHeaders = cacheObject.headers || {}
+    var updatedMaxAge = parseInt(
+      duration / 1000 - (new Date().getTime() / 1000 - cacheObject.timestamp),
+      10
+    )
 
-    Object.assign(headers, filterBlacklistedHeaders(cacheObject.headers || {}), {
+    Object.assign(headers, filterBlacklistedHeaders(cacheObjectHeaders), {
       // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
-      'cache-control':
-        'max-age=' +
-        Math.max(
-          0,
-          (duration / 1000 - (new Date().getTime() / 1000 - cacheObject.timestamp)).toFixed(0)
-        ),
+      'cache-control': (cacheObjectHeaders['cache-control'] || 'max-age=' + updatedMaxAge).replace(
+        /max-age=\s*([+-]?\d+)/,
+        function(_match, cachedMaxAge) {
+          return 'max-age=' + Math.max(0, Math.min(parseInt(cachedMaxAge, 10), updatedMaxAge))
+        }
+      ),
     })
 
     // only embed apicache headers when not in production environment
@@ -669,18 +674,37 @@ function ApiCache() {
                 key,
                 duration,
                 strDuration,
-                middlewareToggle
+                middlewareToggle,
+                opt
               )
             }
           })
         } catch (err) {
           // bypass redis on error
           perf.miss(key)
-          return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
+          return makeResponseCacheable(
+            req,
+            res,
+            next,
+            key,
+            duration,
+            strDuration,
+            middlewareToggle,
+            opt
+          )
         }
       } else {
         perf.miss(key)
-        return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
+        return makeResponseCacheable(
+          req,
+          res,
+          next,
+          key,
+          duration,
+          strDuration,
+          middlewareToggle,
+          opt
+        )
       }
     }
 
