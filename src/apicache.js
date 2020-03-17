@@ -56,6 +56,7 @@ function ApiCache() {
     headers: {
       // 'cache-control':  'no-cache' // example of header overwrite
     },
+    pagingSize: 0,
     trackPerformance: false,
   }
 
@@ -128,17 +129,83 @@ function ApiCache() {
     }
   }
 
+  function getNumPages(response, pagingSize) {
+    var numPages = Math.ceil(response.length / pagingSize)
+    return numPages
+  }
+
+  function pagingResponse(response, pagingSize) {
+    var numPages = getNumPages(response, pagingSize)
+    var pages = new Array(numPages)
+
+    for (var i = 0, o = 0; i < numPages; ++i, o += pagingSize) {
+      pages[i] = response.substr(o, pagingSize)
+    }
+
+    return pages
+  }
+
+  function pushPages(key, pagedResponse, numPages, i) {
+    var redis = globalOptions.redisClient
+    if (i < numPages) {
+      redis.hset(key, 'page_' + i, pagedResponse[i], function(err) {
+        if (!err) {
+          return pushPages(key, pagedResponse, numPages, ++i)
+        }
+      })
+    } else {
+      // pages stored, then numPages
+      redis.hset(key, 'numPages', numPages)
+    }
+  }
+
+  function popPages(key, numPages, callback, done, i) {
+    var redis = globalOptions.redisClient
+    if (i < numPages) {
+      redis.hget(key, 'page_' + i, function(err, obj) {
+        if (!err) {
+          callback(obj)
+          return popPages(key, numPages, callback, done, ++i)
+        }
+      })
+    } else {
+      done()
+    }
+  }
+
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     var expireCallback = globalOptions.events.expire
 
     if (redis && redis.connected) {
       try {
-        redis.hset(key, 'response', JSON.stringify(value))
+        // paging the response to prevent redis blocking
+        if (globalOptions.pagingSize) {
+          var data = value.data.toString('hex')
+          var numPages = getNumPages(data, globalOptions.pagingSize)
+          if (numPages > 1) {
+            redis.hset(key, 'status', value.status)
+            redis.hset(key, 'headers', JSON.stringify(value.headers))
+            redis.hset(key, 'encoding', value.encoding)
+            redis.hset(key, 'timestamp', value.timestamp)
+
+            // store pages
+            var pagedResponse = pagingResponse(data, globalOptions.pagingSize)
+            pushPages(key, pagedResponse, numPages, 0)
+          } else {
+            // store whole response
+            var response = JSON.stringify(value)
+            redis.hset(key, 'response', response)
+          }
+        } else {
+          // store whole response
+          var response = JSON.stringify(value)
+          redis.hset(key, 'response', response)
+        }
         redis.hset(key, 'duration', duration)
         redis.expire(key, duration / 1000, expireCallback || function() {})
       } catch (err) {
-        debug('[apicache] error in redis.hset()')
+        debug('[apicache] error in redis.hset()', err)
       }
     } else {
       memCache.add(key, value, duration, expireCallback)
@@ -239,6 +306,83 @@ function ApiCache() {
     }
 
     next()
+  }
+
+  function sendCachedPagedResponse(request, response, key, numPages, toggle, next, duration, done) {
+    if (toggle && !toggle(request, response)) {
+      return next()
+    }
+
+    var headers = getSafeHeaders(response)
+
+    var redis = globalOptions.redisClient
+    // status
+    redis.hget(key, 'status', function(err, obj) {
+      if (!err && obj) {
+        var status = obj
+        // timestamp
+        redis.hget(key, 'timestamp', function(err, obj) {
+          if (!err && obj) {
+            var timestamp = obj
+            // headers
+            redis.hget(key, 'headers', function(err, obj) {
+              if (!err && obj) {
+                var storedHeaders = JSON.parse(obj)
+                Object.assign(headers, filterBlacklistedHeaders(storedHeaders || {}), {
+                  // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
+                  'cache-control':
+                    'max-age=' +
+                    Math.max(
+                      0,
+                      (duration / 1000 - (new Date().getTime() / 1000 - timestamp)).toFixed(0)
+                    ),
+                })
+
+                // only embed apicache headers when not in production environment
+                if (process.env.NODE_ENV !== 'production') {
+                  Object.assign(headers, {
+                    'apicache-store': globalOptions.redisClient ? 'redis' : 'memory',
+                    'apicache-version': pkg.version,
+                  })
+                }
+
+                // test Etag against If-None-Match for 304
+                var cachedEtag = storedHeaders.etag
+                var requestEtag = request.headers['if-none-match']
+
+                if (requestEtag && cachedEtag === requestEtag) {
+                  response.writeHead(304, headers)
+                  return response.end()
+                }
+
+                response.writeHead(status || 200, headers)
+
+                // pop every page and send
+                popPages(
+                  key,
+                  numPages,
+                  function(data) {
+                    response.write(Buffer.from(data, 'hex'))
+                  },
+                  function() {
+                    response.end()
+
+                    return done()
+                  },
+                  0
+                )
+              } else {
+                // throw
+              }
+            })
+          } else {
+            // throw
+          }
+        })
+      } else {
+        // throw
+      }
+    })
   }
 
   function sendCachedResponse(request, response, cacheObject, toggle, next, duration) {
@@ -646,20 +790,83 @@ function ApiCache() {
       // send if cache hit from redis
       if (redis && redis.connected) {
         try {
-          redis.hgetall(key, function(err, obj) {
-            if (!err && obj && obj.response) {
-              var elapsed = new Date() - req.apicacheTimer
-              debug('sending cached (redis) version of', key, logDuration(elapsed))
+          redis.hkeys(key, function(err, obj) {
+            // has whole response
+            if (!err && obj) {
+              if (obj.indexOf('response') !== -1) {
+                redis.hgetall(key, function(err, obj) {
+                  if (!err && obj && obj.response) {
+                    var elapsed = new Date() - req.apicacheTimer
+                    debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              perf.hit(key)
-              return sendCachedResponse(
-                req,
-                res,
-                JSON.parse(obj.response),
-                middlewareToggle,
-                next,
-                duration
-              )
+                    perf.hit(key)
+                    return sendCachedResponse(
+                      req,
+                      res,
+                      JSON.parse(obj.response),
+                      middlewareToggle,
+                      next,
+                      duration
+                    )
+                  } else {
+                    perf.miss(key)
+                    return makeResponseCacheable(
+                      req,
+                      res,
+                      next,
+                      key,
+                      duration,
+                      strDuration,
+                      middlewareToggle
+                    )
+                  }
+                })
+              }
+              // paging response
+              else if (obj.indexOf('numPages') !== -1) {
+                // using promise to combine all pages
+                redis.hget(key, 'numPages', function(err, obj) {
+                  if (!err && obj) {
+                    return sendCachedPagedResponse(
+                      req,
+                      res,
+                      key,
+                      obj,
+                      middlewareToggle,
+                      next,
+                      duration,
+                      function() {
+                        var elapsed = new Date() - req.apicacheTimer
+                        debug('sending cached (redis) version of', key, logDuration(elapsed))
+
+                        perf.hit(key)
+                      }
+                    )
+                  } else {
+                    perf.miss(key)
+                    return makeResponseCacheable(
+                      req,
+                      res,
+                      next,
+                      key,
+                      duration,
+                      strDuration,
+                      middlewareToggle
+                    )
+                  }
+                })
+              } else {
+                perf.miss(key)
+                return makeResponseCacheable(
+                  req,
+                  res,
+                  next,
+                  key,
+                  duration,
+                  strDuration,
+                  middlewareToggle
+                )
+              }
             } else {
               perf.miss(key)
               return makeResponseCacheable(
