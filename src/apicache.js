@@ -308,7 +308,17 @@ function ApiCache() {
     next()
   }
 
-  function sendCachedPagedResponse(request, response, key, numPages, toggle, next, duration, done) {
+  function sendCachedPagedResponse(
+    request,
+    response,
+    key,
+    numPages,
+    toggle,
+    next,
+    duration,
+    done,
+    error
+  ) {
     if (toggle && !toggle(request, response)) {
       return next()
     }
@@ -372,15 +382,18 @@ function ApiCache() {
                   0
                 )
               } else {
-                // throw
+                console.log('[apicache] error in redis.hget("' + key + '")')
+                error(err)
               }
             })
           } else {
-            // throw
+            console.log('[apicache] error in redis.hget("' + key + '")')
+            error(err)
           }
         })
       } else {
-        // throw
+        console.log('[apicache] error in redis.hget("' + key + '")')
+        error(err)
       }
     })
   }
@@ -835,11 +848,26 @@ function ApiCache() {
                       middlewareToggle,
                       next,
                       duration,
+                      // done
                       function() {
                         var elapsed = new Date() - req.apicacheTimer
                         debug('sending cached (redis) version of', key, logDuration(elapsed))
 
                         perf.hit(key)
+                      },
+                      // error
+                      function() {
+                        // bypass redis on error
+                        perf.miss(key)
+                        return makeResponseCacheable(
+                          req,
+                          res,
+                          next,
+                          key,
+                          duration,
+                          strDuration,
+                          middlewareToggle
+                        )
                       }
                     )
                   } else {
