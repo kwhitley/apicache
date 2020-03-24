@@ -957,12 +957,48 @@ describe('Redis support', function() {
         return request(app)
           .get('/api/testcachegroup')
           .then(function(res) {
-            expect(app.requestsProcessed).to.equal(1)
-            expect(app.apicache.getIndex().all.length).to.equal(1)
-            expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-            expect(Object.keys(app.apicache.clear('cachegroup').groups).length).to.equal(0)
-            expect(app.apicache.getIndex().all.length).to.equal(0)
-            return hgetallIsNull(db, '/api/testcachegroup')
+            return new Promise(function(resolve) {
+              setTimeout(function() {
+                expect(app.requestsProcessed).to.equal(1)
+                expect(app.apicache.getIndex().all.length).to.equal(1)
+                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+                expect(Object.keys(app.apicache.clear('cachegroup').groups).length).to.equal(0)
+                expect(app.apicache.getIndex().all.length).to.equal(0)
+                resolve(hgetallIsNull(db, '/api/testcachegroup'))
+              }, 100)
+            })
+          })
+      })
+
+      it('can share cache groups between instances', function() {
+        var db = redis.createClient()
+        var app = mockAPI.create('10 seconds', { redisClient: db })
+
+        return request(app)
+          .get('/api/testcachegroup')
+          .then(function() {
+            otherApp = mockAPI.create('10 seconds', { redisClient: db })
+            expect((app.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
+            expect((otherApp.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
+          })
+          .then(function() {
+            return new Promise(function(resolve) {
+              setTimeout(function() {
+                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+                expect(otherApp.apicache.getIndex().groups.cachegroup.length).to.equal(1)
+                otherApp.apicache.clear('cachegroup')
+                resolve()
+              }, 100)
+            })
+          })
+          .then(function() {
+            return new Promise(function(resolve) {
+              setTimeout(function() {
+                expect((otherApp.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
+                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1) // stale copy
+                resolve(hgetallIsNull(db, '/api/testcachegroup'))
+              }, 50)
+            })
           })
       })
 
