@@ -95,12 +95,35 @@ function ApiCache() {
     return true
   }
 
+  function getRedisExtendedUnshift(key) {
+    var redis = globalOptions.redisClient
+    redis.sadd('groups', key)
+
+    return function() {
+      var args = arguments
+      redis.sadd(
+        'group:' + key,
+        Array.from(args),
+        function(err) {
+          if (err) return console.log('[apicache] error in redis.sadd("group:' + key + '")')
+          Array.prototype.unshift.apply(this, args)
+        }.bind(this)
+      )
+    }
+  }
+
   function addIndexEntries(key, req) {
     var groupName = req.apicacheGroup
 
     if (groupName) {
       debug('group detected "' + groupName + '"')
-      var group = (index.groups[groupName] = index.groups[groupName] || [])
+      if (!index.groups[groupName]) {
+        var newGroup = []
+        if (globalOptions.redisClient) newGroup.unshift = getRedisExtendedUnshift(groupName)
+        index.groups[groupName] = newGroup
+      }
+      var group = index.groups[groupName]
+
       group.unshift(key)
     }
 
@@ -309,7 +332,7 @@ function ApiCache() {
         debug('clearing cached entry for "' + key + '"')
         clearTimeout(timers[key])
         delete timers[key]
-        if (!globalOptions.redisClient) {
+        if (!redis) {
           memCache.delete(key)
         } else {
           try {
@@ -321,6 +344,14 @@ function ApiCache() {
         index.all = index.all.filter(doesntMatch(key))
       })
 
+      if (redis) {
+        try {
+          redis.srem('groups', target)
+          redis.del('group:' + target)
+        } catch (err) {
+          console.log('[apicache] error removing' + target + 'group from redis')
+        }
+      }
       delete index.groups[target]
     } else if (target) {
       debug('clearing ' + (isAutomatic ? 'expired' : 'cached') + ' entry for "' + target + '"')
@@ -344,9 +375,22 @@ function ApiCache() {
       Object.keys(index.groups).forEach(function(groupName) {
         index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target))
 
+        var isGroupEmpty = !index.groups[groupName].length
         // delete group if now empty
-        if (!index.groups[groupName].length) {
+        if (isGroupEmpty) {
           delete index.groups[groupName]
+        }
+
+        if (redis) {
+          try {
+            var groupKey = 'group:' + groupName
+            redis.srem(groupKey, target)
+            if (isGroupEmpty) redis.del(groupKey)
+          } catch (err) {
+            console.log(
+              '[apicache] error removing' + target + ' key from' + groupKey + 'redis group'
+            )
+          }
         }
       })
     } else {
@@ -715,6 +759,7 @@ function ApiCache() {
 
   this.options = function(options) {
     if (options) {
+      var connectionChanged = globalOptions.redisClient !== options.redisClient
       Object.assign(globalOptions, options)
       syncOptions()
 
@@ -727,6 +772,7 @@ function ApiCache() {
         debug('WARNING: using trackPerformance flag can cause high memory usage!')
       }
 
+      if (connectionChanged) this.resetIndex()
       return this
     } else {
       return globalOptions
@@ -738,6 +784,40 @@ function ApiCache() {
       all: [],
       groups: {},
     }
+
+    try {
+      this.maybeLoadGroupsFromRedis()
+    } catch (err) {
+      console.log('[apicache] error loading index from redis')
+    }
+  }
+
+  this.maybeLoadGroupsFromRedis = function() {
+    var redis = globalOptions.redisClient
+    if (!redis || !redis.smembers) return
+
+    // load groups
+    redis.smembers('groups', function(err, groups) {
+      if (err) return console.log('[apicache] error in redis.smembers("groups")')
+
+      groups.forEach(function(groupName) {
+        var group
+        if (!index.groups[groupName]) {
+          index.groups[groupName] = []
+          index.groups[groupName].unshift = getRedisExtendedUnshift(groupName)
+        }
+        group = index.groups[groupName]
+
+        redis.smembers('group:' + groupName, function(err, keys) {
+          if (err)
+            return console.log('[apicache] error in redis.smembers("group:' + groupName + '")')
+
+          keys.forEach(function(key) {
+            if (group.indexOf('apicache') === -1) group.push(key)
+          })
+        })
+      })
+    })
   }
 
   this.newInstance = function(config) {
