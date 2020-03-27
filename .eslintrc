@@ -1,5 +1,12 @@
 {
   "env": {
     "node": true
+  },
+  "parserOptions": {
+		"ecmaVersion": 5
+	},
+  "extends": ["standard", "plugin:prettier/recommended"],
+  "rules": {
+    "indent": ["error", 2, { "FunctionExpression": { "parameters": "first" }, "SwitchCase": 1 }]
   }
 }
