@@ -4,7 +4,6 @@ function MemoryCache() {
 }
 
 MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
-  var old = this.cache[key]
   var instance = this
 
   var entry = {
@@ -13,7 +12,7 @@ MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
     timeout: setTimeout(function() {
       instance.delete(key)
       return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key)
-    }, time)
+    }, time),
   }
 
   this.cache[key] = entry

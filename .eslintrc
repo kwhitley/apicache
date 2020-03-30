@@ -6,6 +6,10 @@
 		"ecmaVersion": 5
 	},
   "extends": ["standard", "plugin:prettier/recommended"],
+  "globals": {
+    "describe": false,
+    "it": false
+  },
   "rules": {
     "indent": ["error", 2, { "FunctionExpression": { "parameters": "first" }, "SwitchCase": 1 }]
   }
