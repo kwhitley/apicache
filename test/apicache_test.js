@@ -1,13 +1,15 @@
+/* eslint-disable no-unused-expressions */
 var chai = require('chai')
 var expect = chai.expect
 var request = require('supertest')
-var apicache = require('../src/apicache')
 var pkg = require('../package.json')
-var redis = require('fakeredis')
-var a = apicache.clone()
-var b = apicache.clone()
-var c = apicache.clone()
 var movies = require('./api/lib/data.json')
+var redis = require('ioredis-mock')
+// node-redis usage
+redis.createClient = function(options) {
+  if (options.prefix) options.keyPrefix = options.prefix
+  return new this(options)
+}
 
 var apis = [
   { name: 'express', server: require('./api/express') },
@@ -244,6 +246,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['test'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
@@ -257,6 +260,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['test'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
@@ -293,6 +297,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['bar'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
@@ -308,6 +313,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
@@ -340,6 +346,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['400'] },
         events: { expire: undefined },
@@ -353,6 +360,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: ['200'] },
         events: { expire: undefined },
@@ -394,6 +402,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
@@ -409,6 +418,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         appendKey: ['foo'],
         jsonp: false,
         redisClient: false,
+        redisPrefix: '',
         headerBlacklist: [],
         statusCodes: { include: [], exclude: [] },
         events: { expire: undefined },
@@ -668,7 +678,7 @@ describe('.middleware {MIDDLEWARE}', function() {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
-            expect(res.headers['date']).to.exist
+            expect(res.headers.date).to.exist
           })
           .then(function() {
             return request(app)
@@ -691,7 +701,7 @@ describe('.middleware {MIDDLEWARE}', function() {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
-            expect(res.headers['date']).to.exist
+            expect(res.headers.date).to.exist
           })
           .then(function() {
             return request(app)
@@ -710,7 +720,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/movies')
           .expect(200)
           .then(function(res) {
-            var etag = res.headers['etag']
+            var etag = res.headers.etag
             expect(etag).to.exist
             return etag
           })
@@ -729,7 +739,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/movies')
           .expect(200)
           .then(function(res) {
-            return res.headers['etag']
+            return res.headers.etag
           })
           .then(function(etag) {
             return request(app)
@@ -824,7 +834,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function(_err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
@@ -836,7 +846,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('executes expiration callback from globalOptions.events.expire upon entry expiration', function(done) {
-        var callbackResponse = undefined
+        var callbackResponse
         var cb = function(a, b) {
           callbackResponse = b
         }
@@ -844,7 +854,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function(_err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
@@ -861,7 +871,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function(_err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
           })
@@ -869,7 +879,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         setTimeout(function() {
           request(app)
             .get('/api/movies')
-            .end(function(err, res) {
+            .end(function(_err, res) {
               expect(app.apicache.getIndex().all.length).to.equal(1)
               expect(app.apicache.getIndex().all).to.include('/api/movies')
             })
@@ -883,7 +893,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
-        var callbackResponse = undefined
+        var callbackResponse
         var cb = function(a, b) {
           callbackResponse = b
         }
@@ -891,7 +901,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function(_err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
@@ -913,7 +923,8 @@ describe('Redis support', function() {
         if (err) {
           reject(err)
         } else {
-          expect(reply).to.equal(null)
+          // null when node-redis. {} when ioredis
+          expect(reply || {}).to.eql({})
           db.flushdb()
           resolve()
         }
@@ -926,8 +937,8 @@ describe('Redis support', function() {
       var mockAPI = api.server
 
       it('properly caches a request', function() {
-        var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
 
         return request(app)
           .get('/api/movies')
@@ -951,85 +962,115 @@ describe('Redis support', function() {
       })
 
       it('can clear indexed cache groups', function() {
-        var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
 
         return request(app)
           .get('/api/testcachegroup')
           .then(function(res) {
-            return new Promise(function(resolve) {
-              setTimeout(function() {
-                expect(app.requestsProcessed).to.equal(1)
-                expect(app.apicache.getIndex().all.length).to.equal(1)
-                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-                expect(Object.keys(app.apicache.clear('cachegroup').groups).length).to.equal(0)
-                expect(app.apicache.getIndex().all.length).to.equal(0)
-                resolve(hgetallIsNull(db, '/api/testcachegroup'))
-              }, 100)
+            expect(app.requestsProcessed).to.equal(1)
+            return app.apicache.getIndex()
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(1)
+            expect(index.groups.cachegroup.length).to.equal(1)
+            return app.apicache.clear('cachegroup').then(function() {
+              return app.apicache.getIndex()
             })
           })
-      })
-
-      it('can share cache groups between instances', function() {
-        var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
-
-        return request(app)
-          .get('/api/testcachegroup')
-          .then(function() {
-            otherApp = mockAPI.create('10 seconds', { redisClient: db })
-            expect((app.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
-            expect((otherApp.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
-          })
-          .then(function() {
-            return new Promise(function(resolve) {
-              setTimeout(function() {
-                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-                expect(otherApp.apicache.getIndex().groups.cachegroup.length).to.equal(1)
-                otherApp.apicache.clear('cachegroup')
-                resolve()
-              }, 100)
-            })
-          })
-          .then(function() {
-            return new Promise(function(resolve) {
-              setTimeout(function() {
-                expect((otherApp.apicache.getIndex().groups.cachegroup || []).length).to.equal(0)
-                expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1) // stale copy
-                resolve(hgetallIsNull(db, '/api/testcachegroup'))
-              }, 50)
-            })
+          .then(function(index) {
+            expect(Object.keys(index.groups).length).to.equal(0)
+            expect(index.all.length).to.equal(0)
+            return hgetallIsNull(db, '/api/testcachegroup')
           })
       })
 
       it('can clear indexed entries by url/key (non-group)', function() {
-        var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
 
         return request(app)
-          .get('/api/movies')
+          .get('/api/testcachegroup')
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
-            expect(app.apicache.getIndex().all.length).to.equal(1)
-            expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
+            return app.apicache.getIndex()
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(1)
+            expect(Object.keys(index.groups).length).to.equal(1)
+            return app.apicache.clear('/api/testcachegroup').then(function() {
+              return app.apicache.getIndex()
+            })
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(0)
+            expect(Object.keys(index.groups).length).to.equal(0)
             return hgetallIsNull(db, '/api/movies')
           })
       })
 
       it('can clear all entries from index', function() {
-        var db = redis.createClient()
-        var app = mockAPI.create('10 seconds', { redisClient: db })
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
 
-        expect(app.apicache.getIndex().all.length).to.equal(0)
-        expect(app.apicache.clear().all.length).to.equal(0)
-
-        return request(app)
-          .get('/api/movies')
+        return app.apicache
+          .getIndex()
+          .then(function(index) {
+            expect(index.all.length).to.equal(0)
+            return app.apicache.clear().then(function() {
+              return app.apicache.getIndex().then(function(index) {
+                expect(index.all.length).to.equal(0)
+              })
+            })
+          })
+          .then(function() {
+            return request(app).get('/api/testcachegroup')
+          })
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
-            expect(app.apicache.getIndex().all.length).to.equal(1)
-            expect(app.apicache.clear().all.length).to.equal(0)
+            return app.apicache.getIndex()
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(1)
+            expect(Object.keys(index.groups).length).to.equal(1)
+            return app.apicache.clear().then(function() {
+              return app.apicache.getIndex()
+            })
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(0)
+            expect(Object.keys(index.groups).length).to.equal(0)
             return hgetallIsNull(db, '/api/movies')
+          })
+      })
+
+      it('can share cache between instances', function() {
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
+        var otherApp
+
+        return request(app)
+          .get('/api/testcachegroup')
+          .then(function() {
+            otherApp = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
+            return Promise.all([app.apicache.getIndex(), otherApp.apicache.getIndex()])
+          })
+          .then(function(indexes) {
+            indexes.forEach(function(index) {
+              expect(index.all.length).to.equal(1)
+              expect(index.groups.cachegroup.length).to.equal(1)
+            })
+            return otherApp.apicache.clear('cachegroup')
+          })
+          .then(function() {
+            return Promise.all([app.apicache.getIndex(), otherApp.apicache.getIndex()])
+          })
+          .then(function(indexes) {
+            indexes.forEach(function(index) {
+              expect(index.all.length).to.equal(0)
+              expect((index.groups.cachegroup || []).length).to.equal(0)
+            })
+            return hgetallIsNull(db, '/api/testcachegroup')
           })
       })
 
