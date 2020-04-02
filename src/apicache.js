@@ -131,13 +131,8 @@ function ApiCache() {
     }
   }
 
-  function cacheResponse(key, value, duration, group) {
+  function cacheResponse(key, value, duration) {
     var expireCallback = globalOptions.events.expire
-    if (redisCache) {
-      return redisCache.add(key, value, duration, expireCallback, group).catch(() => {
-        debug('[apicache] error in redisCache.add()')
-      })
-    }
     memCache.add(key, value, duration, expireCallback)
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
@@ -195,9 +190,50 @@ function ApiCache() {
           res.setHeader('cache-control', 'no-cache, no-store, must-revalidate')
         }
       }
-
       res._apicache.headers = Object.assign({}, getSafeHeaders(res))
       return res._apicache.writeHead.apply(this, arguments)
+    }
+
+    if (redisCache) {
+      var getCacheObject = function() {
+        var headers = res._apicache.headers || getSafeHeaders(res)
+        return createCacheObject(res.statusCode, headers)
+      }
+      var getGroup = function() {
+        return req.apicacheGroup
+      }
+      var expireCallback = globalOptions.events.expire
+      return redisCache
+        .createWriteStream(
+          key,
+          getCacheObject,
+          duration,
+          expireCallback,
+          getGroup,
+          res.socket.writableHighWaterMark
+        )
+        .then(function(wstream) {
+          ;['write', 'end'].forEach(function(method) {
+            res[method] = function(chunk, encoding) {
+              wstream[method](chunk, encoding)
+              return res._apicache[method].apply(this, arguments)
+            }
+          })
+          var ret = new Promise(function(resolve, reject) {
+            wstream
+              .on('error', function(err) {
+                reject(err)
+              })
+              .on('finish', resolve)
+          })
+
+          next()
+          return ret
+        })
+        .catch(function() {
+          debug('error in makeResponseCacheable function')
+          next()
+        })
     }
 
     // patch res.write
@@ -220,7 +256,7 @@ function ApiCache() {
             res._apicache.content,
             encoding
           )
-          cacheResponse(key, cacheObject, duration, req.apicacheGroup)
+          cacheResponse(key, cacheObject, duration)
 
           // display log entry
           var elapsed = new Date() - req.apicacheTimer
@@ -267,12 +303,6 @@ function ApiCache() {
       })
     }
 
-    // unstringify buffers
-    var data = cacheObject.data
-    if (data && data.type === 'Buffer') {
-      data = typeof data.data === 'number' ? Buffer.alloc(data.data) : Buffer.from(data.data)
-    }
-
     // test Etag against If-None-Match for 304
     var cachedEtag = cacheObject.headers.etag
     var requestEtag = request.headers['if-none-match']
@@ -281,9 +311,33 @@ function ApiCache() {
       response.writeHead(304, headers)
       return response.end()
     }
-
     response.writeHead(cacheObject.status || 200, headers)
 
+    if (redisCache) {
+      var rstream = redisCache
+        .createReadStream(
+          cacheObject.key,
+          cacheObject['data-token'],
+          cacheObject.encoding,
+          response.socket.writableHighWaterMark
+        )
+        .on('error', function() {
+          debug('error in sendCachedResponse function')
+          rstream.unpipe(response)
+          response.end()
+          // if node > 8
+          if (rstream.destroy) rstream.destroy()
+          else rstream.pause()
+        })
+
+      return rstream.pipe(response)
+    }
+
+    // unstringify buffers
+    var data = cacheObject.data
+    if (data && data.type === 'Buffer') {
+      data = typeof data.data === 'number' ? Buffer.alloc(data.data) : Buffer.from(data.data)
+    }
     return response.end(data, cacheObject.encoding)
   }
 
@@ -302,7 +356,7 @@ function ApiCache() {
           return deleteCount
         })
         .catch(function() {
-          console.log('[apicache] error in clear function')
+          debug('error in clear function')
         })
     var group = index.groups[target]
 

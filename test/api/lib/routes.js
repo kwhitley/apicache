@@ -15,7 +15,6 @@ module.exports = function(app) {
     res.json(movies)
   })
 
-
   app.get('/api/writeandend', function(req, res) {
     app.requestsProcessed++
 
@@ -30,12 +29,13 @@ module.exports = function(app) {
   app.get('/api/writebufferandend', function(req, res) {
     app.requestsProcessed++
 
-
     res.setHeader('Content-Type', 'text/plain')
     if (process.versions.node.indexOf('4') === 0) {
+      /* eslint-disable node/no-deprecated-api */
       res.write(new Buffer([0x61]))
       res.write(new Buffer([0x62]))
       res.write(new Buffer([0x63]))
+      /* eslint-enable node/no-deprecated-api */
     } else {
       res.write(Buffer.from('a'))
       res.write(Buffer.from('b'))
@@ -84,7 +84,39 @@ module.exports = function(app) {
   app.get('/api/movies/:index', function(req, res) {
     app.requestsProcessed++
 
-    res.json(movies[index])
+    res.json(movies[req.params.index])
+  })
+
+  app.get('/api/bigresponse', function(req, res) {
+    app.requestsProcessed++
+    req.apicacheGroup = 'bigresponsegroup'
+
+    var chunkCount = 1000
+    var chunkLength = 16384
+    var chunk = new Array(16384).fill('a').join('')
+    var rstream = require('stream').Readable({
+      highWaterMark: chunkLength,
+      read() {
+        var keepPushing = true
+        while (--chunkCount > 0 && (keepPushing = this.push(chunk))) {}
+        if (keepPushing && chunkCount <= 0) this.push(null)
+      },
+    })
+
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    rstream.pipe(res)
+  })
+
+  app.get('/api/slowresponse', function(req, res) {
+    app.requestsProcessed++
+
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.write('hello ')
+    setTimeout(function() {
+      // can't use res.end('world') directly because restify 7.7.0 will write it twice
+      res.write('world')
+      res.end()
+    }, 100)
   })
 
   return app

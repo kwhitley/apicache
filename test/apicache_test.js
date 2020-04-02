@@ -14,8 +14,6 @@ redis.createClient = function(options) {
 var apis = [
   { name: 'express', server: require('./api/express') },
   { name: 'express+gzip', server: require('./api/express-gzip') },
-
-  // THESE TESTS ARE REMOVED AS RESTIFY 4 and 5 ARE CURRENTLY BREAKING IN THE ENVIRONMENT
   { name: 'restify', server: require('./api/restify') },
   { name: 'restify+gzip', server: require('./api/restify-gzip') },
 ]
@@ -1149,7 +1147,143 @@ describe('Redis support', function() {
           })
       })
 
-      it('sends a response even if redis failure', function() {
+      it('can download data even if key gets deleted in the middle of it', function() {
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('1 minute', { redisClient: db, redisPrefix: 'a-prefix:' })
+
+        var then = Date.now()
+        return request(app)
+          .get('/api/bigresponse')
+          .expect(200)
+          .then(function(res) {
+            var resTime = Date.now() - then
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.text.slice(0, 5)).to.equal('aaaaa')
+            then = Date.now()
+            return Promise.all([
+              request(app)
+                .get('/api/bigresponse')
+                .then(function(otherRes) {
+                  return [Date.now() - then, otherRes]
+                }),
+              new Promise(function(resolve) {
+                return setTimeout(function() {
+                  app.apicache.clear('/api/bigresponse').then(function(deleteCount) {
+                    resolve([Date.now() - then, deleteCount])
+                  })
+                }, resTime / 20)
+              }),
+            ])
+              .then(function(promiseAllReturn) {
+                var elapsedTime1 = promiseAllReturn[0][0]
+                var elapsedTime2 = promiseAllReturn[1][0]
+                expect(elapsedTime2).to.be.below(elapsedTime1)
+                return [promiseAllReturn[0][1], promiseAllReturn[1][1]]
+              })
+              .then(function(otherResAndDeleteCount) {
+                var cachedRes = otherResAndDeleteCount[0]
+                var deleteCount = otherResAndDeleteCount[1]
+                expect(cachedRes.text).to.equal(res.text)
+                expect(deleteCount).to.equal(2)
+                return app.apicache.getIndex()
+              })
+          })
+          .then(function(index) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(index.all.length).to.equal(0)
+            expect(Object.keys(index.groups).length).to.equal(0)
+          })
+          .then(function() {
+            return new Promise(function(resolve) {
+              db.flushdb(resolve)
+            })
+          })
+      })
+
+      it('can download data even if key group gets deleted in the middle of it', function() {
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('1 minute', { redisClient: db, redisPrefix: 'a-prefix:' })
+
+        var then = Date.now()
+        return request(app)
+          .get('/api/bigresponse')
+          .expect(200)
+          .then(function(res) {
+            var resTime = Date.now() - then
+            expect(app.requestsProcessed).to.equal(1)
+            expect(res.text.slice(0, 5)).to.equal('aaaaa')
+            then = Date.now()
+            return Promise.all([
+              request(app)
+                .get('/api/bigresponse')
+                .then(function(otherRes) {
+                  return [Date.now() - then, otherRes]
+                }),
+              new Promise(function(resolve) {
+                return setTimeout(function() {
+                  app.apicache.clear('bigresponsegroup').then(function(deleteCount) {
+                    resolve([Date.now() - then, deleteCount])
+                  })
+                }, resTime / 20)
+              }),
+            ])
+              .then(function(promiseAllReturn) {
+                var elapsedTime1 = promiseAllReturn[0][0]
+                var elapsedTime2 = promiseAllReturn[1][0]
+                expect(elapsedTime2).to.be.below(elapsedTime1)
+                return [promiseAllReturn[0][1], promiseAllReturn[1][1]]
+              })
+              .then(function(otherResAndDeleteCount) {
+                var cachedRes = otherResAndDeleteCount[0]
+                var deleteCount = otherResAndDeleteCount[1]
+                expect(cachedRes.text).to.equal(res.text)
+                expect(deleteCount).to.equal(2)
+                return app.apicache.getIndex()
+              })
+          })
+          .then(function(index) {
+            expect(app.requestsProcessed).to.equal(1)
+            expect(index.all.length).to.equal(0)
+            expect(Object.keys(index.groups).length).to.equal(0)
+          })
+          .then(function() {
+            return new Promise(function(resolve) {
+              db.flushdb(resolve)
+            })
+          })
+      })
+
+      it("won't append response to same key twice", function() {
+        var db = redis.createClient({ prefix: 'a-prefix:' })
+        var app = mockAPI.create('1 minute', { redisClient: db, redisPrefix: 'a-prefix:' })
+
+        return Promise.all([
+          request(app).get('/api/slowresponse'),
+          request(app).get('/api/slowresponse'),
+        ])
+          .then(function(res) {
+            expect(res[0].text).to.equal(res[1].text)
+            expect(res[0].text).to.equal('hello world')
+            expect(app.requestsProcessed).to.equal(2)
+            return app.apicache.getIndex()
+          })
+          .then(function(index) {
+            expect(index.all.length).to.equal(1)
+            expect(index.all[0]).to.equal('/api/slowresponse')
+            return request(app).get('/api/slowresponse')
+          })
+          .then(function(res) {
+            expect(app.requestsProcessed).to.equal(2)
+            expect(res.text).to.equal('hello world')
+          })
+          .then(function() {
+            return new Promise(function(resolve) {
+              db.flushdb(resolve)
+            })
+          })
+      })
+
+      it('sends a response even upon redis failure', function() {
         var app = mockAPI.create('10 seconds', { redisClient: {} })
 
         return request(app)

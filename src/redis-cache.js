@@ -1,3 +1,14 @@
+var stream = require('stream')
+var Redlock = require('redlock')
+function generateUuidV4(a, b) {
+  for (
+    b = a = '';
+    a++ < 36;
+    b += (a * 51) & 52 ? (a ^ 15 ? 8 ^ (Math.random() * (a ^ 20 ? 16 : 4)) : 4).toString(16) : '-'
+  );
+  return b
+}
+
 function RedisCache(options, debug) {
   this.redis = options.redisClient
   this.prefix =
@@ -6,35 +17,216 @@ function RedisCache(options, debug) {
     ''
   this.timers = {}
   this.debug = debug || function() {}
+  this.redlock = new Redlock([this.redis], {
+    retryCount: 0,
+  })
 }
 
-RedisCache.prototype.add = function(key, value, time, timeoutCallback, group) {
-  var that = this
-  return new Promise(function(resolve, reject) {
-    var expire = time + Date.now()
-    var multi = that.redis
-      .multi()
-      .hset(key, 'value', JSON.stringify(value))
-      .expireat(expire)
-    if (group) {
-      multi.hset(key, 'group', group).sadd('group:' + group, key)
-    }
+var DEFAULT_LOCK_PTTL = 30 * 1000 // 30s will be the response init limit
+RedisCache.prototype._acquireLock = function(key, pttl) {
+  return this.redlock.lock('lock:' + key, pttl || DEFAULT_LOCK_PTTL)
+}
 
-    multi.exec(function(err, res) {
-      if (err || res === null) return reject(err)
+var DEFAULT_HIGH_WATER_MARK = 16384
+RedisCache.prototype.createWriteStream = (function() {
+  var TYPICAL_3G_DOWNLOAD_SPEED = (1000000 * 0.1) / 8 / 1000 // 0.1 Mbit/s in bytes/ms
+  var POOR_SERVER_TO_REDIS_LATENCY = 170 // 170 ms/fetch if redis instance is far from server
+  var A_QUARTER_OF_LOCK_PTTL = Math.round(DEFAULT_LOCK_PTTL / 4)
 
-      if (timeoutCallback && typeof timeoutCallback === 'function') {
-        that.timers[key] = setTimeout(function() {
-          that.debug('clearing expired entry for "' + key + '"')
-          timeoutCallback(value, key)
-        }, time)
-      }
-      resolve({
-        value: value,
-        expire: expire,
-        timeout: that.timers[key],
+  return function(key, getValue, time, timeoutCallback, getGroup, highWaterMark) {
+    var that = this
+    return this._acquireLock(key)
+      .then(function(lock) {
+        if (!highWaterMark) highWaterMark = DEFAULT_HIGH_WATER_MARK
+        var currentLockPttl = DEFAULT_LOCK_PTTL
+        var moment = Date.now()
+        var expireAt = time + moment
+        var multi = that.redis.multi()
+        var dataToken = generateUuidV4()
+        var dataKey = 'data:' + dataToken + ':' + key
+        var byteLength = 0
+        var cacheEncoding
+        function releaseLock() {
+          lock.unlock().catch(function(err) {
+            that.debug('error in redisCache.getWriteStream function', err)
+          })
+        }
+
+        // if node < 8, the wstream won't call _final
+        var final = function(cb) {
+          try {
+            var dataKey = 'data:' + dataToken + ':' + key
+            var chunkCount = Math.ceil((byteLength || 1) / highWaterMark)
+            var serverToRedisLatency = POOR_SERVER_TO_REDIS_LATENCY * chunkCount
+            var dataMaxAllowedTimeToRead = Math.round(
+              byteLength / TYPICAL_3G_DOWNLOAD_SPEED + serverToRedisLatency
+            )
+            var group = getGroup()
+            var value = getValue()
+            value.encoding = cacheEncoding === 'buffer' ? 'utf8' : cacheEncoding || ''
+            multi
+              .hset(key, 'data-token', dataToken)
+              .hset(key, 'data-extra-pttl', dataMaxAllowedTimeToRead)
+              .hset(key, 'headers', JSON.stringify(value.headers))
+              .hset(key, 'timestamp', value.timestamp)
+              .hset(key, 'status', value.status)
+              .hset(key, 'encoding', value.encoding)
+            if (group) {
+              multi.hset(key, 'group', group)
+              multi.sadd('group:' + group, key)
+            }
+            multi.pexpireat(key, expireAt)
+            multi.pexpireat(dataKey, expireAt + dataMaxAllowedTimeToRead)
+
+            multi.exec(function(err, res) {
+              if (err || res === null) cb(err)
+
+              if (timeoutCallback && typeof timeoutCallback === 'function') {
+                that.timers[key] = setTimeout(function() {
+                  that.debug('clearing expired entry for "' + key + '"')
+                  timeoutCallback(value, key)
+                }, time)
+              }
+              cb()
+            })
+          } catch (err) {
+            cb(err)
+          }
+        }
+
+        return new stream.Writable({
+          highWaterMark: highWaterMark,
+          write(chunk, encoding, cb) {
+            try {
+              multi.append(dataKey, chunk)
+
+              if (!cacheEncoding && encoding) cacheEncoding = encoding
+              byteLength += Buffer.byteLength(chunk, encoding)
+              var now = Date.now()
+              var elapsed = Date.now() - moment
+              moment = now
+              currentLockPttl -= elapsed
+              if (currentLockPttl < A_QUARTER_OF_LOCK_PTTL) {
+                currentLockPttl = A_QUARTER_OF_LOCK_PTTL * 2
+                lock
+                  .extend(currentLockPttl)
+                  .then(function() {
+                    cb()
+                  })
+                  // will error if lock already expired
+                  .catch(function() {
+                    that
+                      ._acquireLock(key, currentLockPttl)
+                      .then(function(newLock) {
+                        lock = newLock
+                        cb()
+                      })
+                      .catch(function(err) {
+                        cb(err)
+                      })
+                  })
+              } else {
+                cb()
+              }
+            } catch (err) {
+              cb(err)
+            }
+          },
+          final: final,
+        })
+          .on('error', releaseLock)
+          .on('finish', function() {
+            // if node >= 8
+            if (typeof this._final === 'function') return releaseLock()
+
+            new Promise(function(resolve) {
+              final(resolve)
+            }).then(releaseLock)
+          })
       })
+      .catch(function() {
+        return new stream.Writable({
+          write(_c, e, cb) {
+            cb()
+          },
+        })
+      })
+  }
+})()
+
+var isNodeGte10 = (function(ret) {
+  return function() {
+    if (ret !== undefined) return ret
+
+    return (ret = parseInt(process.versions.node.split('.')[0], 10) >= 10)
+  }
+})()
+RedisCache.prototype.createReadStream = function(key, dataToken, encoding, highWaterMark) {
+  if (!highWaterMark) highWaterMark = DEFAULT_HIGH_WATER_MARK
+  var isIoRedis = !!this.redis.getrangeBuffer
+  var dataKey = 'data:' + dataToken + ':' + key
+  var getRange
+  var returnBuffers
+
+  if (isIoRedis) {
+    returnBuffers = true
+    getRange = this.redis.getrangeBuffer
+  } else {
+    returnBuffers =
+      (this.redis.options &&
+        (this.redis.options.detect_buffers || this.redis.options.return_buffers)) ||
+      false
+    if (returnBuffers) dataKey = Buffer.from(dataKey)
+    getRange = this.redis.getrange
+  }
+
+  var start = 0
+  var end = highWaterMark - 1
+  var getChunk = function() {
+    return new Promise(function(resolve, reject) {
+      try {
+        getRange(dataKey, start, end, function(err, chunk) {
+          if (err) return reject(err)
+
+          if (!returnBuffers && !Buffer.isBuffer(chunk)) chunk = Buffer.from(chunk, encoding)
+          if (Buffer.byteLength(chunk || '', encoding) === 0) {
+            chunk = null // done reading
+          } else {
+            start = end + 1
+            end = end + highWaterMark
+          }
+          resolve(chunk)
+        })
+      } catch (err) {
+        reject(err)
+      }
     })
+  }
+  var pushChunk = function(push, retry = 3) {
+    return getChunk()
+      .catch(function(err) {
+        if (retry-- === 0) throw err
+
+        return new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(pushChunk(push, retry))
+          }, 20)
+        })
+      })
+      .then(function(chunk) {
+        var shouldPush = push(chunk)
+        if (isNodeGte10() && shouldPush) return pushChunk(push)
+      })
+  }
+
+  return new stream.Readable({
+    highWaterMark: highWaterMark,
+    read() {
+      var that = this
+      pushChunk(this.push.bind(this)).catch(function(err) {
+        that.emit('error', err)
+      })
+    },
   })
 }
 
@@ -57,6 +249,7 @@ RedisCache.prototype.clear = function(target) {
         var cursor = '0'
         var match = null
         var count = String(Math.min(100, groupCount))
+        var deleteCount = 1 // group
 
         var clearGroup = function(group, cursor, match, count) {
           return that
@@ -73,27 +266,30 @@ RedisCache.prototype.clear = function(target) {
                 return clearGroup(group, cursor, match, count)
               }
 
-              multi.del(keys)
-              keys.forEach(function(key) {
-                that.debug('clearing cached entry for "' + key + '"')
-                clearTimeout(that.timers[key])
+              return Promise.all(
+                keys.map(function(key) {
+                  return that._decrementDataExpiration(key, multi)
+                })
+              ).then(function() {
+                deleteCount += keys.length
+                multi.del(keys)
+                keys.forEach(function(key) {
+                  that.debug('clearing cached entry for "' + key + '"')
+                  clearTimeout(that.timers[key])
+                })
+                if (cursor === '0') {
+                  multi.del(group)
+                  return
+                }
+                return clearGroup(group, cursor, match, count)
               })
-              if (cursor === '0') {
-                multi.del(group)
-                return
-              }
-              return clearGroup(group, cursor, match, count)
             })
             .catch(reject)
         }
 
         return clearGroup(group, cursor, match, count).then(function() {
-          multi.exec(function(err, deleteCounts) {
-            if (err || deleteCounts === null) return reject(err)
-
-            var deleteCount = deleteCounts.reduce(function(memo, deleteCount) {
-              return memo + parseInt(deleteCount, 10)
-            }, 0)
+          multi.exec(function(err, res) {
+            if (err || res === null) return reject(err)
             resolve(deleteCount)
           })
         })
@@ -111,16 +307,23 @@ RedisCache.prototype.clear = function(target) {
               }
             })
           } else {
-            that.redis
-              .multi()
-              .srem('group:' + group, target)
-              .del(target)
-              .exec(function(err, res) {
-                if (err || res === null) return reject(err)
+            var multi = that.redis.multi()
+            group = 'group:' + group
+            that._decrementDataExpiration(target, multi).then(function() {
+              multi
+                .srem(group, target)
+                .del(target)
+                .scard(group)
+                .exec(function(err, res) {
+                  if (err || res === null) return reject(err)
 
-                clearTimeout(that.timers[target])
-                resolve(1)
-              })
+                  clearTimeout(that.timers[target])
+                  var deleteCount = parseInt((res[2] || [null, 0])[1], 10)
+                  var wasGroupDeleted = parseInt((res[3] || [null, 1])[1], 10) === 0
+                  if (wasGroupDeleted) deleteCount++
+                  resolve(deleteCount)
+                })
+            })
           }
         })
       }
@@ -130,22 +333,25 @@ RedisCache.prototype.clear = function(target) {
 
 RedisCache.prototype.get = function(key) {
   var that = this
-  return new Promise(function(resolve, reject) {
-    that.redis.hget(key, 'value', function(err, value) {
-      if (err) return reject(err)
-      if (value === null) return resolve({ value: value })
+  return this.getValue(key).then(function(value) {
+    if (value === null) return { value: value }
 
-      that.redis.pttl(key, function(err, time) {
+    return new Promise(function(resolve, reject) {
+      that.redis.get('data:' + value['data-token'] + ':' + key, function(err, data) {
         if (err) return reject(err)
-        if (time < 0) return resolve({ value: null })
+        if (data !== null) value.data = data
 
-        resolve({
-          value: JSON.parse(value),
-          expire: time + Date.now(),
-          timeout: that.timers[key] || null, // available if at same node process
+        that.redis.pttl(key, function(err, time) {
+          if (err) return reject(err)
+          if (time < 0) return resolve({ value: null })
+
+          resolve({
+            value: value,
+            expire: time + Date.now(),
+            timeout: that.timers[key] || null, // available if at same node process
+          })
         })
       })
-      resolve(value)
     })
   })
 }
@@ -153,9 +359,19 @@ RedisCache.prototype.get = function(key) {
 RedisCache.prototype.getValue = function(key) {
   var that = this
   return new Promise(function(resolve, reject) {
-    that.redis.hget(key, 'value', function(err, value) {
+    that.redis.hgetall(key, function(err, value) {
       if (err) reject(err)
-      else resolve(JSON.parse(value))
+      else {
+        // ioredis hgetall empty value is {}, while node-redis is null
+        if (value && Object.keys(value).length > 0) {
+          value.key = key
+          value.headers = JSON.parse(value.headers)
+          value.status = parseInt(value.status, 10)
+          value.timestamp = parseFloat(value.timestamp)
+          value['data-extra-pttl'] = parseInt(value['data-extra-pttl'], 10)
+        } else value = null
+        resolve(value)
+      }
     })
   })
 }
@@ -199,9 +415,13 @@ RedisCache.prototype.getIndex = function(group) {
 
             keys = that._removePrefix(keys)
             keys.forEach(function(k) {
+              if (/^(lock|data):/.test(k)) return
+
               var isGroup = k.length !== (k = k.replace(/^group:/, '')).length
               if (isGroup) groups.push(k)
-              else index.all.push(k)
+              else {
+                index.all.push(k)
+              }
             })
 
             if (cursor === '0') {
@@ -251,6 +471,28 @@ RedisCache.prototype._sscan = function(key, cursor, match, count) {
       if (err) return reject(err)
 
       resolve(cursorAndKeys)
+    })
+  })
+}
+
+// so that a response reading key data chunk by chunk won't error out
+RedisCache.prototype._decrementDataExpiration = function(key, multi) {
+  var that = this
+  return new Promise(function(resolve) {
+    that.redis.hmget(key, 'data-token', 'data-extra-pttl', function(err, res) {
+      // key doesn't exist anymore
+      if (err || res[0] === null || res[1] === null) return resolve()
+      var dataKey = 'data:' + res[0] + ':' + key
+      var pttl = res[1]
+
+      if (multi) {
+        multi.pexpire(dataKey, pttl)
+        resolve()
+      } else {
+        that.redis.pexpire(dataKey, pttl, function() {
+          resolve()
+        })
+      }
     })
   })
 }
