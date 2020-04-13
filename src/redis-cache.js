@@ -170,14 +170,14 @@ RedisCache.prototype.createReadStream = function(key, dataToken, encoding, highW
 
   if (isIoRedis) {
     returnBuffers = true
-    getRange = this.redis.getrangeBuffer
+    getRange = this.redis.getrangeBuffer.bind(this.redis)
   } else {
     returnBuffers =
       (this.redis.options &&
         (this.redis.options.detect_buffers || this.redis.options.return_buffers)) ||
       false
     if (returnBuffers) dataKey = Buffer.from(dataKey)
-    getRange = this.redis.getrange
+    getRange = this.redis.getrange.bind(this.redis)
   }
 
   var start = 0
