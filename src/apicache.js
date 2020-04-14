@@ -352,7 +352,7 @@ function ApiCache() {
       return redisCache
         .clear(target)
         .then(function(deleteCount) {
-          debug(deleteCount + 'keys cleared')
+          debug(deleteCount, 'keys cleared')
           return deleteCount
         })
         .catch(function() {

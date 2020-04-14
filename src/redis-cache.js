@@ -499,8 +499,8 @@ RedisCache.prototype._decrementDataExpiration = function(key, multi) {
 
 RedisCache.prototype._clearAll = function() {
   var that = this
-  return new Promise(function(resolve, reject) {
-    if (!that.prefix) {
+  if (!this.prefix) {
+    return new Promise(function(resolve, reject) {
       that.redis.dbsize(function(err, count) {
         if (err) return reject(err)
 
@@ -511,41 +511,40 @@ RedisCache.prototype._clearAll = function() {
           resolve(parseInt(count, 10))
         })
       })
-    } else {
-      var deleteCount = 0
-      var cursor = '0'
-      var match = that.prefix + '*'
+    })
+  } else {
+    var deleteCount = 0
+    var cursor = '0'
+    var match = that.prefix + '*'
 
-      var deleteAll = function(cursor, match) {
-        return that
-          ._scan(cursor, match)
-          .then(function(cursorAndKeys) {
-            var cursor = cursorAndKeys[0]
-            var keys = cursorAndKeys[1]
+    var deleteAll = function(cursor, match) {
+      return that._scan(cursor, match).then(function(cursorAndKeys) {
+        var cursor = cursorAndKeys[0]
+        var keys = cursorAndKeys[1]
 
-            if (keys.length === 0) {
-              if (cursor === '0') return deleteCount
-              return deleteAll(cursor, match)
-            }
+        if (keys.length === 0) {
+          if (cursor === '0') return deleteCount
+          return deleteAll(cursor, match)
+        }
 
-            keys = that._removePrefix(keys)
-            that.redis.del(keys, function(err, removedCount) {
-              if (err) throw err
-              deleteCount += parseInt(removedCount, 10)
+        keys = that._removePrefix(keys)
+        return new Promise(function(resolve, reject) {
+          that.redis.del(keys, function(err, removedCount) {
+            if (err) return reject(err)
+            deleteCount += parseInt(removedCount, 10)
 
-              keys.forEach(function(key) {
-                clearTimeout(that.timers[key])
-              })
-              if (cursor === '0') return deleteCount
-              return deleteAll(cursor, match)
+            keys.forEach(function(key) {
+              clearTimeout(that.timers[key])
             })
+            if (cursor === '0') resolve(deleteCount)
+            else resolve(deleteAll(cursor, match))
           })
-          .catch(reject)
-      }
-
-      return resolve(deleteAll(cursor, match))
+        })
+      })
     }
-  })
+
+    return deleteAll(cursor, match)
+  }
 }
 
 RedisCache.prototype._removePrefix = (function() {
