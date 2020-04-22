@@ -1,6 +1,29 @@
+var stream = require('stream')
+
 function MemoryCache() {
   this.cache = {}
   this.size = 0
+}
+
+MemoryCache.prototype.createReadStream = function(key) {
+  var chunk = this.getValue(key).data
+
+  return new stream.Readable({
+    read() {
+      try {
+        var shouldPush = this.push(chunk)
+        chunk = null
+        if (shouldPush) this.push(chunk)
+      } catch (err) {
+        this.emit('error', err)
+      }
+    },
+  }).on('error', function() {
+    this.unpipe()
+    // if node < 8
+    if (!this.destroy) return this.pause()
+    this.destroy()
+  })
 }
 
 MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {

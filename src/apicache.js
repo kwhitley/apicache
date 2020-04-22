@@ -1,4 +1,5 @@
 var url = require('url')
+var zlib = require('zlib')
 var MemoryCache = require('./memory-cache')
 var RedisCache = require('./redis-cache')
 var pkg = require('../package.json')
@@ -310,6 +311,7 @@ function ApiCache() {
             res._apicache.content,
             encoding
           )
+          cacheObject.key = key
           cacheResponse(key, cacheObject, duration)
 
           // display log entry
@@ -366,30 +368,45 @@ function ApiCache() {
       response.writeHead(304, headers)
       return response.end()
     }
-    response.writeHead(cacheObject.status || 200, headers)
 
-    if (redisCache) {
-      var rstream = redisCache
-        .createReadStream(
-          cacheObject.key,
-          cacheObject['data-token'],
-          cacheObject.encoding,
-          response.socket.writableHighWaterMark
-        )
-        .on('error', function() {
-          debug('error in sendCachedResponse function')
-          response.end()
-        })
+    var rstream = (redisCache || memCache)
+      .createReadStream(
+        cacheObject.key,
+        cacheObject['data-token'],
+        cacheObject.encoding,
+        response.socket.writableHighWaterMark
+      )
+      .on('error', function() {
+        debug('error in sendCachedResponse function')
+        response.end()
+      })
 
+    var cachedEncoding = (headers['content-encoding'] || 'identity').split(',')[0]
+    if ((request.acceptsEncodings || request.acceptsEncoding).call(request, cachedEncoding)) {
+      response.writeHead(cacheObject.status || 200, headers)
       return rstream.pipe(response)
-    }
+    } else {
+      var tstream
+      if (cachedEncoding === 'br' && zlib.createBrotliDecompress) {
+        tstream = zlib.createBrotliDecompress()
+      } else if (['gzip', 'deflate'].indexOf(cachedEncoding) !== -1) {
+        tstream = zlib.createUnzip()
+      } else {
+        response.writeHead(415, 'Unsupported Media Type')
+        return response.end()
+      }
 
-    // unstringify buffers
-    var data = cacheObject.data
-    if (data && data.type === 'Buffer') {
-      data = typeof data.data === 'number' ? Buffer.alloc(data.data) : Buffer.from(data.data)
+      headers['content-encoding'] = 'identity'
+      response.writeHead(cacheObject.status || 200, headers)
+      tstream.on('error', function() {
+        debug('error in decompression stream')
+        this.unpipe()
+        // if node < 8
+        if (!this.destroy) return this.pause()
+        this.destroy()
+      })
+      return rstream.pipe(tstream).pipe(response)
     }
-    return response.end(data, cacheObject.encoding)
   }
 
   function syncOptions() {

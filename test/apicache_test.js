@@ -1004,6 +1004,127 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 })
 
+var compressionApis = [apis[1], apis[3]]
+compressionApis.forEach(function(api) {
+  describe(api.name + ' compression tests', function() {
+    var db = redis.createClient({ prefix: 'a-prefix:' })
+    var mockAPI = api.server
+    var configs = [
+      {
+        clientName: 'memory',
+        config: {},
+      },
+      {
+        clientName: 'redis',
+        config: { redisClient: db, redisPrefix: 'a-prefix:' },
+      },
+    ]
+
+    configs.forEach(function(meta) {
+      describe('with ' + meta.clientName + ' cache', function() {
+        if (meta.clientName === 'redis') {
+          // eslint-disable-next-line no-undef
+          afterEach(function(done) {
+            db.flushdb(done)
+          })
+        }
+
+        it('can use cache with compression mismatch', function() {
+          var app = mockAPI.create('10 seconds', meta.config)
+
+          return request(app)
+            .get('/api/movies')
+            .set('Accept-Encoding', 'deflate, gzip')
+            .expect('Content-Encoding', 'gzip')
+            .expect(200, movies)
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+            .then(function() {
+              return request(app)
+                .get('/api/movies')
+                .set('Accept-Encoding', 'br')
+                .expect('Content-Encoding', 'identity')
+                .expect(200, movies)
+            })
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+        })
+
+        it('can use compressed cache for uncompressed request', function() {
+          var app = mockAPI.create('10 seconds', meta.config)
+          var encoding = api.name === 'restify+gzip' ? 'gzip' : 'deflate'
+
+          return request(app)
+            .get('/api/movies')
+            .set('Accept-Encoding', encoding)
+            .expect('Content-Encoding', encoding)
+            .expect(200, movies)
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+            .then(function() {
+              return request(app)
+                .get('/api/movies')
+                .set('Accept-Encoding', '')
+                .expect('Content-Encoding', 'identity')
+                .expect(200, movies)
+            })
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+        })
+
+        it('can use compressed cache for unknown encoding request', function() {
+          var app = mockAPI.create('10 seconds', meta.config)
+
+          return request(app)
+            .get('/api/movies')
+            .set('Accept-Encoding', 'gzip')
+            .expect('Content-Encoding', 'gzip')
+            .expect(200, movies)
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+            .then(function() {
+              return request(app)
+                .get('/api/movies')
+                .set('Accept-Encoding', 'unknown')
+                .expect('Content-Encoding', 'identity')
+                .expect(200, movies)
+            })
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+        })
+
+        it("'won't compress with unknown encoding request", function() {
+          var app = mockAPI.create('10 seconds', meta.config)
+
+          return request(app)
+            .get('/api/movies')
+            .set('Accept-Encoding', 'unknown')
+            .expect(200, movies)
+            .then(function() {
+              expect(app.requestsProcessed).to.equal(1)
+            })
+            .then(function() {
+              return request(app)
+                .get('/api/movies')
+                .set('Accept-Encoding', 'gzip')
+                .expect(200, movies)
+            })
+            .then(function(res) {
+              expect(res.headers['content-encoding'] || 'identity').to.equal('identity')
+              expect(app.requestsProcessed).to.equal(1)
+            })
+        })
+      })
+    })
+  })
+})
+
 describe('Redis support', function() {
   function hgetallIsNull(db, key) {
     return new Promise(function(resolve, reject) {
