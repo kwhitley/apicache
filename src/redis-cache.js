@@ -20,6 +20,23 @@ function RedisCache(options, debug) {
   this.redlock = new Redlock([this.redis], {
     retryCount: 0,
   })
+  this.isIoRedis = !!this.redis.getBuffer
+  if (!this.isIoRedis) {
+    // A compressed response can't be converted losslessly to a utf-8 string.
+    // It can be fetched as a buffer (encoded as binary/latin1 or even utf8),
+    // so use ioredis buffer returning fn versions.
+    // For node-redis, key param should be Buffer.from(key) with detect_buffers: true
+    // or else the regular functions will return utf-8 strings
+    var that = this
+    var getBufferFnVersion = function(fn) {
+      return function() {
+        arguments[0] = Buffer.from(arguments[0], 'utf8') // key
+        return fn.apply(that.redis, arguments)
+      }
+    }
+    this.redis.getrangeBuffer = getBufferFnVersion(this.redis.getrange)
+    this.redis.getBuffer = getBufferFnVersion(this.redis.get)
+  }
 }
 
 var DEFAULT_LOCK_PTTL = 30 * 1000 // 30s will be the response init limit
@@ -46,6 +63,7 @@ RedisCache.prototype.createWriteStream = (function() {
         var dataKey = 'data:' + dataToken + ':' + key
         var byteLength = 0
         var cacheEncoding
+        var hasErrored = false
         function releaseLock() {
           lock.unlock().catch(function(err) {
             that.debug('error in redisCache.getWriteStream function', err)
@@ -54,6 +72,8 @@ RedisCache.prototype.createWriteStream = (function() {
 
         // if node < 8, the wstream won't call _final
         var final = function(cb) {
+          if (hasErrored) return cb()
+
           try {
             var dataKey = 'data:' + dataToken + ':' + key
             var chunkCount = Math.ceil((byteLength || 1) / highWaterMark)
@@ -63,7 +83,14 @@ RedisCache.prototype.createWriteStream = (function() {
             )
             var group = getGroup()
             var value = getValue()
-            value.encoding = cacheEncoding === 'buffer' ? 'utf8' : cacheEncoding || ''
+            if (cacheEncoding === 'buffer') {
+              if ((value.headers['content-encoding'] || 'identity') === 'identity') {
+                value.encoding = 'utf8'
+              } else value.encoding = 'binary' // 'alias to latin1 from node >= v6.4.0'
+            } else {
+              value.encoding = cacheEncoding || 'utf8'
+            }
+
             multi
               .hset(key, 'data-token', dataToken)
               .hset(key, 'data-extra-pttl', dataMaxAllowedTimeToRead)
@@ -97,6 +124,8 @@ RedisCache.prototype.createWriteStream = (function() {
         return new stream.Writable({
           highWaterMark: highWaterMark,
           write(chunk, encoding, cb) {
+            if (hasErrored) return cb()
+
             try {
               multi.append(dataKey, chunk)
 
@@ -134,7 +163,11 @@ RedisCache.prototype.createWriteStream = (function() {
           },
           final: final,
         })
-          .on('error', releaseLock)
+          .on('error', function() {
+            hasErrored = true
+            multi.discard()
+            releaseLock()
+          })
           .on('finish', function() {
             // if node >= 8
             if (typeof this._final === 'function') return releaseLock()
@@ -163,35 +196,31 @@ var isNodeGte10 = (function(ret) {
 })()
 RedisCache.prototype.createReadStream = function(key, dataToken, encoding, highWaterMark) {
   if (!highWaterMark) highWaterMark = DEFAULT_HIGH_WATER_MARK
-  var isIoRedis = !!this.redis.getrangeBuffer
   var dataKey = 'data:' + dataToken + ':' + key
-  var getRange
   var returnBuffers
-
-  if (isIoRedis) {
+  if (this.isIoRedis) {
     returnBuffers = true
-    getRange = this.redis.getrangeBuffer.bind(this.redis)
   } else {
     returnBuffers =
       (this.redis.options &&
         (this.redis.options.detect_buffers || this.redis.options.return_buffers)) ||
       false
-    if (returnBuffers) dataKey = Buffer.from(dataKey)
-    getRange = this.redis.getrange.bind(this.redis)
   }
 
+  var that = this
   var start = 0
   var end = highWaterMark - 1
   var getChunk = function() {
     return new Promise(function(resolve, reject) {
       try {
-        getRange(dataKey, start, end, function(err, chunk) {
+        that.redis.getrangeBuffer(dataKey, start, end, function(err, chunk) {
           if (err) return reject(err)
 
-          if (!returnBuffers && !Buffer.isBuffer(chunk)) chunk = Buffer.from(chunk, encoding)
           if (Buffer.byteLength(chunk || '', encoding) === 0) {
             chunk = null // done reading
           } else {
+            // faster instead of checking !Buffer.isBuffer(chunk)
+            if (!returnBuffers) chunk = Buffer.from(chunk, encoding)
             start = end + 1
             end = end + highWaterMark
           }
@@ -227,6 +256,11 @@ RedisCache.prototype.createReadStream = function(key, dataToken, encoding, highW
         that.emit('error', err)
       })
     },
+  }).on('error', function() {
+    this.unpipe()
+    // if node < 8
+    if (!this.destroy) return this.pause()
+    this.destroy()
   })
 }
 
@@ -337,7 +371,7 @@ RedisCache.prototype.get = function(key) {
     if (value === null) return { value: value }
 
     return new Promise(function(resolve, reject) {
-      that.redis.get('data:' + value['data-token'] + ':' + key, function(err, data) {
+      that.redis.getBuffer('data:' + value['data-token'] + ':' + key, function(err, data) {
         if (err) return reject(err)
         if (data !== null) value.data = data
 

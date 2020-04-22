@@ -6,9 +6,6 @@ function MockAPI(expiration, options, toggle, localOptions) {
   var apicache = require('../../src/apicache').newInstance(options)
   var app = express()
 
-  // ENABLE COMPRESSION
-  app.use(compression({ threshold: 1 }))
-
   // EMBED UPSTREAM RESPONSE PARAM
   app.use(function(req, res, next) {
     res.id = 123
@@ -18,6 +15,9 @@ function MockAPI(expiration, options, toggle, localOptions) {
   // ENABLE APICACHE
   app.use(apicache.middleware(expiration, toggle, localOptions))
   app.apicache = apicache
+
+  // ENABLE COMPRESSION
+  app.use(compression({ threshold: 1 }))
 
   // ADD API ROUTES
   app = addRoutes(app)

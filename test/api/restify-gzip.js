@@ -5,10 +5,6 @@ function MockAPI(expiration, options, toggle, localOptions) {
   var apicache = require('../../src/apicache').newInstance(options)
   var app = restify.createServer()
 
-  // ENABLE COMPRESSION
-  var whichGzip = (restify.gzipResponse && restify.gzipResponse()) || restify.plugins.gzipResponse()
-  app.use(whichGzip)
-
   // EMBED UPSTREAM RESPONSE PARAM
   app.use(function(req, res, next) {
     res.id = 123
@@ -18,6 +14,10 @@ function MockAPI(expiration, options, toggle, localOptions) {
   // ENABLE APICACHE
   app.use(apicache.middleware(expiration, toggle, localOptions))
   app.apicache = apicache
+
+  // ENABLE COMPRESSION
+  var whichGzip = (restify.gzipResponse && restify.gzipResponse()) || restify.plugins.gzipResponse()
+  app.use(whichGzip)
 
   app.use(function(req, res, next) {
     res.charSet('utf-8')

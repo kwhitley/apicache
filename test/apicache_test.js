@@ -8,7 +8,22 @@ var redis = require('ioredis-mock')
 // node-redis usage
 redis.createClient = function(options) {
   if (options.prefix) options.keyPrefix = options.prefix
-  return new this(options)
+  var client = new this(options)
+  // patch append to work with buffers and add missing getrangeBuffer
+  var multi = client.multi()
+  client.multi = function() {
+    return multi
+  }
+  var multiAppend = multi.append.bind(multi)
+  multi.append = function(key, value) {
+    if (!Buffer.isBuffer(value)) return multiAppend(key, value)
+
+    var memo = client.data.get(key) || Buffer.alloc(0)
+    value = Buffer.from(value, 'utf8') // ioredis-mock stores buffers as utf-8
+    client.data.set(key, Buffer.concat([memo, value]))
+  }
+  client.getrangeBuffer = client.getrange
+  return client
 }
 
 var apis = [
@@ -463,13 +478,13 @@ describe('.middleware {MIDDLEWARE}', function() {
         request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .expect('Cache-Control', 'max-age=10')
+          .expect('Cache-Control', 'max-age=10, must-revalidate')
           .then(function(res) {
             setTimeout(function() {
               request(app)
                 .get('/api/movies')
                 .expect(200, movies)
-                .expect('Cache-Control', 'max-age=9')
+                .expect('Cache-Control', 'max-age=9, must-revalidate')
                 .then(function() {
                   expect(app.requestsProcessed).to.equal(1)
                   done()
@@ -640,7 +655,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writeandend')
           .expect(200, 'abc')
-          .expect('Cache-Control', 'max-age=10')
+          .expect('Cache-Control', 'max-age=10, must-revalidate')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)
@@ -656,7 +671,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/writebufferandend')
           .expect(200, 'abc')
-          .expect('Cache-Control', 'max-age=10')
+          .expect('Cache-Control', 'max-age=10, must-revalidate')
           .then(assertNumRequestsProcessed(app, 1))
           .then(function() {
             return request(app)
@@ -718,7 +733,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         return request(app)
           .get('/api/movies')
-          .expect('Cache-Control', 'max-age=10')
+          .expect('Cache-Control', 'max-age=10, must-revalidate')
           .expect(200, movies)
           .then(function(res) {
             expect(res.headers['apicache-store']).to.be.undefined
@@ -846,7 +861,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/missing')
           .expect(404)
           .then(function(res) {
-            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
+            expect(res.headers['cache-control']).to.equal('no-store')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
@@ -860,7 +875,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/missing')
           .expect(404)
           .then(function(res) {
-            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
+            expect(res.headers['cache-control']).to.equal('no-store')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
@@ -897,7 +912,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .get('/api/missing')
           .expect(404)
           .then(function(res) {
-            expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
+            expect(res.headers['cache-control']).to.equal('no-store')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
@@ -1042,7 +1057,11 @@ describe('Redis support', function() {
           .get('/api/testcachegroup')
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
-            return app.apicache.getIndex()
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                resolve(app.apicache.getIndex())
+              })
+            })
           })
           .then(function(index) {
             expect(index.all.length).to.equal(1)
@@ -1066,7 +1085,11 @@ describe('Redis support', function() {
           .get('/api/testcachegroup')
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
-            return app.apicache.getIndex()
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                resolve(app.apicache.getIndex())
+              })
+            })
           })
           .then(function(index) {
             expect(index.all.length).to.equal(1)
@@ -1091,7 +1114,11 @@ describe('Redis support', function() {
           .then(function(index) {
             expect(index.all.length).to.equal(0)
             return app.apicache.clear().then(function() {
-              return app.apicache.getIndex().then(function(index) {
+              return new Promise(function(resolve) {
+                setImmediate(function() {
+                  resolve(app.apicache.getIndex())
+                })
+              }).then(function(index) {
                 expect(index.all.length).to.equal(0)
               })
             })
@@ -1101,7 +1128,11 @@ describe('Redis support', function() {
           })
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
-            return app.apicache.getIndex()
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                resolve(app.apicache.getIndex())
+              })
+            })
           })
           .then(function(index) {
             expect(index.all.length).to.equal(1)
@@ -1126,7 +1157,11 @@ describe('Redis support', function() {
           .get('/api/testcachegroup')
           .then(function() {
             otherApp = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
-            return Promise.all([app.apicache.getIndex(), otherApp.apicache.getIndex()])
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                resolve(Promise.all([app.apicache.getIndex(), otherApp.apicache.getIndex()]))
+              })
+            })
           })
           .then(function(indexes) {
             indexes.forEach(function(index) {
@@ -1160,20 +1195,25 @@ describe('Redis support', function() {
             expect(app.requestsProcessed).to.equal(1)
             expect(res.text.slice(0, 5)).to.equal('aaaaa')
             then = Date.now()
-            return Promise.all([
-              request(app)
-                .get('/api/bigresponse')
-                .then(function(otherRes) {
-                  return [Date.now() - then, otherRes]
-                }),
-              new Promise(function(resolve) {
-                return setTimeout(function() {
-                  app.apicache.clear('/api/bigresponse').then(function(deleteCount) {
-                    resolve([Date.now() - then, deleteCount])
-                  })
-                }, resTime / 20)
-              }),
-            ])
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                var promiseAll = Promise.all([
+                  request(app)
+                    .get('/api/bigresponse')
+                    .then(function(otherRes) {
+                      return [Date.now() - then, otherRes]
+                    }),
+                  new Promise(function(resolve) {
+                    return setTimeout(function() {
+                      app.apicache.clear('/api/bigresponse').then(function(deleteCount) {
+                        resolve([Date.now() - then, deleteCount])
+                      })
+                    }, resTime / 20)
+                  }),
+                ])
+                resolve(promiseAll)
+              })
+            })
               .then(function(promiseAllReturn) {
                 var elapsedTime1 = promiseAllReturn[0][0]
                 var elapsedTime2 = promiseAllReturn[1][0]
@@ -1265,7 +1305,11 @@ describe('Redis support', function() {
             expect(res[0].text).to.equal(res[1].text)
             expect(res[0].text).to.equal('hello world')
             expect(app.requestsProcessed).to.equal(2)
-            return app.apicache.getIndex()
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                resolve(app.apicache.getIndex())
+              })
+            })
           })
           .then(function(index) {
             expect(index.all.length).to.equal(1)

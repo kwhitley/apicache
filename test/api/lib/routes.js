@@ -91,7 +91,7 @@ module.exports = function(app) {
     app.requestsProcessed++
     req.apicacheGroup = 'bigresponsegroup'
 
-    var chunkCount = 1000
+    var chunkCount = 150
     var chunkLength = 16384
     var chunk = new Array(16384).fill('a').join('')
     var rstream = require('stream').Readable({

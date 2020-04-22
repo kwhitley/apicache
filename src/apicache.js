@@ -71,20 +71,23 @@ function ApiCache() {
   instances.push(this)
   this.id = instances.length
 
+  function shouldDebug() {
+    var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
+
+    return !!(globalOptions.debug || debugEnv)
+  }
+
   function debug(a, b, c, d) {
+    if (!shouldDebug()) return
     var arr = ['\x1b[36m[apicache]\x1b[0m', a, b, c, d].filter(function(arg) {
       return arg !== undefined
     })
-    var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
-
-    return (globalOptions.debug || debugEnv) && console.log.apply(null, arr)
+    console.log.apply(null, arr)
   }
 
-  function shouldCacheResponse(request, response, toggle) {
-    var opt = globalOptions
-    var codes = opt.statusCodes
-
+  function shouldCacheResponse(request, response, toggle, options) {
     if (!response) return false
+    var codes = (options || globalOptions).statusCodes
 
     if (toggle && !toggle(request, response)) {
       return false
@@ -166,7 +169,40 @@ function ApiCache() {
     }
   }
 
+  function debugCacheAddition(cache, key, strDuration, req, res) {
+    if (!shouldDebug()) return Promise.resolve()
+
+    var elapsed = new Date() - req.apicacheTimer
+    return Promise.resolve(cache.get(key))
+      .then(function(cached) {
+        var cacheObject
+        if (cached && cached.value) {
+          cached = cached.value
+          if (cached.data) cached.data = cached.data.toString(cached.encoding)
+          cacheObject = createCacheObject(
+            cached.status,
+            cached.headers,
+            cached.data,
+            cached.encoding
+          )
+          cacheObject.timestamp = cached.timestamp
+        } else cacheObject = {}
+
+        debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
+        debug('cacheObject: ', cacheObject)
+      })
+      .catch(function(err) {
+        debug('error debugging cache addition', err)
+      })
+  }
+
   function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle, options) {
+    var shouldCacheRes = (function(shouldIt) {
+      return function(req, res, toggle, options) {
+        if (shouldIt !== undefined) return shouldIt
+        return (shouldIt = shouldCacheResponse(req, res, toggle, options))
+      }
+    })()
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
@@ -181,75 +217,93 @@ function ApiCache() {
       res.setHeader(name, options.headers[name])
     })
 
-    res.writeHead = function() {
+    res.writeHead = function(statusCode) {
+      res.statusCode = statusCode
+
       // add cache control headers
       if (!options.headers['cache-control']) {
-        if (shouldCacheResponse(req, res, toggle)) {
-          res.setHeader('cache-control', 'max-age=' + (duration / 1000).toFixed(0))
+        if (shouldCacheRes(req, res, toggle, options)) {
+          res.setHeader(
+            'cache-control',
+            'max-age=' + (duration / 1000).toFixed(0) + ', must-revalidate'
+          )
         } else {
-          res.setHeader('cache-control', 'no-cache, no-store, must-revalidate')
+          res.setHeader('cache-control', 'no-store')
         }
       }
-      res._apicache.headers = Object.assign({}, getSafeHeaders(res))
+
       return res._apicache.writeHead.apply(this, arguments)
     }
 
     if (redisCache) {
-      var getCacheObject = function() {
-        var headers = res._apicache.headers || getSafeHeaders(res)
-        return createCacheObject(res.statusCode, headers)
-      }
-      var getGroup = function() {
-        return req.apicacheGroup
-      }
-      var expireCallback = globalOptions.events.expire
-      return redisCache
-        .createWriteStream(
-          key,
-          getCacheObject,
-          duration,
-          expireCallback,
-          getGroup,
-          res.socket.writableHighWaterMark
-        )
-        .then(function(wstream) {
-          ;['write', 'end'].forEach(function(method) {
-            res[method] = function(chunk, encoding) {
-              wstream[method](chunk, encoding)
-              return res._apicache[method].apply(this, arguments)
-            }
-          })
-          var ret = new Promise(function(resolve, reject) {
-            wstream
-              .on('error', function(err) {
-                reject(err)
-              })
-              .on('finish', resolve)
-          })
+      var getWstream = (function(wstream) {
+        return function() {
+          if (wstream) return wstream
 
-          next()
+          if (!shouldCacheRes(req, res, toggle, options)) {
+            var emptyFn = function() {}
+            return (wstream = { write: emptyFn, end: emptyFn })
+          }
+
+          var getCacheObject = function() {
+            var headers = res._apicache.headers || getSafeHeaders(res)
+            return createCacheObject(res.statusCode, headers)
+          }
+          var getGroup = function() {
+            return req.apicacheGroup
+          }
+          var expireCallback = globalOptions.events.expire
+          return (wstream = redisCache
+            .createWriteStream(
+              key,
+              getCacheObject,
+              duration,
+              expireCallback,
+              getGroup,
+              res.socket.writableHighWaterMark
+            )
+            .then(function(wstream) {
+              return wstream
+                .on('error', function() {
+                  debug('error in makeResponseCacheable function')
+                })
+                .on('finish', function() {
+                  debugCacheAddition(redisCache, key, strDuration, req, res)
+                })
+            }))
+        }
+      })()
+
+      ;['write', 'end'].forEach(function(method) {
+        var ret
+        res[method] = function(chunk, encoding) {
+          ret = res._apicache[method].apply(this, arguments)
+          getWstream().then(function(wstream) {
+            wstream[method](chunk, encoding)
+          })
           return ret
-        })
-        .catch(function() {
-          debug('error in makeResponseCacheable function')
-          next()
-        })
+        }
+      })
+
+      return next()
     }
 
     // patch res.write
     res.write = function(content) {
+      var ret = res._apicache.write.apply(this, arguments)
       accumulateContent(res, content)
-      return res._apicache.write.apply(this, arguments)
+      return ret
     }
 
     // patch res.end
     res.end = function(content, encoding) {
+      var ret = res._apicache.end.apply(this, arguments)
       if (shouldCacheResponse(req, res, toggle)) {
         accumulateContent(res, content)
 
         if (res._apicache.cacheable && res._apicache.content) {
           addIndexEntries(key, req)
-          var headers = res._apicache.headers || getSafeHeaders(res)
+          var headers = getSafeHeaders(res)
           var cacheObject = createCacheObject(
             res.statusCode,
             headers,
@@ -261,13 +315,15 @@ function ApiCache() {
           // display log entry
           var elapsed = new Date() - req.apicacheTimer
           debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
-          debug('_apicache.headers: ', res._apicache.headers)
-          debug('res.getHeaders(): ', getSafeHeaders(res))
+          if (cacheObject.data) {
+            cacheObject = Object.assign({}, cacheObject, {
+              data: cacheObject.data.toString(cacheObject.encoding),
+            })
+          }
           debug('cacheObject: ', cacheObject)
         }
       }
-
-      return res._apicache.end.apply(this, arguments)
+      return ret
     }
 
     next()
@@ -287,12 +343,11 @@ function ApiCache() {
 
     Object.assign(headers, filterBlacklistedHeaders(cacheObjectHeaders), {
       // set properly-decremented max-age header.  This ensures that max-age is in sync with the cache expiration.
-      'cache-control': (cacheObjectHeaders['cache-control'] || 'max-age=' + updatedMaxAge).replace(
-        /max-age=\s*([+-]?\d+)/,
-        function(_match, cachedMaxAge) {
-          return 'max-age=' + Math.max(0, Math.min(parseInt(cachedMaxAge, 10), updatedMaxAge))
-        }
-      ),
+      'cache-control': (
+        cacheObjectHeaders['cache-control'] || 'max-age=' + updatedMaxAge + ', must-revalidate'
+      ).replace(/max-age=\s*([+-]?\d+)/, function(_match, cachedMaxAge) {
+        return 'max-age=' + Math.max(0, Math.min(parseInt(cachedMaxAge, 10), updatedMaxAge))
+      }),
     })
 
     // only embed apicache headers when not in production environment
@@ -323,11 +378,7 @@ function ApiCache() {
         )
         .on('error', function() {
           debug('error in sendCachedResponse function')
-          rstream.unpipe(response)
           response.end()
-          // if node > 8
-          if (rstream.destroy) rstream.destroy()
-          else rstream.pause()
         })
 
       return rstream.pipe(response)
@@ -348,7 +399,7 @@ function ApiCache() {
   }
 
   this.clear = function(target, isAutomatic) {
-    if (redisCache)
+    if (redisCache) {
       return redisCache
         .clear(target)
         .then(function(deleteCount) {
@@ -358,8 +409,9 @@ function ApiCache() {
         .catch(function() {
           debug('error in clear function')
         })
-    var group = index.groups[target]
+    }
 
+    var group = index.groups[target]
     if (group) {
       debug('clearing group "' + target + '"')
 
