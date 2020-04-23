@@ -977,7 +977,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           expect(app.apicache.getIndex().all.length).to.equal(1)
           expect(app.apicache.getIndex().all).to.include('/api/movies')
           done()
-        }, 25)
+        }, 18)
       })
 
       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
@@ -1329,7 +1329,7 @@ describe('Redis support', function() {
                       app.apicache.clear('/api/bigresponse').then(function(deleteCount) {
                         resolve([Date.now() - then, deleteCount])
                       })
-                    }, resTime / 20)
+                    }, resTime / 10)
                   }),
                 ])
                 resolve(promiseAll)
@@ -1374,20 +1374,25 @@ describe('Redis support', function() {
             expect(app.requestsProcessed).to.equal(1)
             expect(res.text.slice(0, 5)).to.equal('aaaaa')
             then = Date.now()
-            return Promise.all([
-              request(app)
-                .get('/api/bigresponse')
-                .then(function(otherRes) {
-                  return [Date.now() - then, otherRes]
-                }),
-              new Promise(function(resolve) {
-                return setTimeout(function() {
-                  app.apicache.clear('bigresponsegroup').then(function(deleteCount) {
-                    resolve([Date.now() - then, deleteCount])
-                  })
-                }, resTime / 20)
-              }),
-            ])
+            return new Promise(function(resolve) {
+              setImmediate(function() {
+                var promiseAll = Promise.all([
+                  request(app)
+                    .get('/api/bigresponse')
+                    .then(function(otherRes) {
+                      return [Date.now() - then, otherRes]
+                    }),
+                  new Promise(function(resolve) {
+                    return setTimeout(function() {
+                      app.apicache.clear('bigresponsegroup').then(function(deleteCount) {
+                        resolve([Date.now() - then, deleteCount])
+                      })
+                    }, resTime / 10)
+                  }),
+                ])
+                resolve(promiseAll)
+              })
+            })
               .then(function(promiseAllReturn) {
                 var elapsedTime1 = promiseAllReturn[0][0]
                 var elapsedTime2 = promiseAllReturn[1][0]

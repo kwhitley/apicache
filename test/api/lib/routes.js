@@ -91,15 +91,14 @@ module.exports = function(app) {
     app.requestsProcessed++
     req.apicacheGroup = 'bigresponsegroup'
 
-    var chunkCount = 150
+    var chunkCount = 250
     var chunkLength = 16384
     var chunk = new Array(16384).fill('a').join('')
     var rstream = require('stream').Readable({
       highWaterMark: chunkLength,
       read() {
-        var keepPushing = true
-        while (--chunkCount > 0 && (keepPushing = this.push(chunk))) {}
-        if (keepPushing && chunkCount <= 0) this.push(null)
+        if (chunkCount-- === 0) this.push(null)
+        else this.push(chunk)
       },
     })
 
