@@ -6,4 +6,5 @@ node_js:
   - 10.0.0
   - 11.0.0
   - 12.0.0
+install: yarn install --ignore-engines
 after_success: npm run coverage
