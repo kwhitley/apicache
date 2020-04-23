@@ -179,11 +179,10 @@ function ApiCache() {
         var cacheObject
         if (cached && cached.value) {
           cached = cached.value
-          if (cached.data) cached.data = cached.data.toString(cached.encoding)
           cacheObject = createCacheObject(
             cached.status,
             cached.headers,
-            cached.data,
+            cached.data && cached.data.toString(cached.encoding),
             cached.encoding
           )
           cacheObject.timestamp = cached.timestamp
@@ -313,16 +312,7 @@ function ApiCache() {
           )
           cacheObject.key = key
           cacheResponse(key, cacheObject, duration)
-
-          // display log entry
-          var elapsed = new Date() - req.apicacheTimer
-          debug('adding cache entry for "' + key + '" @ ' + strDuration, logDuration(elapsed))
-          if (cacheObject.data) {
-            cacheObject = Object.assign({}, cacheObject, {
-              data: cacheObject.data.toString(cacheObject.encoding),
-            })
-          }
-          debug('cacheObject: ', cacheObject)
+          debugCacheAddition(memCache, key, strDuration, req, res)
         }
       }
       return ret
