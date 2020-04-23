@@ -113,7 +113,6 @@ module.exports = function(app) {
     res.writeHead(200, { 'Content-Type': 'text/plain' })
     res.write('hello ')
     setTimeout(function() {
-      // can't use res.end('world') directly because restify 7.7.0 will write it twice
       res.write('world')
       res.end()
     }, 100)

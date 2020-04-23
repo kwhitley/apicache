@@ -171,6 +171,13 @@ function ApiCache() {
       })
   }
 
+  var isNodelte7 = (function(ret) {
+    return function() {
+      if (ret !== undefined) return ret
+
+      return (ret = parseInt(process.versions.node.split('.')[0], 10) <= 7)
+    }
+  })()
   function makeResponseCacheable(req, res, next, key, duration, strDuration, toggle, options) {
     var shouldCacheRes = (function(shouldIt) {
       return function(req, res, toggle, options) {
@@ -266,6 +273,18 @@ function ApiCache() {
         return ret
       }
     })
+
+    // res.end(data) writes data twice
+    if (isNodelte7()) {
+      var _end = res.end
+      res.end = function(chunk, encoding) {
+        if (Buffer.byteLength(chunk || '') > 0) {
+          this.write(chunk, encoding)
+          arguments[0] = null
+        }
+        return _end.apply(this, arguments)
+      }
+    }
 
     return next()
   }
