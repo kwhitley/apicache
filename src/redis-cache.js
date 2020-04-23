@@ -75,7 +75,6 @@ RedisCache.prototype.createWriteStream = (function() {
           if (hasErrored) return cb()
 
           try {
-            var dataKey = 'data:' + dataToken + ':' + key
             var chunkCount = Math.ceil((byteLength || 1) / highWaterMark)
             var serverToRedisLatency = POOR_SERVER_TO_REDIS_LATENCY * chunkCount
             var dataMaxAllowedTimeToRead = Math.round(

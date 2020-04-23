@@ -1179,9 +1179,9 @@ describe('Redis support', function() {
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 resolve(app.apicache.getIndex())
-              })
+              }, 10)
             })
           })
           .then(function(index) {
@@ -1207,9 +1207,9 @@ describe('Redis support', function() {
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 resolve(app.apicache.getIndex())
-              })
+              }, 10)
             })
           })
           .then(function(index) {
@@ -1250,9 +1250,9 @@ describe('Redis support', function() {
           .then(function(res) {
             expect(app.requestsProcessed).to.equal(1)
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 resolve(app.apicache.getIndex())
-              })
+              }, 10)
             })
           })
           .then(function(index) {
@@ -1279,9 +1279,9 @@ describe('Redis support', function() {
           .then(function() {
             otherApp = mockAPI.create('10 seconds', { redisClient: db, redisPrefix: 'a-prefix:' })
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 resolve(Promise.all([app.apicache.getIndex(), otherApp.apicache.getIndex()]))
-              })
+              }, 10)
             })
           })
           .then(function(indexes) {
@@ -1427,9 +1427,9 @@ describe('Redis support', function() {
             expect(res[0].text).to.equal('hello world')
             expect(app.requestsProcessed).to.equal(2)
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 resolve(app.apicache.getIndex())
-              })
+              }, 10)
             })
           })
           .then(function(index) {

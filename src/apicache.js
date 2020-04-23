@@ -145,31 +145,6 @@ function ApiCache() {
     }, Math.min(duration, 2147483647))
   }
 
-  function accumulateContent(res, content) {
-    if (content) {
-      if (typeof content === 'string') {
-        res._apicache.content = (res._apicache.content || '') + content
-      } else if (Buffer.isBuffer(content)) {
-        var oldContent = res._apicache.content
-
-        if (typeof oldContent === 'string') {
-          oldContent = Buffer.from(oldContent)
-        }
-
-        if (!oldContent) {
-          oldContent = Buffer.alloc(0)
-        }
-
-        res._apicache.content = Buffer.concat(
-          [oldContent, content],
-          oldContent.length + content.length
-        )
-      } else {
-        res._apicache.content = content
-      }
-    }
-  }
-
   function debugCacheAddition(cache, key, strDuration, req, res) {
     if (!shouldDebug()) return Promise.resolve()
 
@@ -203,6 +178,7 @@ function ApiCache() {
         return (shouldIt = shouldCacheResponse(req, res, toggle, options))
       }
     })()
+
     // monkeypatch res.end to create cache object
     res._apicache = {
       write: res.write,
@@ -235,90 +211,63 @@ function ApiCache() {
       return res._apicache.writeHead.apply(this, arguments)
     }
 
-    if (redisCache) {
-      var getWstream = (function(wstream) {
-        return function() {
-          if (wstream) return wstream
+    var getWstream = (function(wstream) {
+      return function() {
+        if (wstream) return wstream
 
-          if (!shouldCacheRes(req, res, toggle, options)) {
-            var emptyFn = function() {}
-            return (wstream = { write: emptyFn, end: emptyFn })
-          }
-
-          var getCacheObject = function() {
-            var headers = res._apicache.headers || getSafeHeaders(res)
-            return createCacheObject(res.statusCode, headers)
-          }
-          var getGroup = function() {
-            return req.apicacheGroup
-          }
-          var expireCallback = globalOptions.events.expire
-          return (wstream = redisCache
-            .createWriteStream(
-              key,
-              getCacheObject,
-              duration,
-              expireCallback,
-              getGroup,
-              res.socket.writableHighWaterMark
-            )
-            .then(function(wstream) {
-              return wstream
-                .on('error', function() {
-                  debug('error in makeResponseCacheable function')
-                })
-                .on('finish', function() {
-                  debugCacheAddition(redisCache, key, strDuration, req, res)
-                })
-            }))
+        if (!shouldCacheRes(req, res, toggle, options)) {
+          var emptyFn = function() {}
+          return (wstream = Promise.resolve({ write: emptyFn, end: emptyFn }))
         }
-      })()
 
-      ;['write', 'end'].forEach(function(method) {
-        var ret
-        res[method] = function(chunk, encoding) {
-          ret = res._apicache[method].apply(this, arguments)
-          getWstream().then(function(wstream) {
-            wstream[method](chunk, encoding)
-          })
-          return ret
-        }
-      })
-
-      return next()
-    }
-
-    // patch res.write
-    res.write = function(content) {
-      var ret = res._apicache.write.apply(this, arguments)
-      accumulateContent(res, content)
-      return ret
-    }
-
-    // patch res.end
-    res.end = function(content, encoding) {
-      var ret = res._apicache.end.apply(this, arguments)
-      if (shouldCacheResponse(req, res, toggle)) {
-        accumulateContent(res, content)
-
-        if (res._apicache.cacheable && res._apicache.content) {
-          addIndexEntries(key, req)
+        var getCacheObject = function() {
           var headers = getSafeHeaders(res)
-          var cacheObject = createCacheObject(
-            res.statusCode,
-            headers,
-            res._apicache.content,
-            encoding
-          )
-          cacheObject.key = key
-          cacheResponse(key, cacheObject, duration)
-          debugCacheAddition(memCache, key, strDuration, req, res)
+          return createCacheObject(res.statusCode, headers)
         }
+        var getGroup = function() {
+          return req.apicacheGroup
+        }
+        var expireCallback = globalOptions.events.expire
+        return (wstream = (redisCache || memCache)
+          .createWriteStream(
+            key,
+            getCacheObject,
+            duration,
+            expireCallback,
+            getGroup,
+            res.socket.writableHighWaterMark,
+            // this is needed while memCache index/groups are still handled externally
+            !redisCache &&
+              function(statusCode, headers, data, encoding) {
+                addIndexEntries(key, req)
+                var cacheObject = createCacheObject(statusCode, headers, data, encoding)
+                cacheResponse(key, cacheObject, duration)
+              }
+          )
+          .then(function(wstream) {
+            return wstream
+              .on('error', function() {
+                debug('error in makeResponseCacheable function')
+              })
+              .on('finish', function() {
+                debugCacheAddition(redisCache, key, strDuration, req, res)
+              })
+          }))
       }
-      return ret
-    }
+    })()
 
-    next()
+    ;['write', 'end'].forEach(function(method) {
+      var ret
+      res[method] = function(chunk, encoding) {
+        ret = res._apicache[method].apply(this, arguments)
+        getWstream().then(function(wstream) {
+          wstream[method](chunk, encoding)
+        })
+        return ret
+      }
+    })
+
+    return next()
   }
 
   function sendCachedResponse(request, response, cacheObject, toggle, next, duration) {
