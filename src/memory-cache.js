@@ -94,14 +94,29 @@ MemoryCache.prototype.createWriteStream = function(
   )
 }
 
-MemoryCache.prototype.createReadStream = function(_key, chunk, _encoding, _highWaterMark) {
+MemoryCache.prototype.createReadStream = function(_key, data, encoding, highWaterMark) {
+  if (!highWaterMark) highWaterMark = DEFAULT_HIGH_WATER_MARK
+  if (!data) data = Buffer.alloc(0)
+  var chunk
+  var start = 0
+  var end = highWaterMark
+  var pushChunk = function(push) {
+    chunk = data.slice(start, end)
+    if (Buffer.byteLength(chunk, encoding) === 0) {
+      chunk = null
+    } else {
+      start = end
+      end = end + highWaterMark
+    }
+    var shouldPush = push(chunk)
+    if (shouldPush) return pushChunk(push)
+  }
+
   return new stream.Readable({
-    highWaterMark: Buffer.byteLength(chunk || '') || DEFAULT_HIGH_WATER_MARK,
+    highWaterMark: highWaterMark,
     read() {
       try {
-        var shouldPush = this.push(chunk)
-        chunk = null
-        if (shouldPush) this.push(chunk)
+        pushChunk(this.push.bind(this))
       } catch (err) {
         this.emit('error', err)
       }

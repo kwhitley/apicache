@@ -243,6 +243,7 @@ RedisCache.prototype.createReadStream = function(key, dataToken, encoding, highW
       })
       .then(function(chunk) {
         var shouldPush = push(chunk)
+        // isNodeGte10() needed for keeping async chunk push
         if (isNodeGte10() && shouldPush) return pushChunk(push)
       })
   }
