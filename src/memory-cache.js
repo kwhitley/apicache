@@ -94,9 +94,7 @@ MemoryCache.prototype.createWriteStream = function(
   )
 }
 
-MemoryCache.prototype.createReadStream = function(key) {
-  var chunk = this.getValue(key).data
-
+MemoryCache.prototype.createReadStream = function(_key, chunk, _encoding, _highWaterMark) {
   return new stream.Readable({
     highWaterMark: Buffer.byteLength(chunk || '') || DEFAULT_HIGH_WATER_MARK,
     read() {

@@ -331,7 +331,7 @@ function ApiCache() {
     var rstream = (redisCache || memCache)
       .createReadStream(
         cacheObject.key,
-        cacheObject['data-token'],
+        cacheObject['data-token'] || cacheObject.data,
         cacheObject.encoding,
         response.socket.writableHighWaterMark
       )
