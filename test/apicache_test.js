@@ -1143,6 +1143,7 @@ describe('Redis support', function() {
 
   apis.forEach(function(api) {
     describe(api.name + ' tests', function() {
+      this.timeout(3000)
       var mockAPI = api.server
 
       it('properly caches a request', function() {
@@ -1317,7 +1318,7 @@ describe('Redis support', function() {
             expect(res.text.slice(0, 5)).to.equal('aaaaa')
             then = Date.now()
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 var promiseAll = Promise.all([
                   request(app)
                     .get('/api/bigresponse')
@@ -1333,7 +1334,7 @@ describe('Redis support', function() {
                   }),
                 ])
                 resolve(promiseAll)
-              })
+              }, 10)
             })
               .then(function(promiseAllReturn) {
                 var elapsedTime1 = promiseAllReturn[0][0]
@@ -1375,7 +1376,7 @@ describe('Redis support', function() {
             expect(res.text.slice(0, 5)).to.equal('aaaaa')
             then = Date.now()
             return new Promise(function(resolve) {
-              setImmediate(function() {
+              setTimeout(function() {
                 var promiseAll = Promise.all([
                   request(app)
                     .get('/api/bigresponse')
@@ -1391,7 +1392,7 @@ describe('Redis support', function() {
                   }),
                 ])
                 resolve(promiseAll)
-              })
+              }, 10)
             })
               .then(function(promiseAllReturn) {
                 var elapsedTime1 = promiseAllReturn[0][0]
