@@ -473,6 +473,28 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('returns cached response for url on adding trailing slash', function(done) {
+        var app = mockAPI.create('10 seconds')
+
+        request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(function(res) {
+            setTimeout(function() {
+              request(app)
+                .get('/api/movies/')
+                .expect(200, movies)
+                .then(function() {
+                  expect(app.requestsProcessed).to.equal(1)
+                  done()
+                })
+                .catch(function(err) {
+                  done(err)
+                })
+            }, 500)
+          })
+      })
+
       it('skips cache when using header "x-apicache-bypass"', function() {
         var app = mockAPI.create('10 seconds')
 
