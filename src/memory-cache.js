@@ -13,7 +13,7 @@ MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
     timeout: setTimeout(function() {
       instance.delete(key)
       return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key)
-    }, time)
+    }, time),
   }
 
   this.cache[key] = entry
@@ -56,4 +56,4 @@ MemoryCache.prototype.clear = function() {
   return true
 }
 
-module.exports = MemoryCache
+export default MemoryCache

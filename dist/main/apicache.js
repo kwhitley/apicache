@@ -1,6 +1,143 @@
-var url = require('url')
-var MemoryCache = require('./memory-cache')
-var pkg = require('../package.json')
+'use strict'
+
+function MemoryCache() {
+  this.cache = {}
+  this.size = 0
+}
+
+MemoryCache.prototype.add = function(key, value, time, timeoutCallback) {
+  var old = this.cache[key]
+  var instance = this
+
+  var entry = {
+    value: value,
+    expire: time + Date.now(),
+    timeout: setTimeout(function() {
+      instance.delete(key)
+      return timeoutCallback && typeof timeoutCallback === 'function' && timeoutCallback(value, key)
+    }, time),
+  }
+
+  this.cache[key] = entry
+  this.size = Object.keys(this.cache).length
+
+  return entry
+}
+
+MemoryCache.prototype.delete = function(key) {
+  var entry = this.cache[key]
+
+  if (entry) {
+    clearTimeout(entry.timeout)
+  }
+
+  delete this.cache[key]
+
+  this.size = Object.keys(this.cache).length
+
+  return null
+}
+
+MemoryCache.prototype.get = function(key) {
+  var entry = this.cache[key]
+
+  return entry
+}
+
+MemoryCache.prototype.getValue = function(key) {
+  var entry = this.get(key)
+
+  return entry && entry.value
+}
+
+MemoryCache.prototype.clear = function() {
+  Object.keys(this.cache).forEach(function(key) {
+    this.delete(key)
+  }, this)
+
+  return true
+}
+
+var name = 'apicache'
+var version = '1.5.3'
+var scripts = {
+  test: "nyc mocha $(find test -name '*.test.js') --recursive",
+  'test:watch': 'yarn test -- --watch',
+  coverage: 'nyc report --reporter=text-lcov | coveralls',
+  build: 'rollup -c',
+  build2: 'rollup src/index.js --format cjs --file dist/apicache.js',
+}
+var engines = {
+  node: '>=8',
+}
+var description =
+  'An ultra-simplified API response caching middleware for Express/Node using plain-english durations.'
+var main = 'dist/main/apicache.js'
+var module$1 = 'dist/module/apicache.js'
+var repository = {
+  type: 'git',
+  url: 'https://github.com/kwhitley/apicache.git',
+}
+var keywords = [
+  'cache',
+  'API',
+  'redis',
+  'memcache',
+  'response',
+  'express',
+  'JSON',
+  'duration',
+  'middleware',
+  'memory',
+]
+var author = 'Kevin R. Whitley <krwhitley@gmail.com> (http://krwhitley.com)'
+var license = 'MIT'
+var bugs = {
+  url: 'https://github.com/kwhitley/apicache/issues',
+  email: 'krwhitley@gmail.com',
+}
+var devDependencies = {
+  '@rollup/plugin-json': '^4.0.3',
+  chai: '^4.2.0',
+  compression: '^1.7.4',
+  coveralls: '^3.0.6',
+  eslint: '^4.19.1',
+  express: '^4.17.1',
+  fakeredis: '^2.0.0',
+  husky: '^3.0.4',
+  mocha: '^7.0.0',
+  nyc: '^13.3.0',
+  prettier: '^1.18.2',
+  'pretty-quick': '^1.11.1',
+  restify: '^7.7.0',
+  'restify-etag-cache': '^1.0.12',
+  rollup: '^2.10.2',
+  'rollup-plugin-terser': '^5.3.0',
+  supertest: '^4.0.2',
+}
+var dependencies = {}
+var husky = {
+  hooks: {
+    'pre-commit': 'pretty-quick --staged && npm run test',
+  },
+}
+var pkg = {
+  name: name,
+  version: version,
+  scripts: scripts,
+  engines: engines,
+  description: description,
+  main: main,
+  module: module$1,
+  repository: repository,
+  keywords: keywords,
+  author: author,
+  license: license,
+  bugs: bugs,
+  devDependencies: devDependencies,
+  dependencies: dependencies,
+  husky: husky,
+}
 
 var t = {
   ms: 1,
@@ -734,4 +871,6 @@ function ApiCache() {
   this.resetIndex()
 }
 
-module.exports = new ApiCache()
+var index = new ApiCache()
+
+module.exports = index

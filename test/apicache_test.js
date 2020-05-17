@@ -1,7 +1,7 @@
 var chai = require('chai')
 var expect = chai.expect
 var request = require('supertest')
-var apicache = require('../src/apicache')
+var apicache = require('../dist/main/apicache')
 var pkg = require('../package.json')
 var redis = require('fakeredis')
 var a = apicache.clone()
@@ -25,7 +25,7 @@ function assertNumRequestsProcessed(app, n) {
 }
 
 describe('.options(opt?) {GETTER/SETTER}', function() {
-  var apicache = require('../src/apicache')
+  var apicache = require('../src')
 
   it('is a function', function() {
     expect(typeof apicache.options).to.equal('function')
@@ -58,7 +58,7 @@ describe('.options(opt?) {GETTER/SETTER}', function() {
 })
 
 describe('.getDuration(stringOrNumber) {GETTER}', function() {
-  var apicache = require('../src/apicache')
+  var apicache = require('../src')
 
   it('is a function', function() {
     expect(typeof apicache.getDuration).to.equal('function')
@@ -111,7 +111,7 @@ describe('.getDuration(stringOrNumber) {GETTER}', function() {
 })
 
 describe('.getPerformance()', function() {
-  var apicache = require('../src/apicache')
+  var apicache = require('../src')
 
   it('is a function', function() {
     expect(typeof apicache.getPerformance).to.equal('function')
@@ -185,7 +185,7 @@ describe('.getPerformance()', function() {
 })
 
 describe('.getIndex([groupName]) {GETTER}', function() {
-  var apicache = require('../src/apicache')
+  var apicache = require('../src')
 
   it('is a function', function() {
     expect(typeof apicache.getIndex).to.equal('function')
@@ -208,7 +208,7 @@ describe('.getIndex([groupName]) {GETTER}', function() {
 })
 
 describe('.resetIndex() {SETTER}', function() {
-  var apicache = require('../src/apicache')
+  var apicache = require('../src')
 
   it('is a function', function() {
     expect(typeof apicache.resetIndex).to.equal('function')
@@ -217,19 +217,19 @@ describe('.resetIndex() {SETTER}', function() {
 
 describe('.middleware {MIDDLEWARE}', function() {
   it('is a function', function() {
-    var apicache = require('../src/apicache')
+    var apicache = require('../src')
     expect(typeof apicache.middleware).to.equal('function')
     expect(apicache.middleware.length).to.equal(3)
   })
 
   it('returns the middleware function', function() {
-    var middleware = require('../src/apicache').middleware('10 seconds')
+    var middleware = require('../src').middleware('10 seconds')
     expect(typeof middleware).to.equal('function')
     expect(middleware.length).to.equal(3)
   })
 
   describe('options', function() {
-    var apicache = require('../src/apicache').newInstance()
+    var apicache = require('../src').newInstance()
 
     it('uses global options if local ones not provided', function() {
       apicache.options({
@@ -1010,7 +1010,7 @@ describe('Redis support', function() {
 
 describe('.clear(key?) {SETTER}', function() {
   it('is a function', function() {
-    var apicache = require('../src/apicache')
+    var apicache = require('../src')
     expect(typeof apicache.clear).to.equal('function')
   })
 

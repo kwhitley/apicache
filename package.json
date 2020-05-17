@@ -2,18 +2,19 @@
   "name": "apicache",
   "version": "1.5.3",
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "nyc mocha $(find test -name '*.test.js') --recursive",
-    "test:watch": "npm run test -- --watch",
+    "test2": "nyc mocha $(find test -name '*_test.js') --recursive",
+    "test": "nyc jest",
+    "test:watch": "yarn test -- --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "prepublish": "npm run test"
+    "build": "rollup -c",
+    "build2": "rollup src/index.js --format cjs --file dist/apicache.js"
   },
   "engines": {
     "node": ">=8"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
-  "main": "./src/apicache.js",
+  "main": "dist/main/apicache.js",
+  "module": "dist/module/apicache.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/kwhitley/apicache.git"
@@ -37,6 +38,7 @@
     "email": "krwhitley@gmail.com"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "^4.0.3",
     "chai": "^4.2.0",
     "compression": "^1.7.4",
     "coveralls": "^3.0.6",
@@ -44,13 +46,17 @@
     "express": "^4.17.1",
     "fakeredis": "^2.0.0",
     "husky": "^3.0.4",
+    "jest": "^26.0.1",
     "mocha": "^7.0.0",
     "nyc": "^13.3.0",
     "prettier": "^1.18.2",
     "pretty-quick": "^1.11.1",
     "restify": "^7.7.0",
     "restify-etag-cache": "^1.0.12",
-    "supertest": "^4.0.2"
+    "rollup": "^2.10.2",
+    "rollup-plugin-terser": "^5.3.0",
+    "supertest": "^4.0.2",
+    "yarn-release": "^1.10.2"
   },
   "dependencies": {},
   "husky": {
