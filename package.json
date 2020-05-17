@@ -10,7 +10,7 @@
     "prepublish": "npm run test"
   },
   "engines": {
-    "node": ">=6.2.0 <13"
+    "node": ">=8"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
   "main": "./src/apicache.js",
@@ -40,7 +40,7 @@
     "chai": "^4.2.0",
     "compression": "^1.7.4",
     "coveralls": "^3.0.6",
-    "eslint": "^4.18.0",
+    "eslint": "^4.19.1",
     "express": "^4.17.1",
     "fakeredis": "^2.0.0",
     "husky": "^3.0.4",
