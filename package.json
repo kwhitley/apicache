@@ -3,8 +3,8 @@
   "version": "1.5.3",
   "scripts": {
     "test2": "nyc mocha $(find test -name '*_test.js') --recursive",
-    "test": "nyc jest",
-    "test:watch": "yarn test -- --watch",
+    "test": "nyc jest --verbose",
+    "dev": "yarn test --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "build": "rollup -c",
     "build2": "rollup src/index.js --format cjs --file dist/apicache.js"
