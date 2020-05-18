@@ -106,15 +106,16 @@ var devDependencies = {
   eslint: '^7.0.0',
   express: '^4.17.1',
   fakeredis: '^2.0.0',
-  husky: '^3.0.4',
+  husky: '^4.2.5',
   jest: '^26.0.1',
   mocha: '^7.0.0',
-  nyc: '^13.3.0',
+  nyc: '^15.0.1',
   prettier: '^2.0.5',
   'pretty-quick': '^2.0.1',
   restify: '^7.7.0',
   'restify-etag-cache': '^1.0.12',
   rollup: '^2.10.2',
+  'rollup-plugin-sourcemaps': '^0.6.2',
   'rollup-plugin-terser': '^5.3.0',
   supertest: '^4.0.2',
   'yarn-release': '^1.10.2',
@@ -122,7 +123,7 @@ var devDependencies = {
 var dependencies = {}
 var husky = {
   hooks: {
-    'pre-commit': 'pretty-quick --staged && yarn test',
+    'pre-commit': 'pretty-quick --staged',
   },
 }
 var pkg = {
@@ -878,3 +879,4 @@ function ApiCache() {
 var index = new ApiCache()
 
 module.exports = index
+//# sourceMappingURL=apicache.js.map

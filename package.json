@@ -3,9 +3,10 @@
   "version": "1.5.3",
   "scripts": {
     "lint": "eslint src",
-    "test2": "nyc mocha $(find test -name '*_test.js') --recursive",
+    "test:old": "nyc mocha $(find test -name '*_test.js') --recursive",
     "test": "nyc jest --verbose",
     "dev": "yarn test --watch",
+    "test:coverage": "yarn test && yarn coverage",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "build": "rollup -c",
     "build2": "rollup src/index.js --format cjs --file dist/apicache.js"
@@ -49,12 +50,13 @@
     "husky": "^4.2.5",
     "jest": "^26.0.1",
     "mocha": "^7.0.0",
-    "nyc": "^13.3.0",
+    "nyc": "^15.0.1",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
     "restify": "^7.7.0",
     "restify-etag-cache": "^1.0.12",
     "rollup": "^2.10.2",
+    "rollup-plugin-sourcemaps": "^0.6.2",
     "rollup-plugin-terser": "^5.3.0",
     "supertest": "^4.0.2",
     "yarn-release": "^1.10.2"
