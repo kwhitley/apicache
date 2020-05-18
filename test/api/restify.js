@@ -2,11 +2,11 @@ var restify = require('restify')
 var addRoutes = require('./lib/routes')
 
 function MockAPI(expiration, options, toggle) {
-  var apicache = require('../../src/apicache').newInstance(options)
+  var apicache = require('../../dist/main/apicache').newInstance(options)
   var app = restify.createServer()
 
   // EMBED UPSTREAM RESPONSE PARAM
-  app.use(function(req, res, next) {
+  app.use(function (req, res, next) {
     res.id = 123
     next()
   })
@@ -15,8 +15,8 @@ function MockAPI(expiration, options, toggle) {
   app.use(apicache.middleware(expiration, toggle))
   app.apicache = apicache
 
-  app.use(function(req, res, next) {
-    res.charSet('utf-8');
+  app.use(function (req, res, next) {
+    res.charSet('utf-8')
     next()
   })
 
@@ -29,5 +29,7 @@ function MockAPI(expiration, options, toggle) {
 }
 
 module.exports = {
-  create: function(expiration, config, toggle) { return new MockAPI(expiration, config, toggle) }
+  create: function (expiration, config, toggle) {
+    return new MockAPI(expiration, config, toggle)
+  },
 }

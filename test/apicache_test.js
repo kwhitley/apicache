@@ -19,219 +19,219 @@ var apis = [
 ]
 
 function assertNumRequestsProcessed(app, n) {
-  return function() {
+  return function () {
     expect(app.requestsProcessed).to.equal(n)
   }
 }
 
-describe('.options(opt?) {GETTER/SETTER}', function() {
-  var apicache = require('../src')
+// describe('.options(opt?) {GETTER/SETTER}', function() {
+//   var apicache = require('../src')
 
-  it('is a function', function() {
-    expect(typeof apicache.options).to.equal('function')
-  })
+//   it('is a function', function() {
+//     expect(typeof apicache.options).to.equal('function')
+//   })
 
-  describe('.options() {GETTER}', function() {
-    it('returns global options as object', function() {
-      expect(typeof apicache.options()).to.equal('object')
-    })
-  })
+//   describe('.options() {GETTER}', function() {
+//     it('returns global options as object', function() {
+//       expect(typeof apicache.options()).to.equal('object')
+//     })
+//   })
 
-  describe('.options(opt) {SETTER}', function() {
-    it('is chainable', function() {
-      expect(apicache.options({})).to.equal(apicache)
-    })
+//   describe('.options(opt) {SETTER}', function() {
+//     it('is chainable', function() {
+//       expect(apicache.options({})).to.equal(apicache)
+//     })
 
-    it('extends defaults', function() {
-      expect(apicache.options({ foo: 'bar' }).options().foo).to.equal('bar')
-    })
+//     it('extends defaults', function() {
+//       expect(apicache.options({ foo: 'bar' }).options().foo).to.equal('bar')
+//     })
 
-    it('allows overrides of defaults', function() {
-      var newDuration = 11
+//     it('allows overrides of defaults', function() {
+//       var newDuration = 11
 
-      expect(apicache.options()).to.have.property('defaultDuration')
-      expect(apicache.options({ defaultDuration: newDuration }).options().defaultDuration).to.equal(
-        newDuration
-      )
-    })
-  })
-})
+//       expect(apicache.options()).to.have.property('defaultDuration')
+//       expect(apicache.options({ defaultDuration: newDuration }).options().defaultDuration).to.equal(
+//         newDuration
+//       )
+//     })
+//   })
+// })
 
-describe('.getDuration(stringOrNumber) {GETTER}', function() {
-  var apicache = require('../src')
+// describe('.getDuration(stringOrNumber) {GETTER}', function() {
+//   var apicache = require('../src')
 
-  it('is a function', function() {
-    expect(typeof apicache.getDuration).to.equal('function')
-  })
+//   it('is a function', function() {
+//     expect(typeof apicache.getDuration).to.equal('function')
+//   })
 
-  it('returns value unchanged if numeric', function() {
-    expect(apicache.getDuration(77)).to.equal(77)
-  })
+//   it('returns value unchanged if numeric', function() {
+//     expect(apicache.getDuration(77)).to.equal(77)
+//   })
 
-  it('returns default duration when uncertain', function() {
-    apicache.options({ defaultDuration: 999 })
-    expect(apicache.getDuration(undefined)).to.equal(999)
-  })
+//   it('returns default duration when uncertain', function() {
+//     apicache.options({ defaultDuration: 999 })
+//     expect(apicache.getDuration(undefined)).to.equal(999)
+//   })
 
-  it('accepts singular or plural (e.g. "1 hour", "3 hours")', function() {
-    expect(apicache.getDuration('3 seconds')).to.equal(3000)
-    expect(apicache.getDuration('3 second')).to.equal(3000)
-  })
+//   it('accepts singular or plural (e.g. "1 hour", "3 hours")', function() {
+//     expect(apicache.getDuration('3 seconds')).to.equal(3000)
+//     expect(apicache.getDuration('3 second')).to.equal(3000)
+//   })
 
-  it('accepts decimals (e.g. "1.5 hours")', function() {
-    expect(apicache.getDuration('1.5 seconds')).to.equal(1500)
-  })
+//   it('accepts decimals (e.g. "1.5 hours")', function() {
+//     expect(apicache.getDuration('1.5 seconds')).to.equal(1500)
+//   })
 
-  describe('unit support', function() {
-    it('numeric values as milliseconds', function() {
-      expect(apicache.getDuration(43)).to.equal(43)
-    })
-    it('milliseconds', function() {
-      expect(apicache.getDuration('3 ms')).to.equal(3)
-    })
-    it('seconds', function() {
-      expect(apicache.getDuration('3 seconds')).to.equal(3000)
-    })
-    it('minutes', function() {
-      expect(apicache.getDuration('4 minutes')).to.equal(1000 * 60 * 4)
-    })
-    it('hours', function() {
-      expect(apicache.getDuration('2 hours')).to.equal(1000 * 60 * 60 * 2)
-    })
-    it('days', function() {
-      expect(apicache.getDuration('3 days')).to.equal(1000 * 60 * 60 * 24 * 3)
-    })
-    it('weeks', function() {
-      expect(apicache.getDuration('5 weeks')).to.equal(1000 * 60 * 60 * 24 * 7 * 5)
-    })
-    it('months', function() {
-      expect(apicache.getDuration('6 months')).to.equal(1000 * 60 * 60 * 24 * 30 * 6)
-    })
-  })
-})
+//   describe('unit support', function() {
+//     it('numeric values as milliseconds', function() {
+//       expect(apicache.getDuration(43)).to.equal(43)
+//     })
+//     it('milliseconds', function() {
+//       expect(apicache.getDuration('3 ms')).to.equal(3)
+//     })
+//     it('seconds', function() {
+//       expect(apicache.getDuration('3 seconds')).to.equal(3000)
+//     })
+//     it('minutes', function() {
+//       expect(apicache.getDuration('4 minutes')).to.equal(1000 * 60 * 4)
+//     })
+//     it('hours', function() {
+//       expect(apicache.getDuration('2 hours')).to.equal(1000 * 60 * 60 * 2)
+//     })
+//     it('days', function() {
+//       expect(apicache.getDuration('3 days')).to.equal(1000 * 60 * 60 * 24 * 3)
+//     })
+//     it('weeks', function() {
+//       expect(apicache.getDuration('5 weeks')).to.equal(1000 * 60 * 60 * 24 * 7 * 5)
+//     })
+//     it('months', function() {
+//       expect(apicache.getDuration('6 months')).to.equal(1000 * 60 * 60 * 24 * 30 * 6)
+//     })
+//   })
+// })
 
-describe('.getPerformance()', function() {
-  var apicache = require('../src')
+// describe('.getPerformance()', function() {
+//   var apicache = require('../src')
 
-  it('is a function', function() {
-    expect(typeof apicache.getPerformance).to.equal('function')
-  })
+//   it('is a function', function() {
+//     expect(typeof apicache.getPerformance).to.equal('function')
+//   })
 
-  it('returns an array', function() {
-    expect(Array.isArray(apicache.getPerformance())).to.be.true
-  })
+//   it('returns an array', function() {
+//     expect(Array.isArray(apicache.getPerformance())).to.be.true
+//   })
 
-  it('returns a null hit rate if the api has not been called', function() {
-    var api = require('./api/express')
-    var app = api.create('10 seconds', { trackPerformance: true })
-    expect(app.apicache.getPerformance()[0]).to.deep.equal({
-      callCount: 0,
-      hitCount: 0,
-      missCount: 0,
-      hitRate: null,
-      hitRateLast100: null,
-      hitRateLast1000: null,
-      hitRateLast10000: null,
-      hitRateLast100000: null,
-      lastCacheHit: null,
-      lastCacheMiss: null,
-    })
-  })
+//   it('returns a null hit rate if the api has not been called', function() {
+//     var api = require('./api/express')
+//     var app = api.create('10 seconds', { trackPerformance: true })
+//     expect(app.apicache.getPerformance()[0]).to.deep.equal({
+//       callCount: 0,
+//       hitCount: 0,
+//       missCount: 0,
+//       hitRate: null,
+//       hitRateLast100: null,
+//       hitRateLast1000: null,
+//       hitRateLast10000: null,
+//       hitRateLast100000: null,
+//       lastCacheHit: null,
+//       lastCacheMiss: null,
+//     })
+//   })
 
-  it('returns a 0 hit rate if the api has been called once', function() {
-    var api = require('./api/express')
-    var app = api.create('10 seconds', { trackPerformance: true })
+//   it('returns a 0 hit rate if the api has been called once', function() {
+//     var api = require('./api/express')
+//     var app = api.create('10 seconds', { trackPerformance: true })
 
-    return request(app)
-      .get('/api/movies')
-      .then(function(res) {
-        expect(app.apicache.getPerformance()[0]).to.deep.equal({
-          callCount: 1,
-          hitCount: 0,
-          missCount: 1,
-          hitRate: 0,
-          hitRateLast100: 0,
-          hitRateLast1000: 0,
-          hitRateLast10000: 0,
-          hitRateLast100000: 0,
-          lastCacheHit: null,
-          lastCacheMiss: '/api/movies',
-        })
-      })
-  })
+//     return request(app)
+//       .get('/api/movies')
+//       .then(function(res) {
+//         expect(app.apicache.getPerformance()[0]).to.deep.equal({
+//           callCount: 1,
+//           hitCount: 0,
+//           missCount: 1,
+//           hitRate: 0,
+//           hitRateLast100: 0,
+//           hitRateLast1000: 0,
+//           hitRateLast10000: 0,
+//           hitRateLast100000: 0,
+//           lastCacheHit: null,
+//           lastCacheMiss: '/api/movies',
+//         })
+//       })
+//   })
 
-  it('returns a 0.5 hit rate if the api has been called twice', function() {
-    var api = require('./api/express')
-    var app = api.create('10 seconds', { trackPerformance: true })
-    var requests = []
-    for (var i = 0; i < 2; i++) {
-      requests.push(request(app).get('/api/movies'))
-    }
-    return Promise.all(requests).then(function(res) {
-      expect(app.apicache.getPerformance()[0]).to.deep.equal({
-        callCount: 2,
-        hitCount: 1,
-        missCount: 1,
-        hitRate: 0.5,
-        hitRateLast100: 0.5,
-        hitRateLast1000: 0.5,
-        hitRateLast10000: 0.5,
-        hitRateLast100000: 0.5,
-        lastCacheHit: '/api/movies',
-        lastCacheMiss: '/api/movies',
-      })
-    })
-  })
-})
+//   it('returns a 0.5 hit rate if the api has been called twice', function() {
+//     var api = require('./api/express')
+//     var app = api.create('10 seconds', { trackPerformance: true })
+//     var requests = []
+//     for (var i = 0; i < 2; i++) {
+//       requests.push(request(app).get('/api/movies'))
+//     }
+//     return Promise.all(requests).then(function(res) {
+//       expect(app.apicache.getPerformance()[0]).to.deep.equal({
+//         callCount: 2,
+//         hitCount: 1,
+//         missCount: 1,
+//         hitRate: 0.5,
+//         hitRateLast100: 0.5,
+//         hitRateLast1000: 0.5,
+//         hitRateLast10000: 0.5,
+//         hitRateLast100000: 0.5,
+//         lastCacheHit: '/api/movies',
+//         lastCacheMiss: '/api/movies',
+//       })
+//     })
+//   })
+// })
 
-describe('.getIndex([groupName]) {GETTER}', function() {
-  var apicache = require('../src')
+// describe('.getIndex([groupName]) {GETTER}', function() {
+//   var apicache = require('../src')
 
-  it('is a function', function() {
-    expect(typeof apicache.getIndex).to.equal('function')
-  })
+//   it('is a function', function() {
+//     expect(typeof apicache.getIndex).to.equal('function')
+//   })
 
-  it('returns an object', function() {
-    expect(typeof apicache.getIndex()).to.equal('object')
-  })
+//   it('returns an object', function() {
+//     expect(typeof apicache.getIndex()).to.equal('object')
+//   })
 
-  it('can clear indexed cache groups', function() {
-    var api = require('./api/express')
-    var app = api.create('10 seconds')
+//   it('can clear indexed cache groups', function() {
+//     var api = require('./api/express')
+//     var app = api.create('10 seconds')
 
-    return request(app)
-      .get('/api/testcachegroup')
-      .then(function(res) {
-        expect(app.apicache.getIndex('cachegroup').length).to.equal(1)
-      })
-  })
-})
+//     return request(app)
+//       .get('/api/testcachegroup')
+//       .then(function(res) {
+//         expect(app.apicache.getIndex('cachegroup').length).to.equal(1)
+//       })
+//   })
+// })
 
-describe('.resetIndex() {SETTER}', function() {
-  var apicache = require('../src')
+// describe('.resetIndex() {SETTER}', function() {
+//   var apicache = require('../src')
 
-  it('is a function', function() {
-    expect(typeof apicache.resetIndex).to.equal('function')
-  })
-})
+//   it('is a function', function() {
+//     expect(typeof apicache.resetIndex).to.equal('function')
+//   })
+// })
 
-describe('.middleware {MIDDLEWARE}', function() {
-  it('is a function', function() {
+describe('.middleware {MIDDLEWARE}', function () {
+  it('is a function', function () {
     var apicache = require('../src')
     expect(typeof apicache.middleware).to.equal('function')
     expect(apicache.middleware.length).to.equal(3)
   })
 
-  it('returns the middleware function', function() {
+  it('returns the middleware function', function () {
     var middleware = require('../src').middleware('10 seconds')
     expect(typeof middleware).to.equal('function')
     expect(middleware.length).to.equal(3)
   })
 
-  describe('options', function() {
+  describe('options', function () {
     var apicache = require('../src').newInstance()
 
-    it('uses global options if local ones not provided', function() {
+    it('uses global options if local ones not provided', function () {
       apicache.options({
         appendKey: ['test'],
       })
@@ -265,7 +265,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
     })
 
-    it('uses local options if they provided', function() {
+    it('uses local options if they provided', function () {
       apicache.options({
         appendKey: ['test'],
       })
@@ -316,7 +316,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
     })
 
-    it('updates options if global ones changed', function() {
+    it('updates options if global ones changed', function () {
       apicache.options({
         debug: true,
         appendKey: ['test'],
@@ -361,7 +361,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
     })
 
-    it('updates options if local ones changed', function() {
+    it('updates options if local ones changed', function () {
       apicache.options({
         debug: true,
         appendKey: ['test'],
@@ -418,20 +418,17 @@ describe('.middleware {MIDDLEWARE}', function() {
     })
   })
 
-  apis.forEach(function(api) {
-    describe(api.name + ' tests', function() {
+  apis.forEach(function (api) {
+    describe(api.name + ' tests', function () {
       var mockAPI = api.server
 
-      it('does not interfere with initial request', function() {
+      it('does not interfere with initial request', function () {
         var app = mockAPI.create('10 seconds')
 
-        return request(app)
-          .get('/api/movies')
-          .expect(200)
-          .then(assertNumRequestsProcessed(app, 1))
+        return request(app).get('/api/movies').expect(200).then(assertNumRequestsProcessed(app, 1))
       })
 
-      it('properly returns a request while caching (first call)', function() {
+      it('properly returns a request while caching (first call)', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
@@ -440,7 +437,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .then(assertNumRequestsProcessed(app, 1))
       })
 
-      it('returns max-age header on first request', function() {
+      it('returns max-age header on first request', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
@@ -449,45 +446,45 @@ describe('.middleware {MIDDLEWARE}', function() {
           .expect('Cache-Control', /max-age/)
       })
 
-      it('returns properly decremented max-age header on cached response', function(done) {
+      it('returns properly decremented max-age header on cached response', function (done) {
         var app = mockAPI.create('10 seconds')
 
         request(app)
           .get('/api/movies')
           .expect(200, movies)
           .expect('Cache-Control', 'max-age=10')
-          .then(function(res) {
-            setTimeout(function() {
+          .then(function (res) {
+            setTimeout(function () {
               request(app)
                 .get('/api/movies')
                 .expect(200, movies)
                 .expect('Cache-Control', 'max-age=9')
-                .then(function() {
+                .then(function () {
                   expect(app.requestsProcessed).to.equal(1)
                   done()
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                   done(err)
                 })
             }, 500)
           })
       })
 
-      it('skips cache when using header "x-apicache-bypass"', function() {
+      it('skips cache when using header "x-apicache-bypass"', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
           .then(assertNumRequestsProcessed(app, 1))
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .set('x-apicache-bypass', true)
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(200, movies)
-              .then(function(res) {
+              .then(function (res) {
                 expect(res.headers['apicache-store']).to.be.undefined
                 expect(res.headers['apicache-version']).to.be.undefined
                 expect(app.requestsProcessed).to.equal(2)
@@ -495,21 +492,21 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('skips cache when using header "x-apicache-force-fetch (legacy)"', function() {
+      it('skips cache when using header "x-apicache-force-fetch (legacy)"', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
           .then(assertNumRequestsProcessed(app, 1))
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .set('x-apicache-force-fetch', true)
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(200, movies)
-              .then(function(res) {
+              .then(function (res) {
                 expect(res.headers['apicache-store']).to.be.undefined
                 expect(res.headers['apicache-version']).to.be.undefined
                 expect(app.requestsProcessed).to.equal(2)
@@ -517,33 +514,33 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('does not cache header in headerBlacklist', function() {
+      it('does not cache header in headerBlacklist', function () {
         var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
         return request(app)
           .get('/api/testheaderblacklist')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['x-blacklisted']).to.equal(res.headers['x-notblacklisted'])
             return request(app)
               .get('/api/testheaderblacklist')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(200, movies)
-              .then(function(res2) {
+              .then(function (res2) {
                 expect(res2.headers['x-blacklisted']).to.not.equal(res2.headers['x-notblacklisted'])
               })
           })
       })
 
-      it('properly returns a cached JSON request', function() {
+      it('properly returns a cached JSON request', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
           .then(assertNumRequestsProcessed(app, 1))
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .set('Accept', 'application/json')
@@ -553,19 +550,19 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('properly uses appendKey params', function() {
+      it('properly uses appendKey params', function () {
         var app = mockAPI.create('10 seconds', { appendKey: ['method'] })
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(function() {
+          .then(function () {
             expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET')
           })
       })
 
-      it('properly uses custom appendKey(req, res) function', function() {
-        var appendKey = function(req, res) {
+      it('properly uses custom appendKey(req, res) function', function () {
+        var appendKey = function (req, res) {
           return req.method + res.id
         }
         var app = mockAPI.create('10 seconds', { appendKey: appendKey })
@@ -573,12 +570,12 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(function() {
+          .then(function () {
             expect(app.apicache.getIndex().all[0]).to.equal('/api/movies$$appendKey=GET123')
           })
       })
 
-      it('returns cached response from write+end', function() {
+      it('returns cached response from write+end', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
@@ -586,7 +583,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .expect(200, 'abc')
           .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/writeandend')
               .expect(200, 'abc')
@@ -594,7 +591,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('returns cached response from write Buffer+end', function() {
+      it('returns cached response from write Buffer+end', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
@@ -602,7 +599,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           .expect(200, 'abc')
           .expect('Cache-Control', 'max-age=10')
           .then(assertNumRequestsProcessed(app, 1))
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/writebufferandend')
               .expect(200, 'abc')
@@ -610,18 +607,18 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('embeds store type and apicache version in cached responses', function() {
+      it('embeds store type and apicache version in cached responses', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
           })
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect('apicache-store', 'memory')
@@ -631,23 +628,23 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', function() {
+      it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', function () {
         var app = mockAPI.create('10 seconds')
         process.env.NODE_ENV = 'production'
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
           })
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect(200, movies)
-              .then(function(res) {
+              .then(function (res) {
                 expect(res.headers['apicache-store']).to.be.undefined
                 expect(res.headers['apicache-version']).to.be.undefined
                 expect(app.requestsProcessed).to.equal(1)
@@ -657,20 +654,20 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('embeds cache-control header', function() {
+      it('embeds cache-control header', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect('Cache-Control', 'max-age=10')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
             expect(res.headers['date']).to.exist
           })
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect('apicache-store', 'memory')
@@ -680,20 +677,20 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('allows cache-control header to be overwritten (e.g. "no-cache"', function() {
+      it('allows cache-control header to be overwritten (e.g. "no-cache"', function () {
         var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
 
         return request(app)
           .get('/api/movies')
           .expect('Cache-Control', 'no-cache')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
             expect(res.headers['date']).to.exist
           })
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect('apicache-store', 'memory')
@@ -703,35 +700,32 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('preserves etag header', function() {
+      it('preserves etag header', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200)
-          .then(function(res) {
+          .then(function (res) {
             var etag = res.headers['etag']
             expect(etag).to.exist
             return etag
           })
-          .then(function(etag) {
-            return request(app)
-              .get('/api/movies')
-              .expect(200)
-              .expect('etag', etag)
+          .then(function (etag) {
+            return request(app).get('/api/movies').expect(200).expect('etag', etag)
           })
       })
 
-      it('respects if-none-match header', function() {
+      it('respects if-none-match header', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200)
-          .then(function(res) {
+          .then(function (res) {
             return res.headers['etag']
           })
-          .then(function(etag) {
+          .then(function (etag) {
             return request(app)
               .get('/api/movies')
               .set('if-none-match', etag)
@@ -740,21 +734,21 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
-      it('embeds returns content-type JSON from original response and cached response', function() {
+      it('embeds returns content-type JSON from original response and cached response', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
           .expect(200)
           .expect('Content-Type', 'application/json; charset=utf-8')
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect('Content-Type', 'application/json; charset=utf-8')
           })
       })
 
-      it('does not cache a request when status code found in status code exclusions', function() {
+      it('does not cache a request when status code found in status code exclusions', function () {
         var app = mockAPI.create('2 seconds', {
           statusCodes: { exclude: [404] },
         })
@@ -762,13 +756,13 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/missing')
           .expect(404)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
 
-      it('does not cache a request when status code not found in status code inclusions', function() {
+      it('does not cache a request when status code not found in status code inclusions', function () {
         var app = mockAPI.create('2 seconds', {
           statusCodes: { include: [200] },
         })
@@ -776,16 +770,16 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/missing')
           .expect(404)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
 
-      it('middlewareToggle does not block response on falsy middlewareToggle', function() {
+      it('middlewareToggle does not block response on falsy middlewareToggle', function () {
         var hits = 0
 
-        var onlyOnce = function(req, res) {
+        var onlyOnce = function (req, res) {
           return hits++ === 0
         }
 
@@ -793,18 +787,18 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function (res) {
             return request(app)
               .get('/api/movies')
               .expect(200, movies)
-              .then(function(res) {
+              .then(function (res) {
                 expect(res.headers['apicache-version']).to.be.undefined
               })
           })
       })
 
-      it('middlewareToggle works correctly to control statusCode caching (per example)', function() {
-        var onlyStatusCode200 = function(req, res) {
+      it('middlewareToggle works correctly to control statusCode caching (per example)', function () {
+        var onlyStatusCode200 = function (req, res) {
           return res.statusCode === 200
         }
 
@@ -813,90 +807,90 @@ describe('.middleware {MIDDLEWARE}', function() {
         return request(app)
           .get('/api/missing')
           .expect(404)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['cache-control']).to.equal('no-cache, no-store, must-revalidate')
             expect(app.apicache.getIndex().all.length).to.equal(0)
           })
       })
 
-      it('removes a cache key after expiration', function(done) {
+      it('removes a cache key after expiration', function (done) {
         var app = mockAPI.create(10)
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function (err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
 
-        setTimeout(function() {
+        setTimeout(function () {
           expect(app.apicache.getIndex().all).to.have.length(0)
           done()
         }, 25)
       })
 
-      it('executes expiration callback from globalOptions.events.expire upon entry expiration', function(done) {
+      it('executes expiration callback from globalOptions.events.expire upon entry expiration', function (done) {
         var callbackResponse = undefined
-        var cb = function(a, b) {
+        var cb = function (a, b) {
           callbackResponse = b
         }
         var app = mockAPI.create(10, { events: { expire: cb } })
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function (err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
 
-        setTimeout(function() {
+        setTimeout(function () {
           expect(app.apicache.getIndex().all).to.have.length(0)
           expect(callbackResponse).to.equal('/api/movies')
           done()
         }, 25)
       })
 
-      it('clearing cache cancels expiration callback', function(done) {
+      it('clearing cache cancels expiration callback', function (done) {
         var app = mockAPI.create(20)
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function (err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
           })
 
-        setTimeout(function() {
+        setTimeout(function () {
           request(app)
             .get('/api/movies')
-            .end(function(err, res) {
+            .end(function (err, res) {
               expect(app.apicache.getIndex().all.length).to.equal(1)
               expect(app.apicache.getIndex().all).to.include('/api/movies')
             })
         }, 10)
 
-        setTimeout(function() {
+        setTimeout(function () {
           expect(app.apicache.getIndex().all.length).to.equal(1)
           expect(app.apicache.getIndex().all).to.include('/api/movies')
           done()
         }, 25)
       })
 
-      it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
+      it('allows defaultDuration to be a parseable string (e.g. "1 week")', function (done) {
         var callbackResponse = undefined
-        var cb = function(a, b) {
+        var cb = function (a, b) {
           callbackResponse = b
         }
         var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb } })
 
         request(app)
           .get('/api/movies')
-          .end(function(err, res) {
+          .end(function (err, res) {
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().all).to.include('/api/movies')
           })
 
-        setTimeout(function() {
+        setTimeout(function () {
           expect(app.apicache.getIndex().all).to.have.length(0)
           expect(callbackResponse).to.equal('/api/movies')
           done()
@@ -906,10 +900,10 @@ describe('.middleware {MIDDLEWARE}', function() {
   })
 })
 
-describe('Redis support', function() {
+describe('Redis support', function () {
   function hgetallIsNull(db, key) {
-    return new Promise(function(resolve, reject) {
-      db.hgetall(key, function(err, reply) {
+    return new Promise(function (resolve, reject) {
+      db.hgetall(key, function (err, reply) {
         if (err) {
           reject(err)
         } else {
@@ -921,42 +915,42 @@ describe('Redis support', function() {
     })
   }
 
-  apis.forEach(function(api) {
-    describe(api.name + ' tests', function() {
+  apis.forEach(function (api) {
+    describe(api.name + ' tests', function () {
       var mockAPI = api.server
 
-      it('properly caches a request', function() {
+      it('properly caches a request', function () {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
         return request(app)
           .get('/api/movies')
           .expect(200, movies)
-          .then(function(res) {
+          .then(function (res) {
             expect(res.headers['apicache-store']).to.be.undefined
             expect(res.headers['apicache-version']).to.be.undefined
             expect(app.requestsProcessed).to.equal(1)
           })
-          .then(function() {
+          .then(function () {
             return request(app)
               .get('/api/movies')
               .expect(200, movies)
               .expect('apicache-store', 'redis')
               .expect('apicache-version', pkg.version)
               .then(assertNumRequestsProcessed(app, 1))
-              .then(function() {
+              .then(function () {
                 db.flushdb()
               })
           })
       })
 
-      it('can clear indexed cache groups', function() {
+      it('can clear indexed cache groups', function () {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
         return request(app)
           .get('/api/testcachegroup')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
@@ -966,13 +960,13 @@ describe('Redis support', function() {
           })
       })
 
-      it('can clear indexed entries by url/key (non-group)', function() {
+      it('can clear indexed entries by url/key (non-group)', function () {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
@@ -980,7 +974,7 @@ describe('Redis support', function() {
           })
       })
 
-      it('can clear all entries from index', function() {
+      it('can clear all entries from index', function () {
         var db = redis.createClient()
         var app = mockAPI.create('10 seconds', { redisClient: db })
 
@@ -989,7 +983,7 @@ describe('Redis support', function() {
 
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear().all.length).to.equal(0)
@@ -997,33 +991,31 @@ describe('Redis support', function() {
           })
       })
 
-      it('sends a response even if redis failure', function() {
+      it('sends a response even if redis failure', function () {
         var app = mockAPI.create('10 seconds', { redisClient: {} })
 
-        return request(app)
-          .get('/api/movies')
-          .expect(200, movies)
+        return request(app).get('/api/movies').expect(200, movies)
       })
     })
   })
 })
 
-describe('.clear(key?) {SETTER}', function() {
-  it('is a function', function() {
+describe('.clear(key?) {SETTER}', function () {
+  it('is a function', function () {
     var apicache = require('../src')
     expect(typeof apicache.clear).to.equal('function')
   })
 
-  apis.forEach(function(api) {
-    describe(api.name + ' tests', function() {
+  apis.forEach(function (api) {
+    describe(api.name + ' tests', function () {
       var mockAPI = api.server
 
-      it('works when called with group key', function() {
+      it('works when called with group key', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/testcachegroup')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
@@ -1032,24 +1024,24 @@ describe('.clear(key?) {SETTER}', function() {
           })
       })
 
-      it('works when called with specific endpoint (non-group) key', function() {
+      it('works when called with specific endpoint (non-group) key', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear('/api/movies').all.length).to.equal(0)
           })
       })
 
-      it('clears empty group after removing last specific endpoint', function() {
+      it('clears empty group after removing last specific endpoint', function () {
         var app = mockAPI.create('10 seconds')
 
         return request(app)
           .get('/api/testcachegroup')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.getIndex().groups.cachegroup.length).to.equal(1)
@@ -1058,14 +1050,14 @@ describe('.clear(key?) {SETTER}', function() {
           })
       })
 
-      it('works when called with no key', function() {
+      it('works when called with no key', function () {
         var app = mockAPI.create('10 seconds')
 
         expect(app.apicache.getIndex().all.length).to.equal(0)
         expect(app.apicache.clear().all.length).to.equal(0)
         return request(app)
           .get('/api/movies')
-          .then(function(res) {
+          .then(function (res) {
             expect(app.requestsProcessed).to.equal(1)
             expect(app.apicache.getIndex().all.length).to.equal(1)
             expect(app.apicache.clear().all.length).to.equal(0)
