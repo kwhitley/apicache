@@ -4,6 +4,7 @@
   "scripts": {
     "lint": "eslint src",
     "test:old": "nyc mocha $(find test -name '*_test.js') --recursive",
+    "pretest": "yarn build",
     "test": "nyc jest --verbose",
     "dev": "yarn test --watch",
     "test:coverage": "yarn test && yarn coverage",

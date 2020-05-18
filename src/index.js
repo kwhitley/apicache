@@ -1,5 +1,6 @@
 import MemoryCache from './memory-cache'
 import pkg from '../package.json'
+import { setLongTimeout } from './utils/setLongTimeout'
 
 var t = {
   ms: 1,
@@ -143,10 +144,10 @@ function ApiCache() {
       memCache.add(key, value, duration, expireCallback)
     }
 
-    // add automatic cache clearing from duration, includes max limit on setTimeout
-    timers[key] = setTimeout(function () {
+    // add automatic cache clearing from duration, includes max limit on setLongTimeout
+    timers[key] = setLongTimeout(function () {
       instance.clear(key, true)
-    }, Math.min(duration, 2147483647))
+    }, duration)
   }
 
   function accumulateContent(res, content) {
