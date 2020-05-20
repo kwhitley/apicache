@@ -266,70 +266,60 @@ describe(`apicache @ v${pkg.version}`, () => {
           expect(app.requestsProcessed).toBe(1)
         })
 
-        //       it('skips cache when using header "x-apicache-bypass"', function () {
-        //         var app = mockAPI.create('10 seconds')
+        it('skips cache when using header "x-apicache-bypass"', async () => {
+          var app = mockAPI.create('10 seconds')
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(assertNumRequestsProcessed(app, 1))
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .set('x-apicache-bypass', true)
-        //               .set('Accept', 'application/json')
-        //               .expect('Content-Type', /json/)
-        //               .expect(200, movies)
-        //               .then(function (res) {
-        //                 expect(res.headers['apicache-store']).toBeUndefined()
-        //                 expect(res.headers['apicache-version']).toBeUndefined()
-        //                 expect(app.requestsProcessed).toBe(2)
-        //               })
-        //           })
-        //       })
+          await request(app).get('/api/movies').expect(200, movies)
 
-        //       it('skips cache when using header "x-apicache-force-fetch (legacy)"', function () {
-        //         var app = mockAPI.create('10 seconds')
+          expect(app.requestsProcessed).toBe(1)
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(assertNumRequestsProcessed(app, 1))
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .set('x-apicache-force-fetch', true)
-        //               .set('Accept', 'application/json')
-        //               .expect('Content-Type', /json/)
-        //               .expect(200, movies)
-        //               .then(function (res) {
-        //                 expect(res.headers['apicache-store']).toBeUndefined()
-        //                 expect(res.headers['apicache-version']).toBeUndefined()
-        //                 expect(app.requestsProcessed).toBe(2)
-        //               })
-        //           })
-        //       })
+          let response = await request(app)
+            .get('/api/movies')
+            .set('x-apicache-bypass', true)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200, movies)
 
-        //       it('does not cache header in headerBlacklist', function () {
-        //         var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
+          expect(response.headers['apicache-store']).toBeUndefined()
+          expect(response.headers['apicache-version']).toBeUndefined()
+          expect(app.requestsProcessed).toBe(2)
+        })
 
-        //         return request(app)
-        //           .get('/api/testheaderblacklist')
-        //           .expect(200, movies)
-        //           .then(function (res) {
-        //             expect(res.headers['x-blacklisted']).toBe(res.headers['x-notblacklisted'])
-        //             return request(app)
-        //               .get('/api/testheaderblacklist')
-        //               .set('Accept', 'application/json')
-        //               .expect('Content-Type', /json/)
-        //               .expect(200, movies)
-        //               .then(function (res2) {
-        //                 expect(res2.headers['x-blacklisted']).to.not.equal(
-        //                   res2.headers['x-notblacklisted']
-        //                 )
-        //               })
-        //           })
-        //       })
+        it('skips cache when using header "x-apicache-force-fetch (legacy)"', async () => {
+          var app = mockAPI.create('10 seconds')
+
+          await request(app).get('/api/movies').expect(200, movies)
+
+          expect(app.requestsProcessed).toBe(1)
+
+          let response = await request(app)
+            .get('/api/movies')
+            .set('x-apicache-force-fetch', true)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200, movies)
+
+          expect(response.headers['apicache-store']).toBeUndefined()
+          expect(response.headers['apicache-version']).toBeUndefined()
+          expect(app.requestsProcessed).toBe(2)
+        })
+
+        it('does not cache header in headerBlacklist', async () => {
+          var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
+
+          let response = await request(app).get('/api/testheaderblacklist').expect(200, movies)
+
+          expect(response.headers['x-blacklisted']).toBe(response.headers['x-notblacklisted'])
+
+          let response2 = await request(app).get('/api/testheaderblacklist')
+          // .set('Accept', 'application/json')
+          // .expect('Content-Type', 'application/json')
+          // .expect(200, movies)
+
+          console.log(response.headers)
+
+          expect(response2.headers['x-blacklisted']).not.toBe(response2.headers['x-notblacklisted'])
+        })
 
         //       it('properly returns a cached JSON request', function () {
         //         var app = mockAPI.create('10 seconds')
