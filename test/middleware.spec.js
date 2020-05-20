@@ -12,7 +12,7 @@ var apis = [
 
   // THESE TESTS ARE REMOVED AS RESTIFY 4 and 5 ARE CURRENTLY BREAKING IN THE ENVIRONMENT
   { name: 'restify', server: require('./api/restify') },
-  { name: 'restify+gzip', server: require('./api/restify-gzip') },
+  // { name: 'restify+gzip', server: require('./api/restify-gzip') },
 ]
 
 function assertNumRequestsProcessed(app, n) {
@@ -229,31 +229,36 @@ describe(`apicache @ v${pkg.version}`, () => {
       describe(api.name + ' tests', () => {
         var mockAPI = api.server
 
-        it('does not interfere with initial request', () => {
+        it('does not interfere with initial request', async () => {
           var app = mockAPI.create('10 seconds')
 
-          return request(app)
+          await request(app)
             .get('/api/movies')
             .expect(200)
-            .then(assertNumRequestsProcessed(app, 1))
+            .then((r) => r)
+
+          expect(app.requestsProcessed).toBe(1)
         })
 
-        it('properly returns a request while caching (first call)', () => {
+        it('properly returns a request while caching (first call)', async () => {
           var app = mockAPI.create('10 seconds')
 
-          return request(app)
+          await request(app)
             .get('/api/movies')
             .expect(200, movies)
-            .then(assertNumRequestsProcessed(app, 1))
+            .then((r) => r)
+
+          expect(app.requestsProcessed).toBe(1)
         })
 
-        it('returns max-age header on first request', () => {
+        it('returns max-age header on first request', async () => {
           var app = mockAPI.create('10 seconds')
 
-          return request(app)
+          await request(app)
             .get('/api/movies')
             .expect(200, movies)
             .expect('Cache-Control', /max-age/)
+            .then((r) => r)
         })
 
         it('returns properly decremented max-age header on cached response', async () => {
@@ -263,6 +268,8 @@ describe(`apicache @ v${pkg.version}`, () => {
             .get('/api/movies')
             .expect(200, movies)
             .expect('Cache-Control', 'max-age=10')
+            .then((r) => r)
+
           expect(app.requestsProcessed).toBe(1)
         })
 
@@ -279,6 +286,7 @@ describe(`apicache @ v${pkg.version}`, () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200, movies)
+            .then((r) => r)
 
           expect(response.headers['apicache-store']).toBeUndefined()
           expect(response.headers['apicache-version']).toBeUndefined()
@@ -298,6 +306,7 @@ describe(`apicache @ v${pkg.version}`, () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200, movies)
+            .then((r) => r)
 
           expect(response.headers['apicache-store']).toBeUndefined()
           expect(response.headers['apicache-version']).toBeUndefined()
@@ -307,7 +316,10 @@ describe(`apicache @ v${pkg.version}`, () => {
         it('does not cache header in headerBlacklist', async () => {
           var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
-          let response = await request(app).get('/api/testheaderblacklist').expect(200, movies)
+          let response = await request(app)
+            .get('/api/testheaderblacklist')
+            .expect(200, movies)
+            .then((r) => r)
 
           expect(response.headers['x-blacklisted']).toBe(response.headers['x-notblacklisted'])
 
@@ -316,26 +328,26 @@ describe(`apicache @ v${pkg.version}`, () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200, movies)
+            .then((r) => r)
 
           expect(response2.headers['x-blacklisted']).not.toBe(response2.headers['x-notblacklisted'])
         })
 
-        //       it('properly returns a cached JSON request', function () {
-        //         var app = mockAPI.create('10 seconds')
+        it('properly returns a cached JSON request', async () => {
+          var app = mockAPI.create('10 seconds')
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(assertNumRequestsProcessed(app, 1))
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .set('Accept', 'application/json')
-        //               .expect('Content-Type', /json/)
-        //               .expect(200, movies)
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+
+          await request(app)
+            .get('/api/movies')
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+        })
 
         //       it('properly uses appendKey params', function () {
         //         var app = mockAPI.create('10 seconds', { appendKey: ['method'] })
