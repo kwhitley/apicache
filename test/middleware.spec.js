@@ -311,12 +311,11 @@ describe(`apicache @ v${pkg.version}`, () => {
 
           expect(response.headers['x-blacklisted']).toBe(response.headers['x-notblacklisted'])
 
-          let response2 = await request(app).get('/api/testheaderblacklist')
-          // .set('Accept', 'application/json')
-          // .expect('Content-Type', 'application/json')
-          // .expect(200, movies)
-
-          console.log(response.headers)
+          let response2 = await request(app)
+            .get('/api/testheaderblacklist')
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200, movies)
 
           expect(response2.headers['x-blacklisted']).not.toBe(response2.headers['x-notblacklisted'])
         })
