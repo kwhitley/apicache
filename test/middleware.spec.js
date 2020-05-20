@@ -1,12 +1,12 @@
 const pkg = require('../package.json')
 const request = require('supertest')
-var redis = require('fakeredis')
-// var a = apicache.clone()
-// var b = apicache.clone()
-// var c = apicache.clone()
-var movies = require('./api/lib/data.json')
+const redis = require('fakeredis')
+// const a = apicache.clone()
+// const b = apicache.clone()
+// const c = apicache.clone()
+const movies = require('./api/lib/data.json')
 
-var apis = [
+const apis = [
   { name: 'express', server: require('./api/express') },
   { name: 'express+gzip', server: require('./api/express-gzip') },
 
@@ -16,34 +16,39 @@ var apis = [
 ]
 
 function assertNumRequestsProcessed(app, n) {
-  return function () {
+  return function (response) {
     expect(app.requestsProcessed).toBe(n)
+
+    return response
   }
 }
+
+// e.g. await delay(20) will wait 20ms then resolve
+const delay = (ms = 10) => new Promise((resolve, reject) => setTimeout(resolve, ms))
 
 describe(`apicache @ v${pkg.version}`, () => {
   describe('.middleware {MIDDLEWARE}', () => {
     it('is a function', () => {
-      var apicache = require('../dist/main/apicache')
+      const apicache = require('../dist/main/apicache')
       expect(typeof apicache.middleware).toBe('function')
       expect(apicache.middleware.length).toBe(3)
     })
 
     it('returns the middleware function', () => {
-      var middleware = require('../dist/main/apicache').middleware('10 seconds')
+      const middleware = require('../dist/main/apicache').middleware('10 seconds')
       expect(typeof middleware).toBe('function')
       expect(middleware.length).toBe(3)
     })
 
     describe('options', () => {
-      var apicache = require('../dist/main/apicache').newInstance()
+      const apicache = require('../dist/main/apicache').newInstance()
 
       it('uses global options if local ones not provided', () => {
         apicache.options({
           appendKey: ['test'],
         })
-        var middleware1 = apicache.middleware('10 seconds')
-        var middleware2 = apicache.middleware('20 seconds')
+        const middleware1 = apicache.middleware('10 seconds')
+        const middleware2 = apicache.middleware('20 seconds')
         expect(middleware1.options()).toMatchObject({
           debug: false,
           defaultDuration: 3600000,
@@ -76,7 +81,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         apicache.options({
           appendKey: ['test'],
         })
-        var middleware1 = apicache.middleware('10 seconds', null, {
+        const middleware1 = apicache.middleware('10 seconds', null, {
           debug: true,
           defaultDuration: 7200000,
           appendKey: ['bar'],
@@ -86,7 +91,7 @@ describe(`apicache @ v${pkg.version}`, () => {
             'cache-control': 'no-cache',
           },
         })
-        var middleware2 = apicache.middleware('20 seconds', null, {
+        const middleware2 = apicache.middleware('20 seconds', null, {
           debug: false,
           defaultDuration: 1800000,
           appendKey: ['foo'],
@@ -128,11 +133,11 @@ describe(`apicache @ v${pkg.version}`, () => {
           debug: true,
           appendKey: ['test'],
         })
-        var middleware1 = apicache.middleware('10 seconds', null, {
+        const middleware1 = apicache.middleware('10 seconds', null, {
           defaultDuration: 7200000,
           statusCodes: { include: [], exclude: ['400'] },
         })
-        var middleware2 = apicache.middleware('20 seconds', null, {
+        const middleware2 = apicache.middleware('20 seconds', null, {
           defaultDuration: 1800000,
           statusCodes: { include: [], exclude: ['200'] },
         })
@@ -173,11 +178,11 @@ describe(`apicache @ v${pkg.version}`, () => {
           debug: true,
           appendKey: ['test'],
         })
-        var middleware1 = apicache.middleware('10 seconds', null, {
+        const middleware1 = apicache.middleware('10 seconds', null, {
           defaultDuration: 7200000,
           statusCodes: { include: [], exclude: ['400'] },
         })
-        var middleware2 = apicache.middleware('20 seconds', null, {
+        const middleware2 = apicache.middleware('20 seconds', null, {
           defaultDuration: 900000,
           statusCodes: { include: [], exclude: ['404'] },
         })
@@ -227,10 +232,10 @@ describe(`apicache @ v${pkg.version}`, () => {
 
     apis.forEach(function (api) {
       describe(api.name + ' tests', () => {
-        var mockAPI = api.server
+        const mockAPI = api.server
 
         it('does not interfere with initial request', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
           await request(app)
             .get('/api/movies')
@@ -241,7 +246,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         })
 
         it('properly returns a request while caching (first call)', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
           await request(app)
             .get('/api/movies')
@@ -252,7 +257,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         })
 
         it('returns max-age header on first request', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
           await request(app)
             .get('/api/movies')
@@ -262,23 +267,22 @@ describe(`apicache @ v${pkg.version}`, () => {
         })
 
         it('returns properly decremented max-age header on cached response', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
           await request(app)
             .get('/api/movies')
             .expect(200, movies)
             .expect('Cache-Control', 'max-age=10')
-            .then((r) => r)
-
-          expect(app.requestsProcessed).toBe(1)
+            .then(assertNumRequestsProcessed(app, 1))
         })
 
         it('skips cache when using header "x-apicache-bypass"', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
-          await request(app).get('/api/movies').expect(200, movies)
-
-          expect(app.requestsProcessed).toBe(1)
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
 
           let response = await request(app)
             .get('/api/movies')
@@ -286,19 +290,19 @@ describe(`apicache @ v${pkg.version}`, () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200, movies)
-            .then((r) => r)
+            .then(assertNumRequestsProcessed(app, 2))
 
           expect(response.headers['apicache-store']).toBeUndefined()
           expect(response.headers['apicache-version']).toBeUndefined()
-          expect(app.requestsProcessed).toBe(2)
         })
 
         it('skips cache when using header "x-apicache-force-fetch (legacy)"', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
-          await request(app).get('/api/movies').expect(200, movies)
-
-          expect(app.requestsProcessed).toBe(1)
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
 
           let response = await request(app)
             .get('/api/movies')
@@ -306,15 +310,14 @@ describe(`apicache @ v${pkg.version}`, () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200, movies)
-            .then((r) => r)
+            .then(assertNumRequestsProcessed(app, 2))
 
           expect(response.headers['apicache-store']).toBeUndefined()
           expect(response.headers['apicache-version']).toBeUndefined()
-          expect(app.requestsProcessed).toBe(2)
         })
 
         it('does not cache header in headerBlacklist', async () => {
-          var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
+          const app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
           let response = await request(app)
             .get('/api/testheaderblacklist')
@@ -334,7 +337,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         })
 
         it('properly returns a cached JSON request', async () => {
-          var app = mockAPI.create('10 seconds')
+          const app = mockAPI.create('10 seconds')
 
           await request(app)
             .get('/api/movies')
@@ -349,86 +352,81 @@ describe(`apicache @ v${pkg.version}`, () => {
             .then(assertNumRequestsProcessed(app, 1))
         })
 
-        //       it('properly uses appendKey params', function () {
-        //         var app = mockAPI.create('10 seconds', { appendKey: ['method'] })
+        it('properly uses appendKey params', async () => {
+          const app = mockAPI.create('10 seconds', { appendKey: ['method'] })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(function () {
-        //             expect(app.apicache.getIndex().all[0]).toBe('/api/movies$$appendKey=GET')
-        //           })
-        //       })
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then((r) => r)
 
-        //       it('properly uses custom appendKey(req, res) function', function () {
-        //         var appendKey = function (req, res) {
-        //           return req.method + res.id
-        //         }
-        //         var app = mockAPI.create('10 seconds', { appendKey: appendKey })
+          expect(app.apicache.getIndex().all[0]).toBe('/api/movies$$appendKey=GET')
+        })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(function () {
-        //             expect(app.apicache.getIndex().all[0]).toBe('/api/movies$$appendKey=GET123')
-        //           })
-        //       })
+        it('properly uses custom appendKey(req, res) function', async () => {
+          const appendKey = (req, res) => req.method + res.id
+          const app = mockAPI.create('10 seconds', { appendKey })
 
-        //       it('returns cached response from write+end', function () {
-        //         var app = mockAPI.create('10 seconds')
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then((r) => r)
 
-        //         return request(app)
-        //           .get('/api/writeandend')
-        //           .expect(200, 'abc')
-        //           .expect('Cache-Control', 'max-age=10')
-        //           .then(assertNumRequestsProcessed(app, 1))
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/writeandend')
-        //               .expect(200, 'abc')
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+          expect(app.apicache.getIndex().all[0]).toBe('/api/movies$$appendKey=GET123')
+        })
 
-        //       it('returns cached response from write Buffer+end', function () {
-        //         var app = mockAPI.create('10 seconds')
+        it('returns cached response from write+end', async () => {
+          const app = mockAPI.create('10 seconds')
 
-        //         return request(app)
-        //           .get('/api/writebufferandend')
-        //           .expect(200, 'abc')
-        //           .expect('Cache-Control', 'max-age=10')
-        //           .then(assertNumRequestsProcessed(app, 1))
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/writebufferandend')
-        //               .expect(200, 'abc')
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+          await request(app)
+            .get('/api/writeandend')
+            .expect(200, 'abc')
+            .expect('Cache-Control', 'max-age=10')
+            .then(assertNumRequestsProcessed(app, 1))
 
-        //       it('embeds store type and apicache version in cached responses', function () {
-        //         var app = mockAPI.create('10 seconds')
+          await request(app)
+            .get('/api/writeandend')
+            .expect(200, 'abc')
+            .then(assertNumRequestsProcessed(app, 1))
+        })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(function (res) {
-        //             expect(res.headers['apicache-store']).toBeUndefined()
-        //             expect(res.headers['apicache-version']).toBeUndefined()
-        //             expect(app.requestsProcessed).toBe(1)
-        //           })
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .expect('apicache-store', 'memory')
-        //               .expect('apicache-version', pkg.version)
-        //               .expect(200, movies)
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+        it('returns cached response from write Buffer+end', async () => {
+          const app = mockAPI.create('10 seconds')
+
+          await request(app)
+            .get('/api/writebufferandend')
+            .expect(200, 'abc')
+            .expect('Cache-Control', 'max-age=10')
+            .then(assertNumRequestsProcessed(app, 1))
+
+          await request(app)
+            .get('/api/writebufferandend')
+            .expect(200, 'abc')
+            .then(assertNumRequestsProcessed(app, 1))
+        })
+
+        it('embeds store type and apicache version in cached responses', async () => {
+          const app = mockAPI.create('10 seconds')
+
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => {
+              expect(res.headers['apicache-store']).toBeUndefined()
+              expect(res.headers['apicache-version']).toBeUndefined()
+            })
+
+          await request(app)
+            .get('/api/movies')
+            .expect('apicache-store', 'memory')
+            .expect('apicache-version', pkg.version)
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+        })
 
         //       it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
         //         process.env.NODE_ENV = 'production'
 
         //         return request(app)
@@ -454,7 +452,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('embeds cache-control header', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/movies')
@@ -477,7 +475,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('allows cache-control header to be overwritten (e.g. "no-cache"', function () {
-        //         var app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
+        //         const app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
 
         //         return request(app)
         //           .get('/api/movies')
@@ -500,13 +498,13 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('preserves etag header', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/movies')
         //           .expect(200)
         //           .then(function (res) {
-        //             var etag = res.headers['etag']
+        //             const etag = res.headers['etag']
         //             expect(etag).to.exist
         //             return etag
         //           })
@@ -516,7 +514,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('respects if-none-match header', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/movies')
@@ -534,7 +532,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('embeds returns content-type JSON from original response and cached response', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/movies')
@@ -548,7 +546,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('does not cache a request when status code found in status code exclusions', function () {
-        //         var app = mockAPI.create('2 seconds', {
+        //         const app = mockAPI.create('2 seconds', {
         //           statusCodes: { exclude: [404] },
         //         })
 
@@ -562,7 +560,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('does not cache a request when status code not found in status code inclusions', function () {
-        //         var app = mockAPI.create('2 seconds', {
+        //         const app = mockAPI.create('2 seconds', {
         //           statusCodes: { include: [200] },
         //         })
 
@@ -576,13 +574,13 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('middlewareToggle does not block response on falsy middlewareToggle', function () {
-        //         var hits = 0
+        //         const hits = 0
 
-        //         var onlyOnce = function (req, res) {
+        //         const onlyOnce = function (req, res) {
         //           return hits++ === 0
         //         }
 
-        //         var app = mockAPI.create('2 seconds', {}, onlyOnce)
+        //         const app = mockAPI.create('2 seconds', {}, onlyOnce)
 
         //         return request(app)
         //           .get('/api/movies')
@@ -597,11 +595,11 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('middlewareToggle works correctly to control statusCode caching (per example)', function () {
-        //         var onlyStatusCode200 = function (req, res) {
+        //         const onlyStatusCode200 = function (req, res) {
         //           return res.statusCode === 200
         //         }
 
-        //         var app = mockAPI.create('2 seconds', {}, onlyStatusCode200)
+        //         const app = mockAPI.create('2 seconds', {}, onlyStatusCode200)
 
         //         return request(app)
         //           .get('/api/missing')
@@ -613,7 +611,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('removes a cache key after expiration', function (done) {
-        //         var app = mockAPI.create(10)
+        //         const app = mockAPI.create(10)
 
         //         request(app)
         //           .get('/api/movies')
@@ -629,11 +627,11 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('executes expiration callback from globalOptions.events.expire upon entry expiration', function (done) {
-        //         var callbackResponse = undefined
-        //         var cb = function (a, b) {
+        //         const callbackResponse = undefined
+        //         const cb = function (a, b) {
         //           callbackResponse = b
         //         }
-        //         var app = mockAPI.create(10, { events: { expire: cb } })
+        //         const app = mockAPI.create(10, { events: { expire: cb } })
 
         //         request(app)
         //           .get('/api/movies')
@@ -650,7 +648,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('clearing cache cancels expiration callback', function (done) {
-        //         var app = mockAPI.create(20)
+        //         const app = mockAPI.create(20)
 
         //         request(app)
         //           .get('/api/movies')
@@ -676,11 +674,11 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function (done) {
-        //         var callbackResponse = undefined
-        //         var cb = function (a, b) {
+        //         const callbackResponse = undefined
+        //         const cb = function (a, b) {
         //           callbackResponse = b
         //         }
-        //         var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb } })
+        //         const app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb } })
 
         //         request(app)
         //           .get('/api/movies')
@@ -716,11 +714,11 @@ describe(`apicache @ v${pkg.version}`, () => {
 
         //   apis.forEach(function (api) {
         //     describe(api.name + ' tests', function () {
-        //       var mockAPI = api.server
+        //       const mockAPI = api.server
 
         //       it('properly caches a request', function () {
-        //         var db = redis.createClient()
-        //         var app = mockAPI.create('10 seconds', { redisClient: db })
+        //         const db = redis.createClient()
+        //         const app = mockAPI.create('10 seconds', { redisClient: db })
 
         //         return request(app)
         //           .get('/api/movies')
@@ -744,8 +742,8 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('can clear indexed cache groups', function () {
-        //         var db = redis.createClient()
-        //         var app = mockAPI.create('10 seconds', { redisClient: db })
+        //         const db = redis.createClient()
+        //         const app = mockAPI.create('10 seconds', { redisClient: db })
 
         //         return request(app)
         //           .get('/api/testcachegroup')
@@ -760,8 +758,8 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('can clear indexed entries by url/key (non-group)', function () {
-        //         var db = redis.createClient()
-        //         var app = mockAPI.create('10 seconds', { redisClient: db })
+        //         const db = redis.createClient()
+        //         const app = mockAPI.create('10 seconds', { redisClient: db })
 
         //         return request(app)
         //           .get('/api/movies')
@@ -774,8 +772,8 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('can clear all entries from index', function () {
-        //         var db = redis.createClient()
-        //         var app = mockAPI.create('10 seconds', { redisClient: db })
+        //         const db = redis.createClient()
+        //         const app = mockAPI.create('10 seconds', { redisClient: db })
 
         //         expect(app.apicache.getIndex().all.length).toBe(0)
         //         expect(app.apicache.clear().all.length).toBe(0)
@@ -791,7 +789,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('sends a response even if redis failure', function () {
-        //         var app = mockAPI.create('10 seconds', { redisClient: {} })
+        //         const app = mockAPI.create('10 seconds', { redisClient: {} })
 
         //         return request(app).get('/api/movies').expect(200, movies)
         //       })
@@ -801,16 +799,16 @@ describe(`apicache @ v${pkg.version}`, () => {
 
         // describe('.clear(key?) {SETTER}', function () {
         //   it('is a function', function () {
-        //     var apicache = require('../dist/main/apicache')
+        //     const apicache = require('../dist/main/apicache')
         //     expect(typeof apicache.clear).toBe('function')
         //   })
 
         //   apis.forEach(function (api) {
         //     describe(api.name + ' tests', function () {
-        //       var mockAPI = api.server
+        //       const mockAPI = api.server
 
         //       it('works when called with group key', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/testcachegroup')
@@ -824,7 +822,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('works when called with specific endpoint (non-group) key', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/movies')
@@ -836,7 +834,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('clears empty group after removing last specific endpoint', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         return request(app)
         //           .get('/api/testcachegroup')
@@ -850,7 +848,7 @@ describe(`apicache @ v${pkg.version}`, () => {
         //       })
 
         //       it('works when called with no key', function () {
-        //         var app = mockAPI.create('10 seconds')
+        //         const app = mockAPI.create('10 seconds')
 
         //         expect(app.apicache.getIndex().all.length).toBe(0)
         //         expect(app.apicache.clear().all.length).toBe(0)
