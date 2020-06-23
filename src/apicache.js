@@ -304,7 +304,7 @@ function ApiCache() {
         debug('clearing cached entry for "' + key + '"')
         clearTimeout(timers[key])
         delete timers[key]
-        if (!globalOptions.redisClient) {
+        if (!(redis && redis.connected)) {
           memCache.delete(key)
         } else {
           try {
@@ -322,7 +322,7 @@ function ApiCache() {
       clearTimeout(timers[target])
       delete timers[target]
       // clear actual cached entry
-      if (!redis) {
+      if (!(redis && redis.connected)) {
         memCache.delete(target)
       } else {
         try {
@@ -347,7 +347,7 @@ function ApiCache() {
     } else {
       debug('clearing entire index')
 
-      if (!redis) {
+      if (!(redis && redis.connected)) {
         memCache.clear()
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
@@ -632,16 +632,6 @@ function ApiCache() {
 
       // attempt cache hit
       var redis = opt.redisClient
-      var cached = !redis ? memCache.getValue(key) : null
-
-      // send if cache hit from memory-cache
-      if (cached) {
-        var elapsed = new Date() - req.apicacheTimer
-        debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
-
-        perf.hit(key)
-        return sendCachedResponse(req, res, cached, middlewareToggle, next, duration)
-      }
 
       // send if cache hit from redis
       if (redis && redis.connected) {
@@ -679,6 +669,16 @@ function ApiCache() {
           return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
         }
       } else {
+        // fallback to memory cache for redis not connected or no redis given
+        var cached = memCache.getValue(key) || null
+        if (cached) {
+          var elapsed = new Date() - req.apicacheTimer
+          debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
+
+          perf.hit(key)
+          return sendCachedResponse(req, res, cached, middlewareToggle, next, duration)
+        }
+
         perf.miss(key)
         return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
       }
