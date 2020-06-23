@@ -674,7 +674,6 @@ function ApiCache() {
         if (cached) {
           var elapsed = new Date() - req.apicacheTimer
           debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
-
           perf.hit(key)
           return sendCachedResponse(req, res, cached, middlewareToggle, next, duration)
         }
