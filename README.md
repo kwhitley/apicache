@@ -245,6 +245,12 @@ routes to be cached from your public client, but NOT cached when from the admin 
 is achieved by sending a `"x-apicache-bypass": true` header along with the requst from the admin.
 The presence of this header flag will bypass the cache, ensuring you aren't looking at stale data.
 
+
+You can also send a `"x-apicache-force-fetch": true` header  which will force a data fetch without bypassing the update of the cache. 
+So, the next time, the newest data will be returned by the middleware. 
+Useful for optimizing overall performance of your API by minimizing latency.
+
+
 ## Contributors
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
