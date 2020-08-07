@@ -598,7 +598,7 @@ function ApiCache() {
 
       // initial bypass chances
       if (!opt.enabled) return bypass()
-      if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
+      if (req.headers['x-apicache-bypass']) return bypass()
 
       // REMOVED IN 0.11.1 TO CORRECT MIDDLEWARE TOGGLE EXECUTE ORDER
       // if (typeof middlewareToggle === 'function') {
@@ -635,7 +635,7 @@ function ApiCache() {
       var cached = !redis ? memCache.getValue(key) : null
 
       // send if cache hit from memory-cache
-      if (cached) {
+      if (cached && !req.headers['x-apicache-force-fetch']) {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
@@ -644,7 +644,7 @@ function ApiCache() {
       }
 
       // send if cache hit from redis
-      if (redis && redis.connected) {
+      if (redis && redis.connected && !req.headers['x-apicache-force-fetch']) {
         try {
           redis.hgetall(key, function(err, obj) {
             if (!err && obj && obj.response) {
