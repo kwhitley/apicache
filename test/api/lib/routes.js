@@ -45,12 +45,8 @@ module.exports = function (app) {
 
   app.get('/api/testheaderblacklist', function (req, res) {
     app.requestsProcessed++
-    res.set({
-      'x-blacklisted': app.requestsProcessed,
-      'x-notblacklisted': app.requestsProcessed,
-    })
-    // res.setHeader('x-blacklisted', app.requestsProcessed)
-    // res.setHeader('x-notblacklisted', app.requestsProcessed)
+    res.setHeader('x-blacklisted', app.requestsProcessed)
+    res.setHeader('x-notblacklisted', app.requestsProcessed)
 
     res.json(movies)
   })

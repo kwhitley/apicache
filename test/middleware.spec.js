@@ -11,7 +11,7 @@ const apis = [
   { name: 'express+gzip', server: require('./api/express-gzip') },
 
   // THESE TESTS ARE REMOVED AS RESTIFY 4 and 5 ARE CURRENTLY BREAKING IN THE ENVIRONMENT
-  { name: 'restify', server: require('./api/restify') },
+  // { name: 'restify', server: require('./api/restify') },
   // { name: 'restify+gzip', server: require('./api/restify-gzip') },
 ]
 
@@ -319,21 +319,21 @@ describe(`apicache @ v${pkg.version}`, () => {
         it('does not cache header in headerBlacklist', async () => {
           const app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
-          let response = await request(app)
+          await request(app)
             .get('/api/testheaderblacklist')
             .expect(200, movies)
-            .then((r) => r)
+            .then((res) => {
+              expect(res.headers['x-blacklisted']).toBe(res.headers['x-notblacklisted'])
+            })
 
-          expect(response.headers['x-blacklisted']).toBe(response.headers['x-notblacklisted'])
-
-          let response2 = await request(app)
+          await request(app)
             .get('/api/testheaderblacklist')
-            .set('Accept', 'application/json')
+            .set('Accept', 'gzip')
             .expect('Content-Type', /json/)
             .expect(200, movies)
-            .then((r) => r)
-
-          expect(response2.headers['x-blacklisted']).not.toBe(response2.headers['x-notblacklisted'])
+            .then((res) => {
+              expect(res.headers['x-blacklisted']).not.toBe(res.headers['x-notblacklisted'])
+            })
         })
 
         it('properly returns a cached JSON request', async () => {
@@ -425,111 +425,105 @@ describe(`apicache @ v${pkg.version}`, () => {
             .then(assertNumRequestsProcessed(app, 1))
         })
 
-        //       it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', function () {
-        //         const app = mockAPI.create('10 seconds')
-        //         process.env.NODE_ENV = 'production'
+        it('does NOT store type and apicache version in cached responses when NODE_ENV === "production"', async () => {
+          const app = mockAPI.create('10 seconds')
+          process.env.NODE_ENV = 'production'
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200, movies)
-        //           .then(function (res) {
-        //             expect(res.headers['apicache-store']).toBeUndefined()
-        //             expect(res.headers['apicache-version']).toBeUndefined()
-        //             expect(app.requestsProcessed).toBe(1)
-        //           })
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .expect(200, movies)
-        //               .then(function (res) {
-        //                 expect(res.headers['apicache-store']).toBeUndefined()
-        //                 expect(res.headers['apicache-version']).toBeUndefined()
-        //                 expect(app.requestsProcessed).toBe(1)
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => {
+              expect(res.headers['apicache-store']).toBeUndefined()
+              expect(res.headers['apicache-version']).toBeUndefined()
+            })
 
-        //                 process.env.NODE_ENV = undefined
-        //               })
-        //           })
-        //       })
+          await request(app)
+            .get('/api/movies')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => {
+              expect(res.headers['apicache-store']).toBeUndefined()
+              expect(res.headers['apicache-version']).toBeUndefined()
 
-        //       it('embeds cache-control header', function () {
-        //         const app = mockAPI.create('10 seconds')
+              process.env.NODE_ENV = undefined
+            })
+        })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect('Cache-Control', 'max-age=10')
-        //           .expect(200, movies)
-        //           .then(function (res) {
-        //             expect(res.headers['apicache-store']).toBeUndefined()
-        //             expect(res.headers['apicache-version']).toBeUndefined()
-        //             expect(app.requestsProcessed).toBe(1)
-        //             expect(res.headers['date']).to.exist
-        //           })
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .expect('apicache-store', 'memory')
-        //               .expect('apicache-version', pkg.version)
-        //               .expect(200, movies)
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+        it('embeds cache-control header', async () => {
+          const app = mockAPI.create('10 seconds')
 
-        //       it('allows cache-control header to be overwritten (e.g. "no-cache"', function () {
-        //         const app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
+          await request(app)
+            .get('/api/movies')
+            .expect('Cache-Control', 'max-age=10')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => {
+              expect(res.headers['apicache-store']).toBeUndefined()
+              expect(res.headers['apicache-version']).toBeUndefined()
+              expect(res.headers['date']).not.toBeUndefined()
+            })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect('Cache-Control', 'no-cache')
-        //           .expect(200, movies)
-        //           .then(function (res) {
-        //             expect(res.headers['apicache-store']).toBeUndefined()
-        //             expect(res.headers['apicache-version']).toBeUndefined()
-        //             expect(app.requestsProcessed).toBe(1)
-        //             expect(res.headers['date']).to.exist
-        //           })
-        //           .then(function () {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .expect('apicache-store', 'memory')
-        //               .expect('apicache-version', pkg.version)
-        //               .expect(200, movies)
-        //               .then(assertNumRequestsProcessed(app, 1))
-        //           })
-        //       })
+          await request(app)
+            .get('/api/movies')
+            .expect('apicache-store', 'memory')
+            .expect('apicache-version', pkg.version)
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+        })
 
-        //       it('preserves etag header', function () {
-        //         const app = mockAPI.create('10 seconds')
+        it('allows cache-control header to be overwritten (e.g. "no-cache"', async () => {
+          const app = mockAPI.create('10 seconds', { headers: { 'cache-control': 'no-cache' } })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200)
-        //           .then(function (res) {
-        //             const etag = res.headers['etag']
-        //             expect(etag).to.exist
-        //             return etag
-        //           })
-        //           .then(function (etag) {
-        //             return request(app).get('/api/movies').expect(200).expect('etag', etag)
-        //           })
-        //       })
+          await request(app)
+            .get('/api/movies')
+            .expect('Cache-Control', 'no-cache')
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => {
+              expect(res.headers['apicache-store']).toBeUndefined()
+              expect(res.headers['apicache-version']).toBeUndefined()
+              expect(res.headers['date']).not.toBeUndefined()
+            })
 
-        //       it('respects if-none-match header', function () {
-        //         const app = mockAPI.create('10 seconds')
+          await request(app)
+            .get('/api/movies')
+            .expect('apicache-store', 'memory')
+            .expect('apicache-version', pkg.version)
+            .expect(200, movies)
+            .then(assertNumRequestsProcessed(app, 1))
+        })
 
-        //         return request(app)
-        //           .get('/api/movies')
-        //           .expect(200)
-        //           .then(function (res) {
-        //             return res.headers['etag']
-        //           })
-        //           .then(function (etag) {
-        //             return request(app)
-        //               .get('/api/movies')
-        //               .set('if-none-match', etag)
-        //               .expect(304)
-        //               .expect('etag', etag)
-        //           })
-        //       })
+        it('preserves etag header', async () => {
+          const app = mockAPI.create('10 seconds')
+
+          const etag = await request(app)
+            .get('/api/movies')
+            .expect(200)
+            .then((res) => {
+              const etag = res.headers['etag']
+              expect(etag).not.toBeUndefined()
+              return etag
+            })
+
+          await request(app).get('/api/movies').expect(200).expect('etag', etag)
+        })
+
+        it('respects if-none-match header', async () => {
+          const app = mockAPI.create('10 seconds')
+
+          const etag = await request(app)
+            .get('/api/movies')
+            .expect(200)
+            .then(assertNumRequestsProcessed(app, 1))
+            .then((res) => res.headers['etag'])
+
+          await request(app)
+            .get('/api/movies')
+            .set('if-none-match', etag)
+            .expect(304)
+            .expect('etag', etag)
+        })
 
         //       it('embeds returns content-type JSON from original response and cached response', function () {
         //         const app = mockAPI.create('10 seconds')
