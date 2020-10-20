@@ -1,6 +1,6 @@
-var url = require('url')
-var MemoryCache = require('./memory-cache')
-var pkg = require('../package.json')
+import MemoryCache from './memory-cache'
+import pkg from '../package.json'
+import { setLongTimeout } from './utils/setLongTimeout'
 
 var t = {
   ms: 1,
@@ -14,19 +14,19 @@ var t = {
 
 var instances = []
 
-var matches = function(a) {
-  return function(b) {
+var matches = function (a) {
+  return function (b) {
     return a === b
   }
 }
 
-var doesntMatch = function(a) {
-  return function(b) {
+var doesntMatch = function (a) {
+  return function (b) {
     return !matches(a)(b)
   }
 }
 
-var logDuration = function(d, prefix) {
+var logDuration = function (d, prefix) {
   var str = d > 1000 ? (d / 1000).toFixed(2) + 'sec' : d + 'ms'
   return '\x1b[33m- ' + (prefix ? prefix + ' ' : '') + str + '\x1b[0m'
 }
@@ -69,7 +69,7 @@ function ApiCache() {
   this.id = instances.length
 
   function debug(a, b, c, d) {
-    var arr = ['\x1b[36m[apicache]\x1b[0m', a, b, c, d].filter(function(arg) {
+    var arr = ['\x1b[36m[apicache]\x1b[0m', a, b, c, d].filter(function (arg) {
       return arg !== undefined
     })
     var debugEnv = process.env.DEBUG && process.env.DEBUG.split(',').indexOf('apicache') !== -1
@@ -109,10 +109,10 @@ function ApiCache() {
 
   function filterBlacklistedHeaders(headers) {
     return Object.keys(headers)
-      .filter(function(key) {
+      .filter(function (key) {
         return globalOptions.headerBlacklist.indexOf(key) === -1
       })
-      .reduce(function(acc, header) {
+      .reduce(function (acc, header) {
         acc[header] = headers[header]
         return acc
       }, {})
@@ -136,7 +136,7 @@ function ApiCache() {
       try {
         redis.hset(key, 'response', JSON.stringify(value))
         redis.hset(key, 'duration', duration)
-        redis.expire(key, duration / 1000, expireCallback || function() {})
+        redis.expire(key, duration / 1000, expireCallback || function () {})
       } catch (err) {
         debug('[apicache] error in redis.hset()')
       }
@@ -144,10 +144,10 @@ function ApiCache() {
       memCache.add(key, value, duration, expireCallback)
     }
 
-    // add automatic cache clearing from duration, includes max limit on setTimeout
-    timers[key] = setTimeout(function() {
+    // add automatic cache clearing from duration, includes max limit on setLongTimeout
+    timers[key] = setLongTimeout(function () {
       instance.clear(key, true)
-    }, Math.min(duration, 2147483647))
+    }, duration)
   }
 
   function accumulateContent(res, content) {
@@ -186,11 +186,11 @@ function ApiCache() {
     }
 
     // append header overwrites if applicable
-    Object.keys(globalOptions.headers).forEach(function(name) {
+    Object.keys(globalOptions.headers).forEach(function (name) {
       res.setHeader(name, globalOptions.headers[name])
     })
 
-    res.writeHead = function() {
+    res.writeHead = function () {
       // add cache control headers
       if (!globalOptions.headers['cache-control']) {
         if (shouldCacheResponse(req, res, toggle)) {
@@ -205,13 +205,13 @@ function ApiCache() {
     }
 
     // patch res.write
-    res.write = function(content) {
+    res.write = function (content) {
       accumulateContent(res, content)
       return res._apicache.write.apply(this, arguments)
     }
 
     // patch res.end
-    res.end = function(content, encoding) {
+    res.end = function (content, encoding) {
       if (shouldCacheResponse(req, res, toggle)) {
         accumulateContent(res, content)
 
@@ -293,14 +293,14 @@ function ApiCache() {
     }
   }
 
-  this.clear = function(target, isAutomatic) {
+  this.clear = function (target, isAutomatic) {
     var group = index.groups[target]
     var redis = globalOptions.redisClient
 
     if (group) {
       debug('clearing group "' + target + '"')
 
-      group.forEach(function(key) {
+      group.forEach(function (key) {
         debug('clearing cached entry for "' + key + '"')
         clearTimeout(timers[key])
         delete timers[key]
@@ -336,7 +336,7 @@ function ApiCache() {
       index.all = index.all.filter(doesntMatch(target))
 
       // remove target from each group that it may exist in
-      Object.keys(index.groups).forEach(function(groupName) {
+      Object.keys(index.groups).forEach(function (groupName) {
         index.groups[groupName] = index.groups[groupName].filter(doesntMatch(target))
 
         // delete group if now empty
@@ -351,7 +351,7 @@ function ApiCache() {
         memCache.clear()
       } else {
         // clear redis keys one by one from internal index to prevent clearing non-apicache entries
-        index.all.forEach(function(key) {
+        index.all.forEach(function (key) {
           clearTimeout(timers[key])
           delete timers[key]
           try {
@@ -387,7 +387,7 @@ function ApiCache() {
     return defaultDuration
   }
 
-  this.getDuration = function(duration) {
+  this.getDuration = function (duration) {
     return parseDuration(duration, globalOptions.defaultDuration)
   }
 
@@ -399,13 +399,13 @@ function ApiCache() {
    * })
    * </code>
    */
-  this.getPerformance = function() {
-    return performanceArray.map(function(p) {
+  this.getPerformance = function () {
+    return performanceArray.map(function (p) {
       return p.report()
     })
   }
 
-  this.getIndex = function(group) {
+  this.getIndex = function (group) {
     if (group) {
       return index.groups[group]
     } else {
@@ -421,9 +421,9 @@ function ApiCache() {
       options: opt,
     })
 
-    var options = function(localOptions) {
+    var options = function (localOptions) {
       if (localOptions) {
-        middlewareOptions.find(function(middleware) {
+        middlewareOptions.find(function (middleware) {
           return middleware.options === opt
         }).localOptions = localOptions
       }
@@ -439,7 +439,7 @@ function ApiCache() {
      * A Function for non tracking performance
      */
     function NOOPCachePerformance() {
-      this.report = this.hit = this.miss = function() {} // noop;
+      this.report = this.hit = this.miss = function () {} // noop;
     }
 
     /**
@@ -493,7 +493,7 @@ function ApiCache() {
       /**
        * Return performance statistics
        */
-      this.report = function() {
+      this.report = function () {
         return {
           lastCacheHit: this.lastCacheHit,
           lastCacheMiss: this.lastCacheMiss,
@@ -513,12 +513,12 @@ function ApiCache() {
        * @param {Uint8Array} array An array representing hits and misses.
        * @returns a number between 0 and 1, or null if the array has no hits or misses
        */
-      this.hitRate = function(array) {
+      this.hitRate = function (array) {
         var hits = 0
         var misses = 0
         for (var i = 0; i < array.length; i++) {
           var n8 = array[i]
-          for (j = 0; j < 4; j++) {
+          for (var j = 0; j < 4; j++) {
             switch (n8 & 3) {
               case 1:
                 hits++
@@ -546,7 +546,7 @@ function ApiCache() {
        * 01 encodes a hit
        * 10 encodes a miss
        */
-      this.recordHitInArray = function(array, hit) {
+      this.recordHitInArray = function (array, hit) {
         var arrayIndex = ~~(this.callCount / 4) % array.length
         var bitOffset = (this.callCount % 4) * 2 // 2 bits per record, 4 records per uint8 array element
         var clearMask = ~(3 << bitOffset)
@@ -558,7 +558,7 @@ function ApiCache() {
        * Records the hit or miss in the tracking arrays and increments the call count.
        * @param {boolean} hit true records a hit, false records a miss
        */
-      this.recordHit = function(hit) {
+      this.recordHit = function (hit) {
         this.recordHitInArray(this.hitsLast100, hit)
         this.recordHitInArray(this.hitsLast1000, hit)
         this.recordHitInArray(this.hitsLast10000, hit)
@@ -571,7 +571,7 @@ function ApiCache() {
        * Records a hit event, setting lastCacheMiss to the given key
        * @param {string} key The key that had the cache hit
        */
-      this.hit = function(key) {
+      this.hit = function (key) {
         this.recordHit(true)
         this.lastCacheHit = key
       }
@@ -580,7 +580,7 @@ function ApiCache() {
        * Records a miss event, setting lastCacheMiss to the given key
        * @param {string} key The key that had the cache miss
        */
-      this.miss = function(key) {
+      this.miss = function (key) {
         this.recordHit(false)
         this.lastCacheMiss = key
       }
@@ -590,7 +590,7 @@ function ApiCache() {
 
     performanceArray.push(perf)
 
-    var cache = function(req, res, next) {
+    var cache = function (req, res, next) {
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
@@ -646,7 +646,7 @@ function ApiCache() {
       // send if cache hit from redis
       if (redis && redis.connected) {
         try {
-          redis.hgetall(key, function(err, obj) {
+          redis.hgetall(key, function (err, obj) {
             if (!err && obj && obj.response) {
               var elapsed = new Date() - req.apicacheTimer
               debug('sending cached (redis) version of', key, logDuration(elapsed))
@@ -689,7 +689,7 @@ function ApiCache() {
     return cache
   }
 
-  this.options = function(options) {
+  this.options = function (options) {
     if (options) {
       Object.assign(globalOptions, options)
       syncOptions()
@@ -709,14 +709,14 @@ function ApiCache() {
     }
   }
 
-  this.resetIndex = function() {
+  this.resetIndex = function () {
     index = {
       all: [],
       groups: {},
     }
   }
 
-  this.newInstance = function(config) {
+  this.newInstance = function (config) {
     var instance = new ApiCache()
 
     if (config) {
@@ -726,7 +726,7 @@ function ApiCache() {
     return instance
   }
 
-  this.clone = function() {
+  this.clone = function () {
     return this.newInstance(this.options())
   }
 
@@ -734,4 +734,4 @@ function ApiCache() {
   this.resetIndex()
 }
 
-module.exports = new ApiCache()
+export default new ApiCache()

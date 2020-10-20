@@ -2,18 +2,22 @@
   "name": "apicache",
   "version": "1.5.3",
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "nyc mocha $(find test -name '*.test.js') --recursive",
-    "test:watch": "npm run test -- --watch",
+    "lint": "eslint src",
+    "test:old": "nyc mocha $(find test -name '*_test.js') --recursive",
+    "pretest": "yarn build",
+    "test": "nyc jest --verbose",
+    "dev": "yarn test --watch",
+    "test:coverage": "yarn test && yarn coverage",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "prepublish": "npm run test"
+    "build": "rollup -c",
+    "build2": "rollup src/index.js --format cjs --file dist/apicache.js"
   },
   "engines": {
-    "node": ">=6.2.0 <13"
+    "node": ">=8"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
-  "main": "./src/apicache.js",
+  "main": "dist/main/apicache.js",
+  "module": "dist/module/apicache.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/kwhitley/apicache.git"
@@ -37,25 +41,37 @@
     "email": "krwhitley@gmail.com"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "^4.0.3",
     "chai": "^4.2.0",
     "compression": "^1.7.4",
-    "coveralls": "^3.0.6",
-    "eslint": "^4.18.0",
+    "coveralls": "^3.1.0",
+    "eslint": "^7.0.0",
     "express": "^4.17.1",
     "fakeredis": "^2.0.0",
-    "husky": "^3.0.4",
-    "mocha": "^7.0.0",
-    "nyc": "^13.3.0",
-    "prettier": "^1.18.2",
-    "pretty-quick": "^1.11.1",
-    "restify": "^7.7.0",
+    "husky": "^4.2.5",
+    "jest": "^26.0.1",
+    "mocha": "^7.1.2",
+    "nyc": "^15.0.1",
+    "prettier": "^2.0.5",
+    "pretty-quick": "^2.0.1",
+    "restify": "^8.5.1",
     "restify-etag-cache": "^1.0.12",
-    "supertest": "^4.0.2"
+    "rollup": "^2.10.5",
+    "rollup-plugin-sourcemaps": "^0.6.2",
+    "rollup-plugin-terser": "^5.3.0",
+    "supertest": "^4.0.2",
+    "yarn-release": "^1.10.2"
   },
   "dependencies": {},
   "husky": {
     "hooks": {
-      "pre-commit": "pretty-quick --staged && npm run test"
+      "pre-commit": "pretty-quick --staged"
     }
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
