@@ -126,7 +126,7 @@ let cache = apicache.options({
   },
 }).middleware
 
-let cache5min = cache('5 min') // continue to use normally
+let cache5min = cache('5 minute') // continue to use normally
 ```
 
 ## API
