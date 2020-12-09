@@ -857,7 +857,7 @@ describe('.middleware {MIDDLEWARE}', function() {
       })
 
       it('clearing cache cancels expiration callback', function(done) {
-        var app = mockAPI.create(20)
+        var app = mockAPI.create(100)
 
         request(app)
           .get('/api/movies')
@@ -873,13 +873,13 @@ describe('.middleware {MIDDLEWARE}', function() {
               expect(app.apicache.getIndex().all.length).to.equal(1)
               expect(app.apicache.getIndex().all).to.include('/api/movies')
             })
-        }, 10)
+        }, 50)
 
         setTimeout(function() {
           expect(app.apicache.getIndex().all.length).to.equal(1)
           expect(app.apicache.getIndex().all).to.include('/api/movies')
           done()
-        }, 25)
+        }, 150)
       })
 
       it('allows defaultDuration to be a parseable string (e.g. "1 week")', function(done) {
@@ -887,7 +887,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         var cb = function(a, b) {
           callbackResponse = b
         }
-        var app = mockAPI.create(null, { defaultDuration: '10ms', events: { expire: cb } })
+        var app = mockAPI.create(null, { defaultDuration: '100ms', events: { expire: cb } })
 
         request(app)
           .get('/api/movies')
@@ -900,7 +900,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           expect(app.apicache.getIndex().all).to.have.length(0)
           expect(callbackResponse).to.equal('/api/movies')
           done()
-        }, 25)
+        }, 150)
       })
     })
   })
