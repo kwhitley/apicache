@@ -275,6 +275,7 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Changelog
 
+- **v1.6.0** - added respectCacheControl option flag to force honoring no-cache (thanks [@NaridaL](https://github.com/NaridaL)!)
 - **v1.5.4** - up to Node v15 support, HUGE thanks to [@Chocobozzz](https://github.com/Chocobozzz) and all the folks on the PR thread! <3
 - **v1.5.3** - multiple fixes: Redis should be connected before using (thanks @guybrush)
 - **v1.5.2** - multiple fixes: Buffer deprecation and \_headers deprecation, { trackPerformance: false } by default per discussion (sorry semver...)
