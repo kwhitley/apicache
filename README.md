@@ -249,6 +249,7 @@ The presence of this header flag will bypass the cache, ensuring you aren't look
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
 
+- [@Chocobozzz](https://github.com/Chocobozzz) - the savior of getting this to pass all the Node 14/15 tests again... thanks for everyone's patience!!!
 - [@killdash9](https://github.com/killdash9) - restify support, performance/stats system, and too much else at this point to list
 - [@svozza](https://github.com/svozza) - added restify tests, test suite refactor, and fixed header issue with restify. Node v7 + Restify v5 conflict resolution, etag/if-none-match support, etcetc, etc. Triple thanks!!!
 - [@andredigenova](https://github.com/andredigenova) - Added header blacklist as options, correction to caching checks
@@ -273,6 +274,7 @@ Special thanks to all those that use this library and report issues, but especia
 
 ### Changelog
 
+- **v1.5.4** - up to Node v15 support, HUGE thanks to [@Chocobozzz](https://github.com/Chocobozzz) and all the folks on the PR thread! <3
 - **v1.5.3** - multiple fixes: Redis should be connected before using (thanks @guybrush)
 - **v1.5.2** - multiple fixes: Buffer deprecation and \_headers deprecation, { trackPerformance: false } by default per discussion (sorry semver...)
 - **v1.5.1** - adds { trackPerformance } option to enable/disable performance tracking (thanks @fernandolguevara)
