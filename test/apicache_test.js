@@ -249,6 +249,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -262,10 +263,11 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
     })
 
-    it('uses local options if they provided', function() {
+    it('uses local options if provided', function() {
       apicache.options({
         appendKey: ['test'],
       })
@@ -278,6 +280,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         headers: {
           'cache-control': 'no-cache',
         },
+        respectCacheControl: true,
       })
       var middleware2 = apicache.middleware('20 seconds', null, {
         debug: false,
@@ -300,6 +303,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           'cache-control': 'no-cache',
         },
         trackPerformance: false,
+        respectCacheControl: true,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -313,6 +317,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
     })
 
@@ -345,6 +350,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
       expect(middleware2.options()).to.eql({
         debug: false,
@@ -358,6 +364,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
     })
 
@@ -401,6 +408,7 @@ describe('.middleware {MIDDLEWARE}', function() {
           'cache-control': 'no-cache',
         },
         trackPerformance: false,
+        respectCacheControl: false,
       })
       expect(middleware2.options()).to.eql({
         debug: true,
@@ -414,6 +422,7 @@ describe('.middleware {MIDDLEWARE}', function() {
         events: { expire: undefined },
         headers: {},
         trackPerformance: false,
+        respectCacheControl: false,
       })
     })
   })
@@ -436,6 +445,7 @@ describe('.middleware {MIDDLEWARE}', function() {
 
         return request(app)
           .get('/api/movies')
+          .set('Cache-Control', 'no-cache')
           .expect(200, movies)
           .then(assertNumRequestsProcessed(app, 1))
       })
@@ -484,6 +494,28 @@ describe('.middleware {MIDDLEWARE}', function() {
             return request(app)
               .get('/api/movies')
               .set('x-apicache-bypass', true)
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200, movies)
+              .then(function(res) {
+                expect(res.headers['apicache-store']).to.be.undefined
+                expect(res.headers['apicache-version']).to.be.undefined
+                expect(app.requestsProcessed).to.equal(2)
+              })
+          })
+      })
+
+      it('skips cache with respectCacheControl', function() {
+        var app = mockAPI.create('10 seconds', { respectCacheControl: true })
+
+        return request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            return request(app)
+              .get('/api/movies')
+              .set('Cache-Control', 'no-cache')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(200, movies)

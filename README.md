@@ -157,7 +157,8 @@ let cache5min = cache('5 min') // continue to use normally
   trackPerformance: false,          // enable/disable performance tracking... WARNING: super cool feature, but may cause memory overhead issues
   headers: {
     // 'cache-control':  'no-cache' // example of header overwrite
-  }
+  },
+  respectCacheControl: false|true   // If true, 'Cache-Control: no-cache' in the request header will bypass the cache.
 }
 ```
 

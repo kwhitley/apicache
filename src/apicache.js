@@ -57,6 +57,7 @@ function ApiCache() {
       // 'cache-control':  'no-cache' // example of header overwrite
     },
     trackPerformance: false,
+    respectCacheControl: false,
   }
 
   var middlewareOptions = []
@@ -598,7 +599,12 @@ function ApiCache() {
 
       // initial bypass chances
       if (!opt.enabled) return bypass()
-      if (req.headers['x-apicache-bypass'] || req.headers['x-apicache-force-fetch']) return bypass()
+      if (
+        req.headers['x-apicache-bypass'] ||
+        req.headers['x-apicache-force-fetch'] ||
+        (opt.respectCacheControl && req.headers['cache-control'] == 'no-cache')
+      )
+        return bypass()
 
       // REMOVED IN 0.11.1 TO CORRECT MIDDLEWARE TOGGLE EXECUTE ORDER
       // if (typeof middlewareToggle === 'function') {
