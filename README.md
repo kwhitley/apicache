@@ -246,6 +246,8 @@ routes to be cached from your public client, but NOT cached when from the admin 
 is achieved by sending a `"x-apicache-bypass": true` header along with the requst from the admin.
 The presence of this header flag will bypass the cache, ensuring you aren't looking at stale data.
 
+Additionally, you may want to bypass loading stale content for a request while still updating the cache with fresh content. To achieve this, include a `"x-apicache-bypass": true` header with the request.
+
 ## Contributors
 
 Special thanks to all those that use this library and report issues, but especially to the following active users that have helped add to the core functionality!
