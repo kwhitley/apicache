@@ -639,9 +639,11 @@ function ApiCache() {
       // attempt cache hit
       var redis = opt.redisClient
       var cached = !redis ? memCache.getValue(key) : null
+      // skip cache load when x-apicache-revalidate is present
+      var revalidate = req.headers['x-apicache-revalidate']
 
       // send if cache hit from memory-cache
-      if (cached) {
+      if (!revalidate && cached) {
         var elapsed = new Date() - req.apicacheTimer
         debug('sending cached (memory-cache) version of', key, logDuration(elapsed))
 
@@ -650,7 +652,7 @@ function ApiCache() {
       }
 
       // send if cache hit from redis
-      if (redis && redis.connected) {
+      if (!revalidate && redis && redis.connected) {
         try {
           redis.hgetall(key, function(err, obj) {
             if (!err && obj && obj.response) {
