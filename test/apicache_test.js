@@ -549,6 +549,31 @@ describe('.middleware {MIDDLEWARE}', function() {
           })
       })
 
+      it('revalidates cache when using header "x-apicache-revalidate"', function(done) {
+        var app = mockAPI.create('10 seconds')
+
+        request(app)
+          .get('/api/movies')
+          .expect(200, movies)
+          .expect('Cache-Control', 'max-age=10')
+          .then(assertNumRequestsProcessed(app, 1))
+          .then(function() {
+            setTimeout(function() {
+              return request(app)
+                .get('/api/movies')
+                .set('x-apicache-revalidate', true)
+                .expect(200, movies)
+                .expect('Cache-Control', 'max-age=10')
+                .then(function(res) {
+                  expect(res.headers['apicache-store']).to.be.undefined
+                  expect(res.headers['apicache-version']).to.be.undefined
+                  expect(app.requestsProcessed).to.equal(2)
+                  done()
+                })
+            }, 500)
+          })
+      })
+
       it('does not cache header in headerBlacklist', function() {
         var app = mockAPI.create('10 seconds', { headerBlacklist: ['x-blacklisted'] })
 
