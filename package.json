@@ -10,7 +10,7 @@
     "prepublish": "npm run test"
   },
   "engines": {
-    "node": ">=8 <=15"
+    "node": ">=8"
   },
   "description": "An ultra-simplified API response caching middleware for Express/Node using plain-english durations.",
   "main": "./src/apicache.js",
@@ -52,7 +52,6 @@
     "restify-etag-cache": "^1.0.12",
     "supertest": "^4.0.2"
   },
-  "dependencies": {},
   "husky": {
     "hooks": {
       "pre-commit": "pretty-quick --staged && npm run test"
