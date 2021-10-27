@@ -97,14 +97,14 @@ function ApiCache() {
   }
 
   function addIndexEntries(key, req) {
-    var groupName = req.apicacheGroup
-
-    if (groupName) {
-      debug('group detected "' + groupName + '"')
-      var group = (index.groups[groupName] = index.groups[groupName] || [])
-      group.unshift(key)
+    if (req.apicacheGroup) {
+      var groupNamesSet = new Set(Array.isArray(req.apicacheGroup) ? req.apicacheGroup : [req.apicacheGroup])
+      groupNamesSet.forEach(groupName => {
+        debug('group detected "' + groupName + '"')
+        var group = (index.groups[groupName] = index.groups[groupName] || [])
+        group.unshift(key)
+      })
     }
-
     index.all.unshift(key)
   }
 
