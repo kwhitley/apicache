@@ -132,8 +132,10 @@ function ApiCache() {
   function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     var expireCallback = globalOptions.events.expire
-
-    if (redis && redis.connected) {
+    // Check if redis client is availeble and
+    // Also checks if redis.connected in case of node_redis and redis.status for ioredis
+    var isRedisAndConnected = redis ? redis.connected || redis.status === 'ready' : false
+    if (isRedisAndConnected) {
       try {
         redis.hset(key, 'response', JSON.stringify(value))
         redis.hset(key, 'duration', duration)
