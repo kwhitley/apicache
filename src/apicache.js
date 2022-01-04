@@ -58,6 +58,7 @@ function ApiCache() {
     },
     trackPerformance: false,
     respectCacheControl: false,
+    maxKey: -1,
   }
 
   var middlewareOptions = []
@@ -142,7 +143,8 @@ function ApiCache() {
         debug('[apicache] error in redis.hset()')
       }
     } else {
-      memCache.add(key, value, duration, expireCallback)
+      if (globalOptions.maxKey > 0 && memCache.size > globalOptions.maxKey)
+        memCache.add(key, value, duration, expireCallback)
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
