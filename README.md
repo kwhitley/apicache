@@ -159,6 +159,7 @@ let cache5min = cache('5 minute') // continue to use normally
     // 'cache-control':  'no-cache' // example of header overwrite
   },
   respectCacheControl: false|true   // If true, 'Cache-Control: no-cache' in the request header will bypass the cache.
+  maxKey: number                    // When using local memory, it is necessary to limit the max memory of nodejs. If you want to limit the number of keys that can be cached for this. (default is not using)
 }
 ```
 
